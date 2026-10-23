@@ -28,6 +28,8 @@
 3. **Полностью перезапустите CorelDRAW** и включите панель: Окно → Панели инструментов → «Неон (NeonCenterline)».
 4. **Если панели нет или кнопки пустые** (бывает в старых версиях), кнопки можно поставить вручную: Инструменты → Настройка (Ctrl+J) → Команды → категория «Макросы» → перетащить на любую панель команды `NeonCenterline.NeonUI.RunMono`, `RunScript`, `ShowSettings`, `NeonCenterline.NeonTools.MeasureLength`, `SelectNeonLines`, `NeonCenterline.NeonCut.FitToCut`. Значки — в папке `icons` архива (вкладка «Вид» → «Импорт»).
 
+**Тестовый шрифт** `font\SABNeonTest.ttf` для работы плагина не нужен — он для пробы (моноширинный неоновый шрифт, на нём видно, как должен работать режим «Моно»). Установить: двойной щелчок по файлу → «Установить».
+
 **Совместимость:** проверено в CorelDRAW 2026 (27). Должно работать в 2017–2025; в X7–X8 расчёт, скорее всего, работает, панель — возможно, только вручную. Работает или нет в вашей версии — напишите в Issues на GitHub.
 
 ## Работа
@@ -84,6 +86,8 @@ A CorelDRAW plugin that builds a centerline from letter outlines for milling fle
    Or, once the plugin is loaded, run the macro `NeonCenterline.NeonAddon.InstallToolbar` (Tools → Macros → Run Macro): it puts the toolbar into Addons of the CorelDRAW version it runs in.
 3. **Fully restart CorelDRAW** and turn the toolbar on: Window → Toolbars → "Неон (NeonCenterline)".
 4. **If there is no toolbar or the buttons are blank** (possible in older versions), add the buttons manually: Tools → Customization (Ctrl+J) → Commands → category "Macros" → drag to any toolbar `NeonCenterline.NeonUI.RunMono`, `RunScript`, `ShowSettings`, `NeonCenterline.NeonTools.MeasureLength`, `SelectNeonLines`, `NeonCenterline.NeonCut.FitToCut`. Icons are in the `icons` folder of the archive (Appearance tab → Import).
+
+**Test font** `font\SABNeonTest.ttf` is not required by the plugin — it is for trying it out (a monoline neon font that shows how Mono mode is meant to work). To install: double-click the file → Install.
 
 **Compatibility:** tested in CorelDRAW 2026 (27). Should work in 2017–2025; in X7–X8 the computation most likely works, the toolbar may need manual setup. Please report in GitHub Issues whether it works in your version.
 
