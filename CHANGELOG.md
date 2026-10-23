@@ -10,6 +10,7 @@ RU
 - Автообновление с GitHub (установка после закрытия CorelDRAW, предыдущая версия сохраняется как .bak).
 - Кнопка «Длина»: длина выделенных контуров (под резку) и центральных линий (неон) с копированием в буфер.
 - Кнопка «Выделить линии»: все центральные линии плагина на странице.
+- Окно параметров перед расчётом: диаметр, тип неона, кратность реза, подгонка (можно отключить).
 - Тип неона (светодиодный / неон 2.0) и кратность реза; подгонка линий под кратность (укорачивание свободных концов), отчёт по кратности в «Длине».
 
 EN
@@ -20,4 +21,5 @@ EN
 - Auto-update from GitHub (installed after CorelDRAW is closed, the previous version is kept as .bak).
 - Length button: length of selected outlines (cutting) and centerlines (neon), copy to clipboard.
 - Select lines button: all plugin centerlines on the page.
+- Parameters window before a run: cutter, neon type, cut step, fitting (can be turned off).
 - Neon type (LED neon / Neon 2.0) and cut step; fitting lines to the cut step (shortening free ends), cut-step summary in Length.

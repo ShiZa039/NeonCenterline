@@ -13,7 +13,8 @@ MODS = [('NeonLang', f'{P}/src/NeonLang.bas', 'x = NeonLangCode()'),
         ('NeonMono', f'{P}/src/NeonMono.bas', 'x = NeonMonoRunProbe()'),
         ('NeonScript', f'{P}/src/NeonScript.bas', 'x = NeonScriptRunProbe()'),
         ('NeonBuild', f'{P}/build/NeonBuild.bas', 'x = NeonBuildProbe()'),
-        ('frmCode', f'{P}/src/frmNeonSettings.code.txt', 'x = FrmProbe()')]
+        ('frmCode', f'{P}/src/frmNeonSettings.code.txt', 'x = FrmProbe()'),
+        ('frmRun', f'{P}/src/frmNeonRun.code.txt', 'x = FrmRunProbe()')]
 STUB_COREL = '''
 Private Const cdrGroupShape As Long = 1
 Private Const cdrCurveShape As Long = 2
@@ -46,7 +47,7 @@ for name, path, call in MODS:
         s = re.sub(r'\bAs %s\b' % t, 'As Object', s)
     s = re.sub(r'\bAs cdrUnit\b', 'As Long', s)
     extra = STUB_COREL
-    if name == 'frmCode':
+    if name in ('frmCode', 'frmRun'):
         s = s.replace('Unload Me', "Me = Nothing")
         extra += FORM_STUB
     probe = call.split('= ')[1].split('(')[0]

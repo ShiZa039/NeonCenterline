@@ -1,0 +1,68 @@
+Option Explicit
+' Окно перед расчётом (если включено «Спрашивать при каждом запуске»): диаметр фрезы,
+' тип неона, кратность реза, подгонка. Элементы окна создаёт NeonBuild, код вставляется при сборке.
+
+Private Sub UserForm_Initialize()
+    Me.Caption = NeonL("app_title")
+    lblTool.Caption = NeonL("lbl_tool")
+    cboTool.Clear
+    cboTool.AddItem "6"
+    cboTool.AddItem "8"
+    cboTool.AddItem "10"
+    cboTool.Text = FmtNum(NeonGetTool())
+    lblHint.Caption = NeonL("lbl_tool_hint")
+    lblType.Caption = NeonL("lbl_type")
+    cboType.Clear
+    cboType.AddItem NeonL("type_classic")
+    cboType.AddItem NeonL("type_neon2")
+    cboType.ListIndex = IIf(NeonCutType() = "neon2", 1, 0)
+    lblCut.Caption = NeonL("lbl_cut")
+    cboCut.Clear
+    cboCut.AddItem "10"
+    cboCut.AddItem "25"
+    cboCut.AddItem "50"
+    cboCut.Text = FmtNum(NeonCutStep())
+    chkFit.Caption = NeonL("chk_fit")
+    chkFit.Value = NeonCutFitOn()
+    lblTrim.Caption = NeonL("lbl_trim")
+    cboTrim.Clear
+    cboTrim.AddItem NeonL("trim_both")
+    cboTrim.AddItem NeonL("trim_end")
+    cboTrim.ListIndex = IIf(GetSetting("NeonCenterline", "Cut", "Trim", "both") = "end", 1, 0)
+    chkAsk.Caption = NeonL("chk_ask_run")
+    chkAsk.Value = True
+    btnOK.Caption = NeonL("btn_run")
+    btnCancel.Caption = NeonL("btn_cancel")
+    NeonRunConfirmed = False
+End Sub
+
+Private Sub btnOK_Click()
+    Dim t As Double, c As Double
+    t = ParseNum(cboTool.Text)
+    If t <= 0 Or t > 100 Then
+        MsgBox NeonL("bad_tool"), vbExclamation, NeonL("app_title")
+        Exit Sub
+    End If
+    c = ParseNum(cboCut.Text)
+    If c < 0 Or c > 1000 Then
+        MsgBox NeonL("bad_tool"), vbExclamation, NeonL("app_title")
+        Exit Sub
+    End If
+    SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
+    SaveSetting "NeonCenterline", "Cut", "Step", FmtNum(c)
+    SaveSetting "NeonCenterline", "Cut", "Type", IIf(cboType.ListIndex = 1, "neon2", "classic")
+    SaveSetting "NeonCenterline", "Cut", "Fit", IIf(chkFit.Value, "1", "0")
+    SaveSetting "NeonCenterline", "Cut", "Trim", IIf(cboTrim.ListIndex = 1, "end", "both")
+    SaveSetting "NeonCenterline", "UI", "AskTool", IIf(chkAsk.Value, "1", "0")
+    NeonRunConfirmed = True
+    Me.Hide
+End Sub
+
+Private Sub btnCancel_Click()
+    NeonRunConfirmed = False
+    Me.Hide
+End Sub
+
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+    NeonRunConfirmed = False
+End Sub

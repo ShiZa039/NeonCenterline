@@ -78,6 +78,10 @@ Public Sub NeonBuildPlugin()
         BuildSettingsForm vp, src & "\frmNeonSettings.code.txt"
         rep = rep & "  + frmNeonSettings" & vbCr
     End If
+    If Len(Dir$(src & "\frmNeonRun.code.txt")) > 0 Then
+        BuildRunForm vp, src & "\frmNeonRun.code.txt"
+        rep = rep & "  + frmNeonRun" & vbCr
+    End If
 
     On Error Resume Next
     gp.Dirty = True
@@ -148,6 +152,41 @@ Private Sub BuildSettingsForm(vp As Object, ByVal codeFile As String)
     d.Controls("cboType").Style = 2
     d.Controls("cboTrim").Style = 2
     d.Controls("lblHint").WordWrap = True
+    d.Controls("btnOK").Default = True
+    d.Controls("btnCancel").Cancel = True
+    code = ReadUtf8(codeFile)
+    With fc.CodeModule
+        If .CountOfLines > 0 Then
+            .DeleteLines 1, .CountOfLines
+        End If
+        .AddFromString code
+    End With
+End Sub
+
+' window shown before a run: cutter, neon type, cut step, fitting
+Private Sub BuildRunForm(vp As Object, ByVal codeFile As String)
+    Dim fc As Object, d As Object, code As String
+    Set fc = vp.VBComponents.Add(3)
+    fc.Name = "frmNeonRun"
+    fc.Properties("Width") = 360
+    fc.Properties("Height") = 290
+    fc.Properties("Caption") = "NeonCenterline"
+    Set d = fc.Designer
+    AddCtl d, "Forms.Label.1", "lblTool", 12, 14, 170, 18
+    AddCtl d, "Forms.ComboBox.1", "cboTool", 190, 10, 70, 20
+    AddCtl d, "Forms.Label.1", "lblHint", 12, 36, 326, 18
+    AddCtl d, "Forms.Label.1", "lblType", 12, 60, 170, 18
+    AddCtl d, "Forms.ComboBox.1", "cboType", 12, 78, 326, 20
+    AddCtl d, "Forms.Label.1", "lblCut", 12, 108, 170, 18
+    AddCtl d, "Forms.ComboBox.1", "cboCut", 190, 104, 70, 20
+    AddCtl d, "Forms.CheckBox.1", "chkFit", 12, 130, 326, 18
+    AddCtl d, "Forms.Label.1", "lblTrim", 30, 154, 100, 18
+    AddCtl d, "Forms.ComboBox.1", "cboTrim", 130, 150, 208, 20
+    AddCtl d, "Forms.CheckBox.1", "chkAsk", 12, 184, 326, 18
+    AddCtl d, "Forms.CommandButton.1", "btnOK", 160, 214, 96, 26
+    AddCtl d, "Forms.CommandButton.1", "btnCancel", 262, 214, 76, 26
+    d.Controls("cboType").Style = 2
+    d.Controls("cboTrim").Style = 2
     d.Controls("btnOK").Default = True
     d.Controls("btnCancel").Cancel = True
     code = ReadUtf8(codeFile)

@@ -20,6 +20,8 @@ Public Const NEON_UPDATE_URL As String = "https://raw.githubusercontent.com/ShiZ
 ' страница поддержки автора (пусто — пункт не показывается)
 Public Const NEON_DONATE_URL As String = ""
 Private Const REG_APP As String = "NeonCenterline"
+' результат окна перед расчётом (frmNeonRun): True — «Построить»
+Public NeonRunConfirmed As Boolean
 
 ' ---------------------------------------------------------------------
 '  Кнопки
@@ -65,23 +67,16 @@ End Sub
 '  Запуск расчёта
 ' ---------------------------------------------------------------------
 Private Sub RunMode(ByVal mode As Long)
-    Dim tool As Double, s As String, rc As Long, nIn As Long, nOut As Long
+    Dim tool As Double, rc As Long, nIn As Long, nOut As Long
     Dim tAll As Double, tCore As Double, errText As String, mname As String
     Dim before As Collection, cutRep As String, newCol As Collection
 
-    tool = NeonGetTool()
     If GetSetting(REG_APP, "UI", "AskTool", "1") = "1" Then
-        s = InputBox(NeonL("prompt_tool"), NeonL("app_title"), FmtNum(tool))
-        If Len(Trim$(s)) = 0 Then
+        If Not AskRunParams() Then
             Exit Sub
         End If
-        tool = ParseNum(s)
-        If tool <= 0 Or tool > 100 Then
-            MsgBox NeonL("bad_tool"), vbExclamation, NeonL("app_title")
-            Exit Sub
-        End If
-        SaveSetting REG_APP, "Params", "Tool", FmtNum(tool)
     End If
+    tool = NeonGetTool()
 
     Set before = Nothing
     If NeonCutFitOn() And NeonCutStep() > 0 And Not ActiveDocument Is Nothing Then
@@ -136,6 +131,32 @@ Private Sub RunMode(ByVal mode As Long)
         NeonDailyUpdateCheck
     End If
 End Sub
+
+' окно параметров перед расчётом; без собранной формы — прежний вопрос о диаметре
+Private Function AskRunParams() As Boolean
+    Dim f As Object, s As String, tool As Double
+    On Error Resume Next
+    Set f = VBA.UserForms.Add("frmNeonRun")
+    On Error GoTo 0
+    If Not f Is Nothing Then
+        NeonRunConfirmed = False
+        f.Show
+        AskRunParams = NeonRunConfirmed
+        Unload f
+        Exit Function
+    End If
+    s = InputBox(NeonL("prompt_tool"), NeonL("app_title"), FmtNum(NeonGetTool()))
+    If Len(Trim$(s)) = 0 Then
+        Exit Function
+    End If
+    tool = ParseNum(s)
+    If tool <= 0 Or tool > 100 Then
+        MsgBox NeonL("bad_tool"), vbExclamation, NeonL("app_title")
+        Exit Function
+    End If
+    SaveSetting REG_APP, "Params", "Tool", FmtNum(tool)
+    AskRunParams = True
+End Function
 
 ' ---------------------------------------------------------------------
 '  Настройки (общие для обеих кнопок; диаметр — тот же ключ, что у прежнего макроса)
