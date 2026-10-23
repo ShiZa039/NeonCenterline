@@ -46,13 +46,22 @@ Public Sub NeonUpdateCheck(ByVal quiet As Boolean)
 
     pending = GetSetting(REG_APP, "Update", "Pending", "")
     If Len(pending) > 0 Then
-        If VerCmp(pending, NEON_VERSION) > 0 Then
+        tmpF = GetSetting(REG_APP, "Update", "PendingFile", "")
+        If VerCmp(pending, NEON_VERSION) > 0 And Len(tmpF) > 0 And FileExists(tmpF) Then
+            ' скачано, но ещё не установлено (подменщик мог не дожить: выход из Windows,
+            ' перезагрузка) — запустить его снова и не скачивать заново
+            target = PluginGmsPath()
+            If Len(target) > 0 Then
+                StartSwapScript tmpF, target, errText
+            End If
             If Not quiet Then
                 MsgBox NeonLF("upd_pending", pending), vbInformation, NeonL("app_title")
             End If
             Exit Sub
         End If
-        SaveSetting REG_APP, "Update", "Pending", ""       ' уже установлено
+        ' уже установлено или файла обновления нет — сбросить и проверить заново
+        SaveSetting REG_APP, "Update", "Pending", ""
+        SaveSetting REG_APP, "Update", "PendingFile", ""
     End If
 
     js = HttpGetText(NEON_UPDATE_URL & "?t=" & Format$(Now, "yyyymmddhhnnss"), errText)
@@ -91,7 +100,7 @@ Public Sub NeonUpdateCheck(ByVal quiet As Boolean)
         MsgBox NeonL("upd_nogms"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
-    tmpF = Environ$("TEMP") & "\NeonCenterline_" & ver & ".gms"
+    tmpF = TempDir() & "\NeonCenterline_" & ver & ".gms"
     If Not HttpDownload(url, tmpF, errText) Then
         MsgBox NeonLF("upd_err", errText), vbExclamation, NeonL("app_title")
         Exit Sub
@@ -113,6 +122,7 @@ Public Sub NeonUpdateCheck(ByVal quiet As Boolean)
         Exit Sub
     End If
     SaveSetting REG_APP, "Update", "Pending", ver
+    SaveSetting REG_APP, "Update", "PendingFile", tmpF
     MsgBox NeonLF("upd_ready", ver), vbInformation, NeonL("app_title")
 End Sub
 
@@ -279,7 +289,7 @@ End Function
 Private Function FileSha256(ByVal path As String) As String
     Dim sh As Object, outF As String, f As Integer, ln As String, s As String
     On Error GoTo Fail
-    outF = Environ$("TEMP") & "\NeonCenterline_hash.txt"
+    outF = TempDir() & "\NeonCenterline_hash.txt"
     KillQuiet outF
     Set sh = CreateObject("WScript.Shell")
     sh.Run "cmd /c certutil -hashfile """ & path & """ SHA256 > """ & outF & """", 0, True
@@ -315,6 +325,23 @@ Private Function IsHex64(ByVal s As String) As Boolean
     IsHex64 = True
 End Function
 
+Private Function FileExists(ByVal path As String) As Boolean
+    On Error Resume Next
+    FileExists = CreateObject("Scripting.FileSystemObject").FileExists(path)
+End Function
+
+' временная папка: через WScript.Shell (Environ$ отдаёт ANSI и портит путь с русским именем
+' пользователя на нерусской Windows)
+Private Function TempDir() As String
+    Dim t As String
+    On Error Resume Next
+    t = CreateObject("WScript.Shell").ExpandEnvironmentStrings("%TEMP%")
+    If Len(t) = 0 Or t = "%TEMP%" Then
+        t = Environ$("TEMP")
+    End If
+    TempDir = t
+End Function
+
 Private Sub KillQuiet(ByVal path As String)
     On Error Resume Next
     Kill path
@@ -325,13 +352,18 @@ End Sub
 Private Function StartSwapScript(ByVal newF As String, ByVal target As String, errText As String) As Boolean
     Dim vbs As String, code As String, st As Object
     On Error GoTo Fail
-    vbs = Environ$("TEMP") & "\NeonCenterline_update.vbs"
+    vbs = TempDir() & "\NeonCenterline_update.vbs"
     code = "On Error Resume Next" & vbCrLf & _
            "Set fso = CreateObject(""Scripting.FileSystemObject"")" & vbCrLf & _
            "Set wmi = GetObject(""winmgmts:\\.\root\cimv2"")" & vbCrLf & _
+           "If wmi Is Nothing Then WScript.Quit" & vbCrLf & _
            "For i = 1 To 43200" & vbCrLf & _
            "  Set ps = wmi.ExecQuery(""SELECT ProcessId FROM Win32_Process WHERE Name='CorelDRW.exe'"")" & vbCrLf & _
-           "  If ps.Count = 0 Then Exit For" & vbCrLf & _
+           "  Err.Clear" & vbCrLf & _
+           "  n = -1" & vbCrLf & _
+           "  n = ps.Count" & vbCrLf & _
+           "  If Err.Number <> 0 Then WScript.Quit" & vbCrLf & _
+           "  If n = 0 Then Exit For" & vbCrLf & _
            "  WScript.Sleep 2000" & vbCrLf & _
            "Next" & vbCrLf & _
            "WScript.Sleep 1500" & vbCrLf & _
@@ -339,6 +371,7 @@ Private Function StartSwapScript(ByVal newF As String, ByVal target As String, e
            "dst = """ & target & """" & vbCrLf & _
            "If fso.FileExists(src) Then" & vbCrLf & _
            "  If fso.FileExists(dst) Then fso.CopyFile dst, dst & "".bak"", True" & vbCrLf & _
+           "  Err.Clear" & vbCrLf & _
            "  fso.CopyFile src, dst, True" & vbCrLf & _
            "  If Err.Number = 0 Then fso.DeleteFile src, True" & vbCrLf & _
            "End If" & vbCrLf & _

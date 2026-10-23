@@ -57,6 +57,9 @@ Public Sub NeonBuildPlugin()
     For i = vp.VBComponents.Count To 1 Step -1
         Set comp = vp.VBComponents(i)
         If comp.Type = 1 Or comp.Type = 2 Or comp.Type = 3 Then
+            On Error Resume Next
+            comp.Name = comp.Name & "_old" & i
+            On Error GoTo 0
             vp.VBComponents.Remove comp
         End If
     Next i

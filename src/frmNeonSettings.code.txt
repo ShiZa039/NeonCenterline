@@ -37,7 +37,7 @@ Private Sub UserForm_Initialize()
 End Sub
 
 Private Sub btnOK_Click()
-    Dim t As Double, oldLg As String, lg As String
+    Dim t As Double, lg As String
     t = ParseNum(cboTool.Text)
     If t <= 0 Or t > 100 Then
         MsgBox NeonL("bad_tool"), vbExclamation, NeonL("settings_title")
@@ -46,7 +46,6 @@ Private Sub btnOK_Click()
     SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
     SaveSetting "NeonCenterline", "UI", "AskTool", IIf(chkAsk.Value, "1", "0")
     SaveSetting "NeonCenterline", "Update", "Daily", IIf(chkUpd.Value, "1", "0")
-    oldLg = NeonLangCode()
     Select Case cboLang.ListIndex
     Case 1
         lg = "ru"
