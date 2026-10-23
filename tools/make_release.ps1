@@ -11,6 +11,8 @@ param(
   [string]$Owner = "ShiZa039",
   [string]$Repo = "NeonCenterline"
 )
+# работаем из корня репозитория, откуда бы ни запустили скрипт
+Set-Location (Split-Path -Parent $PSScriptRoot)
 $gms = Get-ChildItem "$env:APPDATA\Corel" -Recurse -Filter "NeonCenterline.gms" -ErrorAction SilentlyContinue |
        Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $gms) { Write-Error "NeonCenterline.gms not found under $env:APPDATA\Corel"; exit 1 }
