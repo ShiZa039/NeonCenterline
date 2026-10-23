@@ -47,7 +47,7 @@ with tempfile.TemporaryDirectory() as td:
         if rid not in seen:
             bmp_ico(os.path.join(ROOT, 'icons', ico + '.ico'), os.path.join(td, ico + '.ico'))
             rc.append(f'{rid} ICON "{ico}.ico"'); seen.add(rid)
-    rc += ['STRINGTABLE', 'BEGIN', '  20000 L"NeonCenterline"']
+    rc += ['STRINGTABLE', 'BEGIN', '  20000 L"' + esc('Неон (NeonCenterline)') + '"']
     rc += [f'  {20001 + i} L"{esc(cap)}"' for i, (k, ico, rid, cap) in enumerate(ITEMS)]
     rc += ['END', '']
     open(os.path.join(td, 'res.rc'), 'w').write('\n'.join(rc))
@@ -56,7 +56,7 @@ with tempfile.TemporaryDirectory() as td:
                     os.path.join(A, 'Resources.dll'), 'res.o'], cwd=td, check=True)
 cfg = ['<?xml version="1.0"?>', '<config>', '  <resources>',
        f'    <resource name="{G("resources")}" path="Resources.dll">', '      <resourceMap>',
-       f'        <resEntry id="{G("bar")}" string="20000"/>']
+       f'        <resEntry id="{G("bar-v2")}" string="20000"/>']
 cfg += [f'        <resEntry id="{G(k)}" string="{20001 + i}" icon="{rid}"/>' for i, (k, ico, rid, cap) in enumerate(ITEMS)]
 cfg += ['      </resourceMap>', '    </resource>', '  </resources>', '</config>', '']
 open(os.path.join(A, 'config.xml'), 'w', encoding='utf-8').write('\n'.join(cfg))

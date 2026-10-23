@@ -76,9 +76,9 @@
   <xsl:template match="uiConfig/commandBars">
     <xsl:copy>
       <xsl:apply-templates select="node()|@*"/>
-      <commandBarData guid="772fbf90-5bc1-5c4d-93a0-d1fced7f98b5"
-                      nonLocalizableName="NeonCenterline"
-                      userCaption="NeonCenterline"
+      <commandBarData guid="3d22040b-4ee7-596d-91ae-1653ffb39f77"
+                      nonLocalizableName="NeonCenterline2"
+                      userCaption="Неон (NeonCenterline)"
                       type="toolbar">
         <toolbar>
           <item guidRef="4e6d43bf-0b2d-500c-b154-b553b6087991"/>
