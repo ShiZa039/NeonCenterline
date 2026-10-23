@@ -38,6 +38,8 @@ Private Const BIG As Double = 1E+30
 Private Const PI_ As Double = 3.14159265358979
 
 Private gW As Double, gTool As Double, gTol As Double, gH As Double
+' отступ свободного конца от края, мм (задан пользователем); не задан — D/2
+Private gEndOff As Double, gEndOffSet As Boolean
 ' режим «шрифт — образец»: 0 — фрезеровка самого контура (как раньше), 1 — линия до кончика штриха,
 ' 2 — с отступом на полширины штриха; фреза не учитывается (нет отталкивания от краёв)
 Private gRefEnd As Long, gToolBase As Double
@@ -136,6 +138,20 @@ End Sub
 
 Private Function CoreRingStart() As Long
     CoreRingStart = NAP
+End Function
+
+' отступ свободного конца от края контура, мм; отрицательное — по умолчанию (D/2)
+Public Sub NeonScriptSetEndOff(ByVal mm As Double)
+    gEndOff = mm
+    gEndOffSet = (mm >= 0)
+End Sub
+
+Private Function EndOff() As Double
+    If gEndOffSet Then
+        EndOff = gEndOff
+    Else
+        EndOff = gTool / 2
+    End If
 End Function
 
 Private Sub CoreSetParams(ByVal tool As Double, ByVal tol As Double)
@@ -4961,7 +4977,7 @@ Private Sub FreeEndRay(xs() As Double, ys() As Double, np_ As Long, ByVal w As D
     If bestD < 0 Then
         Exit Sub
     End If
-    ext = bestD - gTool / 2
+    ext = bestD - EndOff()
     If ext > 0 Then
         PushPt xs, ys, np_, xs(np_ - 1) + bx * ext, ys(np_ - 1) + by * ext
     Else
@@ -4999,7 +5015,7 @@ Private Sub FreeEndFit(xs() As Double, ys() As Double, np_ As Long, ByVal cref A
         If D >= BIG Then
             Exit Sub
         End If
-        ext = D - gTool / 2
+        ext = D - EndOff()
         If ext > 0 Then
             PushPt xs, ys, np_, xs(np_ - 1) + dx * ext, ys(np_ - 1) + dy * ext
         Else
@@ -5031,7 +5047,7 @@ Private Sub FreeEndFit(xs() As Double, ys() As Double, np_ As Long, ByVal cref A
     If Not hasExit Then
         Exit Sub
     End If
-    target = lExit - gTool / 2
+    target = lExit - EndOff()
     If target >= 0 Then
         m = Int(target / gH)
         For i = 1 To m

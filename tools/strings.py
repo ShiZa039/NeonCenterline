@@ -98,6 +98,8 @@ STRINGS = {
     'ref_off':       ('нет: фрезеровать сам контур', 'no: mill the outline itself'),
     'ref_tip':       ('да, линия до кончика штриха', 'yes, line to the stroke tip'),
     'ref_half':      ('да, отступ на полширины штриха', 'yes, inset by half the stroke width'),
+    'lbl_endoff':    ('Отступ конца линии от края, мм:', 'Line end inset from the edge, mm:'),
+    'endoff_default':('D/2 (радиус фрезы)', 'D/2 (cutter radius)'),
     'fallback_lang': ('Язык интерфейса: Да — русский, Нет — English, Отмена — авто.',
                       'Interface language: Yes — Russian, No — English, Cancel — auto.'),
     'fallback_upd':  ('Проверять обновления раз в день?', 'Check for updates once a day?'),

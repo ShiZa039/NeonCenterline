@@ -12,6 +12,17 @@ Private Sub UserForm_Initialize()
     cboTool.AddItem "10"
     cboTool.Text = FmtNum(NeonGetTool())
     lblHint.Caption = NeonL("lbl_tool_hint")
+    lblEnd.Caption = NeonL("lbl_endoff")
+    cboEnd.Clear
+    cboEnd.AddItem NeonL("endoff_default")
+    cboEnd.AddItem "0"
+    cboEnd.AddItem "2"
+    cboEnd.AddItem "5"
+    If Len(GetSetting("NeonCenterline", "Params", "EndOff", "")) = 0 Then
+        cboEnd.ListIndex = 0
+    Else
+        cboEnd.Text = GetSetting("NeonCenterline", "Params", "EndOff", "")
+    End If
     chkAsk.Caption = NeonL("chk_ask")
     chkAsk.Value = (GetSetting("NeonCenterline", "UI", "AskTool", "1") = "1")
     lblType.Caption = NeonL("lbl_type")
@@ -70,6 +81,14 @@ Private Sub btnOK_Click()
     c = ParseNum(cboCut.Text)
     If c < 0 Or c > 1000 Then
         MsgBox NeonL("bad_tool"), vbExclamation, NeonL("settings_title")
+        Exit Sub
+    End If
+    If cboEnd.ListIndex = 0 Or Len(Trim$(cboEnd.Text)) = 0 Then
+        SaveSetting "NeonCenterline", "Params", "EndOff", ""
+    ElseIf ParseNum(cboEnd.Text) >= 0 And ParseNum(cboEnd.Text) <= 100 Then
+        SaveSetting "NeonCenterline", "Params", "EndOff", FmtNum(ParseNum(cboEnd.Text))
+    Else
+        MsgBox NeonL("bad_tool"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
     SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)

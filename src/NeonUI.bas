@@ -72,7 +72,7 @@ End Sub
 Private Sub RunMode(ByVal mode As Long)
     Dim tool As Double, rc As Long, nIn As Long, nOut As Long
     Dim tAll As Double, tCore As Double, errText As String, mname As String
-    Dim before As Collection, cutRep As String, newCol As Collection
+    Dim before As Collection, cutRep As String, newCol As Collection, eo As String
 
     If GetSetting(REG_APP, "UI", "AskTool", "1") = "1" Then
         If Not AskRunParams() Then
@@ -84,6 +84,18 @@ Private Sub RunMode(ByVal mode As Long)
     Set before = Nothing
     If NeonCutFitOn() And NeonCutStep() > 0 And Not ActiveDocument Is Nothing Then
         Set before = NeonLineIds()
+    End If
+    ' отступ свободного конца: пусто — D/2; в режиме «образец» у курсива концы задаёт сам режим
+    eo = GetSetting(REG_APP, "Params", "EndOff", "")
+    If Len(eo) > 0 Then
+        NeonMonoSetEndOff ParseNum(eo)
+        NeonScriptSetEndOff ParseNum(eo)
+    Else
+        NeonMonoSetEndOff -1
+        NeonScriptSetEndOff -1
+    End If
+    If mode = 1 And Val(GetSetting(REG_APP, "Script", "RefEnd", "1")) > 0 Then
+        NeonScriptSetEndOff -1
     End If
     If mode = 0 Then
         mname = NeonL("mode_mono")
