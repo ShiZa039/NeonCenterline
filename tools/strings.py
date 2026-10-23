@@ -57,6 +57,10 @@ STRINGS = {
                       'Selling or repackaging the plugin is prohibited (see LICENSE).'),
     'about_donate':  ('\n\nПлагин бесплатный. Если он вам помогает — можно поблагодарить автора. Открыть страницу?',
                       '\n\nThe plugin is free. If it helps you, you can support the author. Open the page?'),
+    'addon_done':    ('Панель инструментов копируется в\n{0}\n\nПодтвердите запрос прав администратора, затем полностью перезапустите CorelDRAW. '
+                      'Панель: Окно > Панели инструментов > NeonCenterline.',
+                      'The toolbar is being copied to\n{0}\n\nConfirm the administrator prompt, then fully restart CorelDRAW. '
+                      'Toolbar: Window > Toolbars > NeonCenterline.'),
     'fallback_lang': ('Язык интерфейса: Да — русский, Нет — English, Отмена — авто.',
                       'Interface language: Yes — Russian, No — English, Cancel — auto.'),
     'fallback_upd':  ('Проверять обновления раз в день?', 'Check for updates once a day?'),

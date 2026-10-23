@@ -7,6 +7,7 @@ P = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODS = [('NeonLang', f'{P}/src/NeonLang.bas', 'x = NeonLangCode()'),
         ('NeonUI', f'{P}/src/NeonUI.bas', 'x = FmtNum(1.5)'),
         ('NeonUpdate', f'{P}/src/NeonUpdate.bas', 'x = VerCmp("1.2", "1.10")'),
+        ('NeonAddon', f'{P}/src/NeonAddon.bas', 'x = NeonAddonProbe()'),
         ('NeonMono', f'{P}/src/NeonMono.bas', 'x = NeonMonoRunProbe()'),
         ('NeonScript', f'{P}/src/NeonScript.bas', 'x = NeonScriptRunProbe()'),
         ('NeonBuild', f'{P}/build/NeonBuild.bas', 'x = NeonBuildProbe()'),

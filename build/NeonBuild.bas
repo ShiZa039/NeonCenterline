@@ -64,7 +64,7 @@ Public Sub NeonBuildPlugin()
         End If
     Next i
 
-    mods = Array("NeonLang.bas", "NeonUI.bas", "NeonUpdate.bas", "NeonMono.bas", "NeonScript.bas")
+    mods = Array("NeonLang.bas", "NeonUI.bas", "NeonUpdate.bas", "NeonAddon.bas", "NeonMono.bas", "NeonScript.bas")
     For Each m In mods
         If Len(Dir$(src & "\" & m)) = 0 Then
             MsgBox "Missing file: " & src & "\" & m, vbExclamation, "NeonBuild"
