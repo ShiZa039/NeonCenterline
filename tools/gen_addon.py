@@ -3,7 +3,9 @@
 import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A = os.path.join(ROOT, 'addon', 'NeonCenterline')
-files = ['AppUI.xslt', 'UserUI.xslt', 'Coreldrw.addon']
+files = ['AppUI.xslt', 'UserUI.xslt', 'Coreldrw.addon', 'config.xml']
+import base64
+B64 = base64.b64encode(open(os.path.join(A, 'Resources.dll'), 'rb').read()).decode()
 L = ['Attribute VB_Name = "NeonAddon"',
      "' =====================================================================",
      "'  NeonCenterline — установка панели инструментов в текущий CorelDRAW.",
@@ -19,6 +21,7 @@ L = ['Attribute VB_Name = "NeonAddon"',
      '    MakeDir tmp']
 for f in files:
     L.append(f'    WriteUtf8 tmp & "\\{f}", AddonText_{f.replace(".", "_")}()')
+L.append('    WriteBase64 tmp & "\\Resources.dll", AddonBin_Resources_dll()')
 L += ['    dst = Application.AddonPath',
       '    If Right$(dst, 1) <> "\\" Then',
       '        dst = dst & "\\"',
@@ -43,6 +46,19 @@ L += ['    dst = Application.AddonPath',
       '    st.Charset = "utf-8"',
       '    st.Open',
       '    st.WriteText txt',
+      '    st.SaveToFile path, 2',
+      '    st.Close',
+      'End Sub', '',
+      'Private Sub WriteBase64(ByVal path As String, ByVal b64 As String)',
+      '    Dim doc As Object, el As Object, st As Object',
+      '    Set doc = CreateObject("MSXML2.DOMDocument")',
+      '    Set el = doc.createElement("b")',
+      '    el.DataType = "bin.base64"',
+      '    el.Text = b64',
+      '    Set st = CreateObject("ADODB.Stream")',
+      '    st.Type = 1',
+      '    st.Open',
+      '    st.Write el.nodeTypedValue',
       '    st.SaveToFile path, 2',
       '    st.Close',
       'End Sub', '',
@@ -71,5 +87,16 @@ for f in files:
         else:
             L.append('    s = s & AU("' + ' '.join('%X' % ord(c) for c in p) + '")')
     L += [f'    {fn} = s', 'End Function', '']
+# двоичный Resources.dll — base64, по 100 символов; функция бьётся на части (лимит размера процедуры)
+chunks = [B64[i:i+100] for i in range(0, len(B64), 100)]
+parts = [chunks[i:i+150] for i in range(0, len(chunks), 150)]
+L.append('Private Function AddonBin_Resources_dll() As String')
+L.append('    AddonBin_Resources_dll = ' + ' & '.join(f'AddonBinPart{j}()' for j in range(len(parts))))
+L += ['End Function', '']
+for j, p in enumerate(parts):
+    L.append(f'Private Function AddonBinPart{j}() As String')
+    L.append('    Dim s As String')
+    L += [f'    s = s & "{c}"' for c in p]
+    L += [f'    AddonBinPart{j} = s', 'End Function', '']
 open(os.path.join(ROOT, 'src', 'NeonAddon.bas'), 'w', encoding='utf-8').write('\n'.join(L))
 print('NeonAddon.bas', len(L), 'lines, max', max(len(x) for x in L))
