@@ -56,7 +56,9 @@ Public Sub NeonBuildPlugin()
     End If
     For i = vp.VBComponents.Count To 1 Step -1
         Set comp = vp.VBComponents(i)
-        If comp.Type = 1 Or comp.Type = 2 Or comp.Type = 3 Then
+        ' forms named frmNeon* are kept and refilled (a removed form keeps its name until the
+        ' project is saved, so re-adding it fails with error 75); everything else is removed
+        If comp.Type = 1 Or comp.Type = 2 Or (comp.Type = 3 And LCase$(Left$(comp.Name, 7)) <> "frmneon") Then
             On Error Resume Next
             comp.Name = comp.Name & "_old" & i
             On Error GoTo 0
@@ -123,8 +125,7 @@ End Function
 
 Private Sub BuildSettingsForm(vp As Object, ByVal codeFile As String)
     Dim fc As Object, d As Object, code As String
-    Set fc = vp.VBComponents.Add(3)
-    fc.Name = "frmNeonSettings"
+    Set fc = GetForm(vp, "frmNeonSettings")
     fc.Properties("Width") = 360
     fc.Properties("Height") = 380
     fc.Properties("Caption") = "NeonCenterline"
@@ -166,8 +167,7 @@ End Sub
 ' window shown before a run: cutter, neon type, cut step, fitting
 Private Sub BuildRunForm(vp As Object, ByVal codeFile As String)
     Dim fc As Object, d As Object, code As String
-    Set fc = vp.VBComponents.Add(3)
-    fc.Name = "frmNeonRun"
+    Set fc = GetForm(vp, "frmNeonRun")
     fc.Properties("Width") = 360
     fc.Properties("Height") = 290
     fc.Properties("Caption") = "NeonCenterline"
@@ -197,6 +197,32 @@ Private Sub BuildRunForm(vp As Object, ByVal codeFile As String)
         .AddFromString code
     End With
 End Sub
+
+' existing form: clear its controls and code; otherwise add a new one
+Private Function GetForm(vp As Object, ByVal nm As String) As Object
+    Dim i As Long, fc As Object, d As Object
+    For i = 1 To vp.VBComponents.Count
+        If LCase$(vp.VBComponents(i).Name) = LCase$(nm) Then
+            Set fc = vp.VBComponents(i)
+            Exit For
+        End If
+    Next i
+    If fc Is Nothing Then
+        Set fc = vp.VBComponents.Add(3)
+        fc.Name = nm
+    Else
+        Set d = fc.Designer
+        For i = d.Controls.Count - 1 To 0 Step -1
+            d.Controls.Remove d.Controls(i).Name
+        Next i
+        With fc.CodeModule
+            If .CountOfLines > 0 Then
+                .DeleteLines 1, .CountOfLines
+            End If
+        End With
+    End If
+    Set GetForm = fc
+End Function
 
 Private Sub AddCtl(d As Object, ByVal progId As String, ByVal nm As String, ByVal x As Single, ByVal y As Single, _
                    ByVal w As Single, ByVal h As Single)
