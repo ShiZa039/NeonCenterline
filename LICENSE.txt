@@ -1,0 +1,59 @@
+NeonCenterline — лицензия SAB:CORE Free Use License, версия 1.0
+Copyright (c) 2026 SAB:CORE (Сергей). Все права защищены, кроме прямо разрешённых ниже.
+
+1. ИСПОЛЬЗОВАНИЕ. Разрешается бесплатно устанавливать и использовать плагин любым лицом
+   и в любых целях, включая коммерческое производство (изготовление вывесок, фрезеровку
+   и любые работы на заказ). Результаты работы плагина (кривые, макеты, изделия)
+   принадлежат пользователю без ограничений.
+
+2. ИСХОДНЫЙ КОД. Разрешается изучать исходный код и изменять его для собственного
+   использования внутри своей организации.
+
+3. ЗАПРЕЩАЕТСЯ без письменного разрешения правообладателя:
+   а) продавать плагин или его части, в том числе изменённые, за деньги или иное
+      вознаграждение, включая продажу в составе других продуктов, сборок и подписок;
+   б) распространять изменённые версии или перепаковывать плагин (под другим названием,
+      в другом установщике, с удалёнными или изменёнными указаниями на автора);
+   в) удалять или изменять этот текст лицензии и указания на автора.
+
+4. РАСПРОСТРАНЕНИЕ. Разрешается бесплатно передавать другим неизменённую официальную
+   версию плагина вместе с этим файлом лицензии. Предпочтительно — ссылкой на официальный
+   репозиторий. Предложения по улучшению принимаются через официальный репозиторий.
+
+5. БЕЗ ГАРАНТИЙ. Плагин предоставляется «как есть», без каких-либо гарантий. Автор не
+   отвечает за любой ущерб от его использования, в том числе за испорченный материал
+   и ошибки в управляющих программах станков. Проверяйте результат перед резкой.
+
+6. Поддержать автора можно добровольным пожертвованием (ссылка в окне «О программе»
+   и в README). Пожертвование не является оплатой и не меняет условий лицензии.
+Текст лицензии приведён на русском и английском языках; при расхождении приоритет у русского текста.
+
+---------------------------------------------------------------------------------------
+NeonCenterline — SAB:CORE Free Use License, version 1.0
+Copyright (c) 2026 SAB:CORE (Sergey). All rights reserved except as expressly granted below.
+This license is provided in Russian and English. In case of discrepancy the Russian text prevails.
+
+1. USE. Anyone may install and use the plugin free of charge for any purpose, including
+   commercial production (making signage, CNC milling and any work for hire). The output
+   of the plugin (curves, layouts, products) belongs to the user without restriction.
+
+2. SOURCE CODE. You may study the source code and modify it for your own use within
+   your organization.
+
+3. Without the copyright holder's written permission you may NOT:
+   a) sell the plugin or any part of it, modified or not, for money or any other
+      consideration, including as part of other products, bundles or subscriptions;
+   b) distribute modified versions or repackage the plugin (under another name, in another
+      installer, or with author attribution removed or altered);
+   c) remove or alter this license text or the author attribution.
+
+4. DISTRIBUTION. You may share the unmodified official version of the plugin free of
+   charge together with this license file, preferably by linking to the official
+   repository. Improvements are welcome through the official repository.
+
+5. NO WARRANTY. The plugin is provided "AS IS", without warranty of any kind. The author
+   is not liable for any damage arising from its use, including spoiled material and
+   errors in machine toolpaths. Check the result before cutting.
+
+6. You can support the author with a voluntary donation (link in the "About" window and
+   in the README). A donation is not a payment and does not change the terms of this license.

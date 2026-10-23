@@ -1,0 +1,4 @@
+release/
+src_ansi/
+*.gms.bak
+__pycache__/

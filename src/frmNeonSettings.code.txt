@@ -1,0 +1,72 @@
+Option Explicit
+' Окно настроек NeonCenterline. Элементы окна создаёт NeonBuild (сборщик), этот код
+' вставляется в форму при сборке.
+
+Private Sub UserForm_Initialize()
+    Dim lg As String
+    Me.Caption = NeonL("app_title") & " - " & NeonL("settings_title")
+    lblTool.Caption = NeonL("lbl_tool")
+    cboTool.Clear
+    cboTool.AddItem "6"
+    cboTool.AddItem "8"
+    cboTool.AddItem "10"
+    cboTool.Text = FmtNum(NeonGetTool())
+    lblHint.Caption = NeonL("lbl_tool_hint")
+    chkAsk.Caption = NeonL("chk_ask")
+    chkAsk.Value = (GetSetting("NeonCenterline", "UI", "AskTool", "1") = "1")
+    lblLang.Caption = NeonL("lbl_lang")
+    cboLang.Clear
+    cboLang.AddItem NeonL("lang_auto")
+    cboLang.AddItem NeonL("lang_ru")
+    cboLang.AddItem NeonL("lang_en")
+    lg = LCase$(GetSetting("NeonCenterline", "UI", "Lang", ""))
+    If lg = "ru" Then
+        cboLang.ListIndex = 1
+    ElseIf lg = "en" Then
+        cboLang.ListIndex = 2
+    Else
+        cboLang.ListIndex = 0
+    End If
+    chkUpd.Caption = NeonL("chk_upd")
+    chkUpd.Value = (GetSetting("NeonCenterline", "Update", "Daily", "1") = "1")
+    lblVer.Caption = NeonLF("lbl_version", NEON_VERSION)
+    btnUpdate.Caption = NeonL("btn_update")
+    btnAbout.Caption = NeonL("btn_about")
+    btnOK.Caption = NeonL("btn_ok")
+    btnCancel.Caption = NeonL("btn_cancel")
+End Sub
+
+Private Sub btnOK_Click()
+    Dim t As Double, oldLg As String, lg As String
+    t = ParseNum(cboTool.Text)
+    If t <= 0 Or t > 100 Then
+        MsgBox NeonL("bad_tool"), vbExclamation, NeonL("settings_title")
+        Exit Sub
+    End If
+    SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
+    SaveSetting "NeonCenterline", "UI", "AskTool", IIf(chkAsk.Value, "1", "0")
+    SaveSetting "NeonCenterline", "Update", "Daily", IIf(chkUpd.Value, "1", "0")
+    oldLg = NeonLangCode()
+    Select Case cboLang.ListIndex
+    Case 1
+        lg = "ru"
+    Case 2
+        lg = "en"
+    Case Else
+        lg = ""
+    End Select
+    SaveSetting "NeonCenterline", "UI", "Lang", lg
+    Unload Me
+End Sub
+
+Private Sub btnCancel_Click()
+    Unload Me
+End Sub
+
+Private Sub btnUpdate_Click()
+    NeonUpdateCheck False
+End Sub
+
+Private Sub btnAbout_Click()
+    ShowAbout
+End Sub

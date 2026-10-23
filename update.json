@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "gms_url": "https://github.com/OWNER/NeonCenterline/releases/download/v1.0.0/NeonCenterline.gms",
+  "sha256": "",
+  "notes_ru": "Первая версия плагина: кнопки «Моно» и «Курсив», настройки, русский/английский интерфейс, автообновление.",
+  "notes_en": "First plugin release: Mono and Script buttons, settings, Russian/English interface, auto-update."
+}
