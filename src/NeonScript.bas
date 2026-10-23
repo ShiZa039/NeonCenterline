@@ -2236,11 +2236,19 @@ Private Sub ProcessChains()
         End If
         If Not closed Then
             If free1 Then
-                FreeEnd xs, ys, np_, cref, nm1
+                If gRefEnd = 1 Then
+                    RefEnd xs, ys, np_, cref, nm1
+                Else
+                    FreeEnd xs, ys, np_, cref, nm1
+                End If
             End If
             If free0 Then
                 ReversePts xs, ys, np_
-                FreeEnd xs, ys, np_, cref, nm0
+                If gRefEnd = 1 Then
+                    RefEnd xs, ys, np_, cref, nm0
+                Else
+                    FreeEnd xs, ys, np_, cref, nm0
+                End If
                 ReversePts xs, ys, np_
             End If
         End If
@@ -4960,6 +4968,243 @@ Private Function Centered(ByVal x As Double, ByVal y As Double, ByVal dx As Doub
     End If
     Centered = (Abs(dl - dr) <= 0.4 * (dl + dr)) Or (mx > 2 * w)
 End Function
+
+' расстояние от точки до края контура (перебор отрезков колец)
+Private Function BDist(ByVal x As Double, ByVal y As Double) As Double
+    Dim r As Long, i As Long, j As Long, b As Long, n As Long
+    Dim ax As Double, ay As Double, dx As Double, dy As Double, L2 As Double, t As Double, d As Double, best As Double
+    best = BIG
+    For r = 0 To NR - 1
+        b = RS(r): n = RN(r)
+        For i = 0 To n - 1
+            j = (i + 1) Mod n
+            ax = RX(b + i): ay = RY(b + i): dx = RX(b + j) - ax: dy = RY(b + j) - ay
+            L2 = dx * dx + dy * dy
+            t = 0
+            If L2 > 1E-18 Then
+                t = ((x - ax) * dx + (y - ay) * dy) / L2
+                If t < 0 Then
+                    t = 0
+                ElseIf t > 1 Then
+                    t = 1
+                End If
+            End If
+            d = (ax + dx * t - x) ^ 2 + (ay + dy * t - y) ^ 2
+            If d < best Then
+                best = d
+            End If
+        Next i
+    Next r
+    BDist = Sqr(best)
+End Function
+
+' точка продолжения конца: kind 0 — прямая (p0,p1 — начало, p2,p3 — направление),
+' kind 1 — дуга (p0,p1 — центр, p2 — радиус, p3 — нач. угол, p4 — знак обхода)
+Private Sub RefAt(ByVal kind As Long, p() As Double, ByVal t As Double, x As Double, y As Double)
+    Dim a As Double
+    If kind = 0 Then
+        x = p(0) + p(2) * t: y = p(1) + p(3) * t
+    Else
+        a = p(3) + p(4) * t / p(2)
+        x = p(0) + p(2) * Cos(a): y = p(1) + p(2) * Sin(a)
+    End If
+End Sub
+
+' длина пути продолжения до выхода из контура; -1 — не вышло за tmax
+Private Function RefExit(ByVal kind As Long, p() As Double, ByVal tmax As Double) As Double
+    Dim stp As Double, t As Double, lo As Double, hi As Double, md As Double, it As Long, x As Double, y As Double
+    RefExit = -1
+    stp = gH / 4: t = stp
+    Do While t <= tmax
+        RefAt kind, p, t, x, y
+        If Not InUnion(x, y, -1) Then
+            lo = t - stp: hi = t
+            For it = 1 To 12
+                md = (lo + hi) / 2
+                RefAt kind, p, md, x, y
+                If InUnion(x, y, -1) Then
+                    lo = md
+                Else
+                    hi = md
+                End If
+            Next it
+            RefExit = (lo + hi) / 2
+            Exit Function
+        End If
+        t = t + stp
+    Loop
+End Function
+
+' режим «шрифт — образец», до кончика штриха (как _ref_end в прототипе): зона торца
+' срезается (до ~0.9 локальной ширины), ось продолжается прямой или дугой по участку
+' перед срезом до края контура минус EndOff; берётся продолжение, уходящее дальше
+Private Sub RefEnd(xs() As Double, ys() As Double, np_ As Long, ByVal cref As Double, ByVal nmax As Long)
+    Dim wLoc As Double, s As Double, i As Long, Ltot As Double, kcI As Long, kwI As Long
+    Dim kcv As Double, kwv As Double, cutv As Double
+    Dim qx() As Double, qy() As Double, nq As Long, fx() As Double, fy() As Double, nf As Long
+    Dim hasL As Boolean, hasC As Boolean
+    Dim lx() As Double, ly() As Double, ln_ As Long, lCut As Double, lp(0 To 4) As Double
+    Dim ccx() As Double, ccy() As Double, cn_ As Long, cCut As Double, cp(0 To 4) As Double, cTmax As Double
+    Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double
+    Dim ox As Double, oy As Double, rr As Double, a0 As Double, ap As Double
+    Dim exL As Double, exC As Double, reachL As Double, reachC As Double, useC As Boolean, lx_ As Double
+    Dim target As Double, m As Long, x As Double, y As Double, kind As Long
+    If np_ < 3 Then
+        Exit Sub
+    End If
+    s = 0: wLoc = 0
+    For i = np_ - 1 To 1 Step -1
+        If 2 * BDist(xs(i), ys(i)) > wLoc Then
+            wLoc = 2 * BDist(xs(i), ys(i))
+        End If
+        s = s + Dist(xs(i), ys(i), xs(i - 1), ys(i - 1))
+        If s > 2 * cref Then
+            Exit For
+        End If
+    Next i
+    If wLoc <= 0 Then
+        Exit Sub
+    End If
+    Ltot = 0
+    For i = 0 To np_ - 2
+        Ltot = Ltot + Dist(xs(i), ys(i), xs(i + 1), ys(i + 1))
+    Next i
+    For kcI = 0 To 3
+        kcv = Choose(kcI + 1, 0.9, 0.65, 0.4, 0.2)
+        For kwI = 0 To 2
+            If hasL And hasC Then
+                Exit For
+            End If
+            kwv = Choose(kwI + 1, 1.3, 0.9, 0.6)
+            cutv = Ltot - (kwv + 0.3) * wLoc
+            If cutv < 0 Then
+                cutv = 0
+            End If
+            If cutv > kcv * wLoc Then
+                cutv = kcv * wLoc
+            End If
+            nq = np_
+            ReDim qx(0 To np_ + 1): ReDim qy(0 To np_ + 1)
+            For i = 0 To np_ - 1
+                qx(i) = xs(i): qy(i) = ys(i)
+            Next i
+            If cutv > 0 Then
+                Retract qx, qy, nq, cutv
+            End If
+            ' участок для подгонки: kwv*wLoc от нового конца
+            ReDim fx(0 To nq): ReDim fy(0 To nq)
+            nf = 1: fx(0) = qx(nq - 1): fy(0) = qy(nq - 1): s = 0
+            For i = nq - 1 To 1 Step -1
+                s = s + Dist(qx(i), qy(i), qx(i - 1), qy(i - 1))
+                fx(nf) = qx(i - 1): fy(nf) = qy(i - 1): nf = nf + 1
+                If s >= kwv * wLoc Then
+                    Exit For
+                End If
+            Next i
+            ReversePts fx, fy, nf
+            If nf >= 3 And s >= 0.4 * wLoc Then
+                If Not hasL Then
+                    FitLineLS fx, fy, nf, mx, my, dx, dy, rms
+                    If rms < 0.03 * wLoc Then
+                        If (fx(nf - 1) - fx(0)) * dx + (fy(nf - 1) - fy(0)) * dy < 0 Then
+                            dx = -dx: dy = -dy
+                        End If
+                        lp(0) = qx(nq - 1): lp(1) = qy(nq - 1): lp(2) = dx: lp(3) = dy
+                        ReDim lx(0 To nq): ReDim ly(0 To nq)
+                        For i = 0 To nq - 1
+                            lx(i) = qx(i): ly(i) = qy(i)
+                        Next i
+                        ln_ = nq: lCut = cutv: hasL = True
+                    End If
+                End If
+                If Not hasC And nf >= 4 Then
+                    If FitCircle(fx, fy, nf, ox, oy, rr, rms) Then
+                        If rr > 0.6 * wLoc And rms < 0.03 * wLoc Then
+                            If Bent(fx, fy, 0, nf - 1, rr, wLoc) Then
+                                a0 = Atan2(qy(nq - 1) - oy, qx(nq - 1) - ox)
+                                ap = Atan2(fy(nf - 2) - oy, fx(nf - 2) - ox)
+                                cp(0) = ox: cp(1) = oy: cp(2) = rr: cp(3) = a0
+                                If Sin(a0 - ap) > 0 Then
+                                    cp(4) = 1
+                                Else
+                                    cp(4) = -1
+                                End If
+                                cTmax = 2.1 * rr
+                                If cTmax > 3 * wLoc Then
+                                    cTmax = 3 * wLoc
+                                End If
+                                ReDim ccx(0 To nq): ReDim ccy(0 To nq)
+                                For i = 0 To nq - 1
+                                    ccx(i) = qx(i): ccy(i) = qy(i)
+                                Next i
+                                cn_ = nq: cCut = cutv: hasC = True
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        Next kwI
+        If hasL And hasC Then
+            Exit For
+        End If
+    Next kcI
+    exL = -1: exC = -1
+    If hasL Then
+        exL = RefExit(0, lp, 3 * wLoc)
+    End If
+    If hasC Then
+        exC = RefExit(1, cp, cTmax)
+    End If
+    If exL < 0 And exC < 0 Then
+        FreeEnd xs, ys, np_, cref, nmax
+        Exit Sub
+    End If
+    useC = False
+    If exC >= 0 Then
+        reachC = exC - cCut - 0.15 * wLoc
+        If exL < 0 Then
+            useC = True
+        Else
+            reachL = exL - lCut
+            useC = (reachC > reachL)
+        End If
+    End If
+    If useC Then
+        np_ = cn_: kind = 1: lx_ = exC
+        For i = 0 To 4
+            lp(i) = cp(i)
+        Next i
+        If np_ + 1 > UBound(xs) Then
+            ReDim Preserve xs(0 To np_ + 8): ReDim Preserve ys(0 To np_ + 8)
+        End If
+        For i = 0 To np_ - 1
+            xs(i) = ccx(i): ys(i) = ccy(i)
+        Next i
+    Else
+        np_ = ln_: kind = 0: lx_ = exL
+        If np_ + 1 > UBound(xs) Then
+            ReDim Preserve xs(0 To np_ + 8): ReDim Preserve ys(0 To np_ + 8)
+        End If
+        For i = 0 To np_ - 1
+            xs(i) = lx(i): ys(i) = ly(i)
+        Next i
+    End If
+    target = lx_ - EndOff()
+    If target <= 0 Then
+        Retract xs, ys, np_, -target
+        Exit Sub
+    End If
+    m = Int(target / gH)
+    For i = 1 To m
+        RefAt kind, lp, i * gH, x, y
+        PushPt xs, ys, np_, x, y
+    Next i
+    If target - m * gH > 0.000001 Or m = 0 Then
+        RefAt kind, lp, target, x, y
+        PushPt xs, ys, np_, x, y
+    End If
+End Sub
+
 
 Private Sub FreeEndRay(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double)
     Dim dx As Double, dy As Double, a0 As Double, a As Double, k As Long, D As Double, bestD As Double
