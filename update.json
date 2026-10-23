@@ -1,8 +1,8 @@
 {
-    "version":  "1.0.0",
-    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.0.0/NeonCenterline.gms",
-    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.0.0/dist/NeonCenterline.gms",
-    "sha256":  "0e4d324e7df3d818cdc15a262749e5b674db67b97a22907d76d74d543bfac396",
-    "notes_ru":  "Первая версия",
-    "notes_en":  "First release"
+    "version":  "1.0.1",
+    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.0.1/NeonCenterline.gms",
+    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.0.1/dist/NeonCenterline.gms",
+    "sha256":  "f638f361ef866eb14d0e955ee1ad2a82ac53fe4f3c14d53a62213a234cea7eb0",
+    "notes_ru":  "Проверка обновлений через curl, README.txt",
+    "notes_en":  "Update check via curl, README.txt"
 }
