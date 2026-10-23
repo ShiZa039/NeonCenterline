@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.2
+
+RU
+- «Моно»: линия, идущая прямо через развилку, больше не даёт «волну», когда сразу за развилкой стоит фаска или излом (буква «к» в моноширинных шрифтах).
+- Кнопка «Поддержать автора» в окне «О программе» (ведёт на страницу DONATE.md).
+- README: ручная установка, совместимость, тестовый шрифт; в архиве — папка icons.
+
+EN
+- Mono: a line running straight through a junction no longer gets a "wave" when a chamfer or bend follows right after the junction (letter "к" in monoline fonts).
+- "Support the author" in the About window (opens DONATE.md).
+- README: manual installation, compatibility, test font; icons folder in the archive.
+
 ## 1.0.1
 
 RU

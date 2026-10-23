@@ -14,7 +14,7 @@ Attribute VB_Name = "NeonUI"
 ' =====================================================================
 Option Explicit
 
-Public Const NEON_VERSION As String = "1.0.1"
+Public Const NEON_VERSION As String = "1.0.2"
 ' адрес файла с описанием последней версии (см. update.json в репозитории)
 Public Const NEON_UPDATE_URL As String = "https://raw.githubusercontent.com/ShiZa039/NeonCenterline/main/update.json"
 ' запасные адреса того же файла (raw.githubusercontent.com бывает недоступен у части провайдеров)

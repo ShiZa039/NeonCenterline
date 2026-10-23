@@ -2500,6 +2500,9 @@ Private Function ArcFill(xs() As Double, ys() As Double, ByVal np_ As Long, ax_(
         For i = 0 To nfs - 1: PushPt fx, fy, nf, fsx(i), fsy(i): Next i
         For i = 0 To 5: pf(i) = pfs(i): Next i
         ArcFill = True
+    ElseIf CollinearBridge(xs, ys, np_, ax_, ay_, na, stp, w, fx, fy, nf) Then
+        For i = 0 To 5: pf(i) = 0: Next i
+        ArcFill = True
     End If
 End Function
 
@@ -6350,6 +6353,55 @@ Private Function TurnAtW(x() As Double, y() As Double, ByVal n As Long, ByVal i 
     TurnAtW = ACosD(d1x * d2x + d1y * d2y)
 End Function
 
+
+Private Function CollinearBridge(xs() As Double, ys() As Double, ByVal np_ As Long, ax_() As Double, ay_() As Double, _
+                                 ByVal na As Long, ByVal stp As Double, ByVal w As Double, fx() As Double, fy() As Double, _
+                                 nf As Long) As Boolean
+    Dim side As Long, Ax() As Double, Ay() As Double, nQa As Long, Bx() As Double, By() As Double, nQb As Long
+    Dim mx As Double, my As Double, dx As Double, dy As Double, rr As Double, i As Long, n As Long, t As Double
+    Dim ok As Boolean, x0 As Double, y0 As Double, x1 As Double, y1 As Double
+    If np_ < 3 Or na < 3 Then
+        Exit Function
+    End If
+    x0 = xs(np_ - 1): y0 = ys(np_ - 1): x1 = ax_(0): y1 = ay_(0)
+    For side = 0 To 1
+        If side = 0 Then
+            TakePts xs, ys, np_, True, 2 * w, Ax, Ay, nQa
+            TakePts ax_, ay_, na, False, 0.4 * w, Bx, By, nQb
+        Else
+            TakePts ax_, ay_, na, False, 2 * w, Ax, Ay, nQa
+            TakePts xs, ys, np_, True, 0.4 * w, Bx, By, nQb
+        End If
+        If nQa >= 4 And nQb >= 2 Then
+            FitLineLS Ax, Ay, nQa, mx, my, dx, dy, rr
+            If rr <= 0.02 * w Then
+                ok = True
+                For i = 0 To nQb - 1
+                    If Abs((Bx(i) - mx) * dy - (By(i) - my) * dx) > 0.05 * w Then
+                        ok = False
+                        Exit For
+                    End If
+                Next i
+                If ok Then
+                    nf = 0
+                    n = Int(Dist(x0, y0, x1, y1) / stp)
+                    If n < 1 Then
+                        n = 1
+                    End If
+                    For i = 1 To n - 1
+                        t = i / n
+                        PushPt fx, fy, nf, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+                    Next i
+                    If PathInside(x0, y0, fx, fy, nf, x1, y1, True) Then
+                        CollinearBridge = True
+                        Exit Function
+                    End If
+                    nf = 0
+                End If
+            End If
+        End If
+    Next side
+End Function
 
 '@@CORE_END
 
