@@ -5,7 +5,7 @@
 Плагин для CorelDRAW: строит центральную линию по контурам букв для фрезеровки канала под гибкий неон. Без DLL, чистый VBA.
 
 - **Моно** — для моноширинных (неоновых) шрифтов: прямые штрихи остаются прямыми, дуги — минимумом кривых, восьмёрки замкнуты.
-- **Курсив** — для рукописных шрифтов (Segoe Script и т. п.): линия не выходит за контур там, где штрихи сливаются, и держится от края не ближе радиуса фрезы.
+- **Курсив** ⚠️ *в разработке, работает нестабильно* — для рукописных шрифтов (Segoe Script и т. п.): линия не выходит за контур там, где штрихи сливаются, и держится от края не ближе радиуса фрезы. На стыках букв возможны изломы и лишние куски — проверяйте результат перед резкой.
 - Свободный конец линии ставится на D/2 от края контура (D — диаметр фрезы, задаётся в настройках).
 - Результат — кривые на слое «Неон - центр» (красная волосяная линия).
 
@@ -44,7 +44,7 @@
 A CorelDRAW plugin that builds a centerline from letter outlines for milling flex-neon channels. Pure VBA, no DLL.
 
 - **Mono** — for monoline (neon) fonts: straight strokes stay straight, arcs use a minimum of curves, loops are closed.
-- **Script** — for handwritten fonts (Segoe Script etc.): the line stays inside the outline where strokes merge and keeps at least the cutter radius from the edge.
+- **Script** ⚠️ *work in progress, not stable yet* — for handwritten fonts (Segoe Script etc.): the line stays inside the outline where strokes merge and keeps at least the cutter radius from the edge. Kinks and stray pieces may appear at letter joints — check the result before cutting.
 - A free line end is placed D/2 from the outline edge (D is the cutter diameter, set in the settings).
 - Output: curves on the layer "Неон - центр" (red hairline).
 
