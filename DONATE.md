@@ -2,7 +2,7 @@
 
 **RU** — NeonCenterline бесплатный. Если плагин экономит вам время на макетах под неон, можно сказать спасибо — это помогает развивать его дальше (курсив, расстановка LED-модулей, раскладка на листе).
 
-- **Из России (СБП, карты РФ):** _ссылка появится здесь_
+- **Из России (СБП, карты РФ):** [pay.cloudtips.ru/p/bdf46ba9](https://pay.cloudtips.ru/p/bdf46ba9)
 
 **EN** — NeonCenterline is free. If it saves you time on neon layouts, you can say thanks — it helps the development (script fonts, LED module placement, nesting).
 
