@@ -27,7 +27,7 @@ $suite = $exe.Directory.Parent.FullName            # ...\CorelDRAW Graphics Suit
 $addons = Join-Path $exe.Directory.FullName "Addons"
 Write-Host "CorelDRAW version $ver : $suite"
 
-# 1) GMS: папка пользователя с тем же именем, что и папка программы; иначе - самая свежая с Draw\GMS
+# 1) GMS: user folder named like the program folder; otherwise the most recently used one with Draw\GMS
 $name = Split-Path $suite -Leaf
 $gms = Join-Path "$env:APPDATA\Corel\$name" "Draw\GMS"
 if (-not (Test-Path $gms)) {
@@ -43,7 +43,7 @@ if (Test-Path "$here\NeonCenterline.gms") {
   } else { Write-Host "User GMS folder not found - copy NeonCenterline.gms manually (see README)." }
 } else { Write-Host "NeonCenterline.gms is not in this folder - skipped (build it with NeonBuild)." }
 
-# 2) Addons (права администратора)
+# 2) Addons (administrator rights)
 $dst = Join-Path $addons "NeonCenterline"
 Write-Host "Addon -> $dst  (administrator rights)"
 Start-Process powershell -Verb RunAs -Wait -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$($MyInvocation.MyCommand.Path)`"", "-AddonOnly", "`"$dst`"")
