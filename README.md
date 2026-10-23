@@ -24,6 +24,9 @@
 ## Работа
 
 Выделите контуры (кривые, текст, группы) и нажмите **Моно** или **Курсив**.
+
+**Длина** — отдельная кнопка: считает длину выделенного. Контуры (длина под резку) и центральные линии плагина (длина неона, число кусков, самый длинный кусок) — отдельно; результат можно скопировать в буфер обмена.
+**Выделить линии** — выделяет все центральные линии плагина на странице (например, чтобы сразу посчитать длину неона или убрать их).
 В **настройках** — диаметр фрезы, спрашивать ли его при каждом запуске, язык интерфейса (русский / English / как в Windows), ежедневная проверка обновлений.
 
 ## Обновления
@@ -63,6 +66,9 @@ Without Addons you can still put the commands on any toolbar: Tools → Customiz
 ## Usage
 
 Select outlines (curves, text, groups) and press **Mono** or **Script**.
+
+**Length** — a separate button: measures the selection. Outlines (cutting length) and plugin centerlines (neon length, number of pieces, longest piece) are reported separately; the result can be copied to the clipboard.
+**Select lines** — selects all plugin centerlines on the page (e.g. to measure the neon or remove them).
 **Settings**: cutter diameter, whether to ask for it on every run, interface language (Russian / English / as Windows), daily update check.
 
 ## Updates

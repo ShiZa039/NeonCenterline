@@ -8,6 +8,7 @@ MODS = [('NeonLang', f'{P}/src/NeonLang.bas', 'x = NeonLangCode()'),
         ('NeonUI', f'{P}/src/NeonUI.bas', 'x = FmtNum(1.5)'),
         ('NeonUpdate', f'{P}/src/NeonUpdate.bas', 'x = VerCmp("1.2", "1.10")'),
         ('NeonAddon', f'{P}/src/NeonAddon.bas', 'x = NeonAddonProbe()'),
+        ('NeonTools', f'{P}/src/NeonTools.bas', 'x = NeonToolsProbe()'),
         ('NeonMono', f'{P}/src/NeonMono.bas', 'x = NeonMonoRunProbe()'),
         ('NeonScript', f'{P}/src/NeonScript.bas', 'x = NeonScriptRunProbe()'),
         ('NeonBuild', f'{P}/build/NeonBuild.bas', 'x = NeonBuildProbe()'),
@@ -21,6 +22,8 @@ Private ActiveDocument As Object, ActivePage As Object, ActiveWindow As Object, 
 Private Optimization As Boolean, EventsEnabled As Boolean
 Private GMSManager As Object
 Private Function ActiveSelectionRange() As Object
+End Function
+Private Function CreateShapeRange() As Object
 End Function
 Private Function CreateRGBColor(ByVal r As Long, ByVal g As Long, ByVal b As Long) As Object
 End Function

@@ -51,6 +51,18 @@
                 dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
                 userCaption="Неон: о программе"
                 enable="true"/>
+      <itemData guid="0b33ce77-31ad-5c46-bb8b-2cd2e362084f"
+                icon="guid://0b33ce77-31ad-5c46-bb8b-2cd2e362084f"
+                dynamicCommand="NeonCenterline.NeonTools.MeasureLength"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Неон: длина контуров и линий"
+                enable="true"/>
+      <itemData guid="c913505c-324e-543b-b2b1-a55c9bcbc9eb"
+                icon="guid://c913505c-324e-543b-b2b1-a55c9bcbc9eb"
+                dynamicCommand="NeonCenterline.NeonTools.SelectNeonLines"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Неон: выделить центральные линии"
+                enable="true"/>
     </xsl:copy>
   </xsl:template>
 
@@ -64,6 +76,8 @@
         <toolbar>
           <item guidRef="4e6d43bf-0b2d-500c-b154-b553b6087991"/>
           <item guidRef="c68c5d4f-d668-5fb4-937e-adb7430cae58"/>
+          <item guidRef="0b33ce77-31ad-5c46-bb8b-2cd2e362084f"/>
+          <item guidRef="c913505c-324e-543b-b2b1-a55c9bcbc9eb"/>
           <item guidRef="ce37ed0a-544f-575c-ac35-ef4d4aab66c9"/>
         </toolbar>
       </commandBarData>

@@ -9,6 +9,8 @@ G = lambda k: str(uuid.uuid5(uuid.NAMESPACE_URL, 'sabcore/neoncenterline/' + k))
 ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
          ('script', 'neon_script', 102, 'Неон: Курсив (бета)'),
          ('settings', 'neon_settings', 103, 'Неон: настройки'),
+         ('length', 'neon_length', 104, 'Неон: длина контуров и линий'),
+         ('select', 'neon_select', 105, 'Неон: выделить центральные линии'),
          ('update', 'neon_settings', 103, 'Неон: проверить обновления'),
          ('about', 'neon_settings', 103, 'Неон: о программе')]
 
