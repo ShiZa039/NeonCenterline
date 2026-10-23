@@ -204,6 +204,39 @@ Private Function HttpBody(ByVal url As String, ByVal timeoutMs As Long, body As 
     HttpBody = True
 End Function
 
+' curl.exe (есть в Windows 10/11): работает там, где у WinHTTP проблемы с прокси/IPv6/TLS.
+' Скачивает url в файл path (скрытое окно), True — успех
+Private Function CurlToFile(ByVal url As String, ByVal path As String, ByVal secs As Long, errText As String) As Boolean
+    Dim rc As Long
+    On Error GoTo Fail
+    KillQuiet path
+    rc = CreateObject("WScript.Shell").Run("curl.exe -sSfL --max-time " & secs & " -A NeonCenterline -o """ & path & """ """ & url & """", 0, True)
+    If rc <> 0 Then
+        errText = errText & " / curl " & rc
+        KillQuiet path
+        Exit Function
+    End If
+    If FileLen(path) = 0 Then
+        Exit Function
+    End If
+    CurlToFile = True
+    Exit Function
+Fail:
+    errText = errText & " / curl: " & Err.Description
+End Function
+
+Private Function ReadUtf8File(ByVal path As String) As String
+    Dim st As Object
+    On Error Resume Next
+    Set st = CreateObject("ADODB.Stream")
+    st.Type = 2
+    st.Charset = "utf-8"
+    st.Open
+    st.LoadFromFile path
+    ReadUtf8File = st.ReadText
+    st.Close
+End Function
+
 ' прокси из настроек Windows (Internet Settings), если включён; пусто — нет
 Private Function SystemProxy() As String
     Dim sh As Object, en As Variant, sv As String
@@ -228,15 +261,22 @@ Private Function SystemProxy() As String
 End Function
 
 Private Function HttpGetText(ByVal url As String, errText As String) As String
-    Dim body As Variant
+    Dim body As Variant, tmp As String
     If HttpBody(url, 5000, body, errText) Then
         HttpGetText = Utf8ToStr(body)
+        Exit Function
+    End If
+    tmp = TempDir() & "\NeonCenterline_get.tmp"
+    If CurlToFile(url, tmp, 10, errText) Then
+        HttpGetText = ReadUtf8File(tmp)
+        KillQuiet tmp
     End If
 End Function
 
 Private Function HttpDownload(ByVal url As String, ByVal path As String, errText As String) As Boolean
     Dim body As Variant, st As Object
     If Not HttpBody(url, 60000, body, errText) Then
+        HttpDownload = CurlToFile(url, path, 120, errText)
         Exit Function
     End If
     On Error GoTo Fail

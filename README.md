@@ -14,7 +14,7 @@
 1. Скачайте последний релиз (файл `NeonCenterline-<версия>.zip`) и распакуйте.
 2. Закройте CorelDRAW и запустите `install.cmd` (попросит права администратора — для папки Addons).
    Скрипт кладёт `NeonCenterline.gms` в пользовательскую папку макросов CorelDRAW и панель инструментов — в папку Addons.
-3. Запустите CorelDRAW. Появится панель **NeonCenterline** (если нет: Окно → Панели инструментов → NeonCenterline).
+3. Запустите CorelDRAW. Появится панель **«Неон (NeonCenterline)»** (если нет: Окно → Панели инструментов → «Неон (NeonCenterline)»).
 
 Вручную: `NeonCenterline.gms` → `%APPDATA%\Corel\CorelDRAW Graphics Suite <версия>\Draw\GMS\`,
 папку `addon\NeonCenterline` → `<папка CorelDRAW>\Programs64\Addons\`.
@@ -62,7 +62,7 @@ A CorelDRAW plugin that builds a centerline from letter outlines for milling fle
 1. Download the latest release (`NeonCenterline-<version>.zip`) and unzip it.
 2. Close CorelDRAW and run `install.cmd` (it asks for administrator rights for the Addons folder).
    It copies `NeonCenterline.gms` into the CorelDRAW user macro folder and the toolbar into the Addons folder.
-3. Start CorelDRAW. The **NeonCenterline** toolbar appears (if not: Window → Toolbars → NeonCenterline).
+3. Start CorelDRAW. The **"Неон (NeonCenterline)"** toolbar appears (if not: Window → Toolbars → "Неон (NeonCenterline)").
 
 Manually: `NeonCenterline.gms` → `%APPDATA%\Corel\CorelDRAW Graphics Suite <version>\Draw\GMS\`,
 the `addon\NeonCenterline` folder → `<CorelDRAW folder>\Programs64\Addons\`.

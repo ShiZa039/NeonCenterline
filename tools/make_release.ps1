@@ -36,7 +36,7 @@ $json = $obj | ConvertTo-Json
 $pkg = "release\NeonCenterline-$Version"
 Remove-Item $pkg -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path "$pkg\addon" | Out-Null
-Copy-Item "release\NeonCenterline.gms", "install.cmd", "install.ps1", "LICENSE.txt", "README.md", "CHANGELOG.md" $pkg
+Copy-Item "release\NeonCenterline.gms", "install.cmd", "install.ps1", "LICENSE.txt", "README.md", "README.txt", "CHANGELOG.md" $pkg
 Copy-Item "addon\NeonCenterline" "$pkg\addon" -Recurse
 Copy-Item "font" "$pkg" -Recurse
 Compress-Archive -Path "$pkg\*" -DestinationPath "release\NeonCenterline-$Version.zip" -Force

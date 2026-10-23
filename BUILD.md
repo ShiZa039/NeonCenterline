@@ -26,7 +26,7 @@
 
 ## Выпуск новой версии
 
-1. Поднять `NEON_VERSION` в `src/NeonUI.bas`, дописать `CHANGELOG.md`.
+1. Поднять `NEON_VERSION` в `src/NeonUI.bas`, дописать `CHANGELOG.md`. Если менялся README.md — `python tools/gen_readme_txt.py` (README.txt для архива).
 2. Собрать `.gms` (шаги 2–4 выше).
 3. PowerShell в корне репозитория:
    `.\tools\make_release.ps1 -Version 1.1.0 -Owner ShiZa039 -NotesRu "..." -NotesEn "..."`

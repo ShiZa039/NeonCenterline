@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1
+
+RU
+- Проверка обновлений: запасные способы связи (curl.exe из Windows, прокси из настроек Windows, запасные адреса) — для сетей, где встроенный механизм не достучался до GitHub.
+- В архиве релиза — README.txt (простой текст).
+
+EN
+- Update check: fallback connection methods (Windows curl.exe, Windows proxy settings, mirror addresses) for networks where the built-in method could not reach GitHub.
+- README.txt (plain text) in the release archive.
+
 ## 1.0.0 — 2026-10-23
 
 RU
