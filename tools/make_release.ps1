@@ -26,5 +26,14 @@ $obj = [ordered]@{
 }
 $json = $obj | ConvertTo-Json
 [System.IO.File]::WriteAllText((Join-Path (Get-Location) "update.json"), $json, (New-Object System.Text.UTF8Encoding($false)))
+# архив для пользователей: всё, что нужно для установки
+$pkg = "release\NeonCenterline-$Version"
+Remove-Item $pkg -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path "$pkg\addon" | Out-Null
+Copy-Item "release\NeonCenterline.gms", "install.cmd", "install.ps1", "LICENSE.txt", "README.md", "CHANGELOG.md" $pkg
+Copy-Item "addon\NeonCenterline" "$pkg\addon" -Recurse
+Copy-Item "font" "$pkg" -Recurse
+Compress-Archive -Path "$pkg\*" -DestinationPath "release\NeonCenterline-$Version.zip" -Force
+Write-Host "release\NeonCenterline-$Version.zip  (for users)"
 Write-Host "release\NeonCenterline.gms  sha256=$hash"
-Write-Host "update.json written. Upload the .gms to release v$Version, then commit update.json."
+Write-Host "update.json written. Upload NeonCenterline.gms AND NeonCenterline-$Version.zip to release v$Version, then commit update.json."
