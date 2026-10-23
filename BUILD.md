@@ -31,10 +31,10 @@
 3. PowerShell в корне репозитория:
    `.\tools\make_release.ps1 -Version 1.1.0 -Owner ShiZa039 -NotesRu "..." -NotesEn "..."`
    — копирует `.gms` в `release\` и `dist\` (запасной адрес через CDN jsDelivr, если GitHub у пользователя недоступен), считает SHA-256, пишет `update.json`.
-4. GitHub → Releases → новый релиз `v1.1.0`, приложить `release\NeonCenterline.gms` (и zip для новых пользователей).
-5. Закоммитить и запушить `update.json` и `dist\NeonCenterline.gms` в `main` (тег `v<версия>` создаётся вместе с релизом). С этого момента плагины предложат обновление.
+4. GitHub → Releases → новый релиз с тегом `1.1.0` (без буквы v — так в update.json), приложить `release\NeonCenterline.gms` (и zip для новых пользователей).
+5. Закоммитить и запушить `update.json` и `dist\NeonCenterline.gms` в `main` (тег `<версия>`, без v, создаётся вместе с релизом). С этого момента плагины предложат обновление.
 
 ## Build & release (English)
 
 First build: import `build/NeonBuild.bas` into GlobalMacros, run `NeonBuildPlugin`, point it to `src`, then save the `NeonCenterline` project in the VBA editor (Ctrl+S).
-New version: bump `NEON_VERSION`, rebuild and save, run `tools/make_release.ps1`, attach `release/NeonCenterline.gms` to a GitHub release `v<version>`, commit `update.json` to `main`.
+New version: bump `NEON_VERSION`, rebuild and save, run `tools/make_release.ps1`, attach `release/NeonCenterline.gms` to a GitHub release tagged `<version>` (no "v"), commit `update.json` to `main`.

@@ -24,8 +24,8 @@ New-Item -ItemType Directory -Force -Path "dist" | Out-Null
 Copy-Item "release\NeonCenterline.gms" "dist\NeonCenterline.gms" -Force
 $obj = [ordered]@{
   version  = $Version
-  gms_url  = "https://github.com/$Owner/$Repo/releases/download/v$Version/NeonCenterline.gms"
-  gms_url2 = "https://cdn.jsdelivr.net/gh/$Owner/$Repo@v$Version/dist/NeonCenterline.gms"
+  gms_url  = "https://github.com/$Owner/$Repo/releases/download/$Version/NeonCenterline.gms"
+  gms_url2 = "https://cdn.jsdelivr.net/gh/$Owner/$Repo@$Version/dist/NeonCenterline.gms"
   sha256   = $hash
   notes_ru = $NotesRu
   notes_en = $NotesEn
@@ -42,4 +42,4 @@ Copy-Item "font" "$pkg" -Recurse
 Compress-Archive -Path "$pkg\*" -DestinationPath "release\NeonCenterline-$Version.zip" -Force
 Write-Host "release\NeonCenterline-$Version.zip  (for users)"
 Write-Host "release\NeonCenterline.gms  sha256=$hash"
-Write-Host "update.json written. Commit update.json and dist\NeonCenterline.gms, create tag/release v$Version and upload NeonCenterline.gms + NeonCenterline-$Version.zip."
+Write-Host "update.json written. Commit update.json and dist\NeonCenterline.gms, create tag/release $Version (tag without "v") and upload NeonCenterline.gms + NeonCenterline-$Version.zip."
