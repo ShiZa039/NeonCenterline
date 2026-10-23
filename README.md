@@ -32,7 +32,7 @@
 В настройках: **тип неона** — светодиодный (лента внутри: кусок неона = длина паза) или **неон 2.0** (силиконовый рассеиватель в пазу, лента отдельно), и **кратность реза** (10 / 25 / 50 мм или своя).
 - Галочка **«Подгонять линии под кратность реза»**: после расчёта каждый кусок укорачивается до ближайшей меньшей кратной длины — только за счёт **свободных** концов (поровну с обоих или только с конца линии — настройка). Удлинять нельзя: конец уже на D/2 от края. Замкнутые куски и куски без свободных концов не меняются — остаток виден в отчёте.
 - Кнопка **«Длина»** для центральных линий показывает, сколько неона (или ленты для неона 2.0) получается кратно резу и сколько уйдёт в остатки.
-- Команда `NeonCenterline.NeonCut.FitToCut` — подогнать под кратность уже готовые выделенные линии.
+- Кнопка **«Подогнать под рез»** (`NeonCenterline.NeonCut.FitToCut`) — подогнать под кратность уже готовые выделенные линии.
 В **настройках** — диаметр фрезы, спрашивать ли его при каждом запуске, язык интерфейса (русский / English / как в Windows), ежедневная проверка обновлений.
 
 ## Обновления
@@ -80,7 +80,7 @@ Select outlines (curves, text, groups) and press **Mono** or **Script**.
 Settings: **neon type** — LED neon (strip inside: neon piece = groove length) or **Neon 2.0** (silicone diffuser in a groove, separate strip), and the **cut step** (10 / 25 / 50 mm or custom).
 - **"Fit lines to the cut step"**: after a run every piece is shortened to the nearest smaller multiple — only at **free** ends (equally at both or only at the line end — a setting). Lines are never extended: a free end is already D/2 from the edge. Closed pieces and pieces without free ends are left as is; the remainder is shown in the report.
 - The **Length** button shows how much neon (or strip, for Neon 2.0) fits in whole cut steps and how much goes to remainders.
-- Command `NeonCenterline.NeonCut.FitToCut` fits already selected lines to the cut step.
+- The **Fit to cut** button (`NeonCenterline.NeonCut.FitToCut`) fits already selected lines to the cut step.
 **Settings**: cutter diameter, whether to ask for it on every run, interface language (Russian / English / as Windows), daily update check.
 
 ## Updates

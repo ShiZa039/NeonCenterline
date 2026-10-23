@@ -63,6 +63,13 @@
                 dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
                 userCaption="Неон: выделить центральные линии"
                 enable="true"/>
+      <itemData guid="ce9120be-eca9-5ed0-b1c8-c43624951305"
+                icon="guid://ce9120be-eca9-5ed0-b1c8-c43624951305"
+                dynamicCommand="NeonCenterline.NeonCut.FitToCut"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Неон: подогнать под кратность реза"
+                userToolTip="Укоротить свободные концы выделенных линий до кратности реза (из настроек)"
+                enable="true"/>
     </xsl:copy>
   </xsl:template>
 
@@ -78,6 +85,7 @@
           <item guidRef="c68c5d4f-d668-5fb4-937e-adb7430cae58"/>
           <item guidRef="0b33ce77-31ad-5c46-bb8b-2cd2e362084f"/>
           <item guidRef="c913505c-324e-543b-b2b1-a55c9bcbc9eb"/>
+          <item guidRef="ce9120be-eca9-5ed0-b1c8-c43624951305"/>
           <item guidRef="ce37ed0a-544f-575c-ac35-ef4d4aab66c9"/>
         </toolbar>
       </commandBarData>
