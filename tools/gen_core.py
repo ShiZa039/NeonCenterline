@@ -82,7 +82,7 @@ def conv(src, dst, vbname, oldmacro, fn):
     b = s.index('End Sub', a) + len('End Sub')
     s = s[:a] + ENTRY.format(fn=fn).rstrip('\n') + s[b:]
     pub = re.findall(r'^Public (?:Sub|Function) (\w+)', s, flags=re.M)
-    assert pub == [fn], pub
+    assert fn in pub and all(p == fn or p.startswith(fn.replace('Run', '')) for p in pub), pub
     open(dst, 'w', encoding='utf-8').write(s)
     print(dst, 'public:', pub)
 

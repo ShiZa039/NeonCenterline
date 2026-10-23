@@ -127,7 +127,7 @@ Private Sub BuildSettingsForm(vp As Object, ByVal codeFile As String)
     Dim fc As Object, d As Object, code As String
     Set fc = GetForm(vp, "frmNeonSettings")
     fc.Properties("Width") = 360
-    fc.Properties("Height") = 380
+    fc.Properties("Height") = 424
     fc.Properties("Caption") = "NeonCenterline"
     Set d = fc.Designer
     AddCtl d, "Forms.Label.1", "lblTool", 12, 14, 170, 18
@@ -141,17 +141,20 @@ Private Sub BuildSettingsForm(vp As Object, ByVal codeFile As String)
     AddCtl d, "Forms.CheckBox.1", "chkFit", 12, 164, 326, 18
     AddCtl d, "Forms.Label.1", "lblTrim", 30, 188, 100, 18
     AddCtl d, "Forms.ComboBox.1", "cboTrim", 130, 184, 208, 20
-    AddCtl d, "Forms.Label.1", "lblLang", 12, 218, 170, 18
-    AddCtl d, "Forms.ComboBox.1", "cboLang", 190, 214, 148, 20
-    AddCtl d, "Forms.CheckBox.1", "chkUpd", 12, 242, 326, 18
-    AddCtl d, "Forms.Label.1", "lblVer", 12, 268, 326, 18
-    AddCtl d, "Forms.CommandButton.1", "btnUpdate", 12, 290, 160, 24
-    AddCtl d, "Forms.CommandButton.1", "btnAbout", 178, 290, 160, 24
-    AddCtl d, "Forms.CommandButton.1", "btnOK", 180, 324, 76, 24
-    AddCtl d, "Forms.CommandButton.1", "btnCancel", 262, 324, 76, 24
+    AddCtl d, "Forms.Label.1", "lblRef", 12, 210, 326, 18
+    AddCtl d, "Forms.ComboBox.1", "cboRef", 12, 228, 326, 20
+    AddCtl d, "Forms.Label.1", "lblLang", 12, 262, 170, 18
+    AddCtl d, "Forms.ComboBox.1", "cboLang", 190, 258, 148, 20
+    AddCtl d, "Forms.CheckBox.1", "chkUpd", 12, 286, 326, 18
+    AddCtl d, "Forms.Label.1", "lblVer", 12, 312, 326, 18
+    AddCtl d, "Forms.CommandButton.1", "btnUpdate", 12, 334, 160, 24
+    AddCtl d, "Forms.CommandButton.1", "btnAbout", 178, 334, 160, 24
+    AddCtl d, "Forms.CommandButton.1", "btnOK", 180, 368, 76, 24
+    AddCtl d, "Forms.CommandButton.1", "btnCancel", 262, 368, 76, 24
     d.Controls("cboLang").Style = 2
     d.Controls("cboType").Style = 2
     d.Controls("cboTrim").Style = 2
+    d.Controls("cboRef").Style = 2
     d.Controls("lblHint").WordWrap = True
     d.Controls("btnOK").Default = True
     d.Controls("btnCancel").Cancel = True
@@ -169,7 +172,7 @@ Private Sub BuildRunForm(vp As Object, ByVal codeFile As String)
     Dim fc As Object, d As Object, code As String
     Set fc = GetForm(vp, "frmNeonRun")
     fc.Properties("Width") = 360
-    fc.Properties("Height") = 290
+    fc.Properties("Height") = 334
     fc.Properties("Caption") = "NeonCenterline"
     Set d = fc.Designer
     AddCtl d, "Forms.Label.1", "lblTool", 12, 14, 170, 18
@@ -182,11 +185,14 @@ Private Sub BuildRunForm(vp As Object, ByVal codeFile As String)
     AddCtl d, "Forms.CheckBox.1", "chkFit", 12, 130, 326, 18
     AddCtl d, "Forms.Label.1", "lblTrim", 30, 154, 100, 18
     AddCtl d, "Forms.ComboBox.1", "cboTrim", 130, 150, 208, 20
-    AddCtl d, "Forms.CheckBox.1", "chkAsk", 12, 184, 326, 18
-    AddCtl d, "Forms.CommandButton.1", "btnOK", 160, 214, 96, 26
-    AddCtl d, "Forms.CommandButton.1", "btnCancel", 262, 214, 76, 26
+    AddCtl d, "Forms.Label.1", "lblRef", 12, 176, 326, 18
+    AddCtl d, "Forms.ComboBox.1", "cboRef", 12, 194, 326, 20
+    AddCtl d, "Forms.CheckBox.1", "chkAsk", 12, 228, 326, 18
+    AddCtl d, "Forms.CommandButton.1", "btnOK", 160, 258, 96, 26
+    AddCtl d, "Forms.CommandButton.1", "btnCancel", 262, 258, 76, 26
     d.Controls("cboType").Style = 2
     d.Controls("cboTrim").Style = 2
+    d.Controls("cboRef").Style = 2
     d.Controls("btnOK").Default = True
     d.Controls("btnCancel").Cancel = True
     code = ReadUtf8(codeFile)

@@ -19,6 +19,12 @@ Private Sub UserForm_Initialize()
     cboType.AddItem NeonL("type_classic")
     cboType.AddItem NeonL("type_neon2")
     cboType.ListIndex = IIf(NeonCutType() = "neon2", 1, 0)
+    lblRef.Caption = NeonL("lbl_ref")
+    cboRef.Clear
+    cboRef.AddItem NeonL("ref_off")
+    cboRef.AddItem NeonL("ref_tip")
+    cboRef.AddItem NeonL("ref_half")
+    cboRef.ListIndex = CLng(Val(GetSetting("NeonCenterline", "Script", "RefEnd", "1")))
     lblCut.Caption = NeonL("lbl_cut")
     cboCut.Clear
     cboCut.AddItem "10"
@@ -68,6 +74,7 @@ Private Sub btnOK_Click()
     End If
     SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
     SaveSetting "NeonCenterline", "Cut", "Step", FmtNum(c)
+    SaveSetting "NeonCenterline", "Script", "RefEnd", CStr(cboRef.ListIndex)
     SaveSetting "NeonCenterline", "Cut", "Type", IIf(cboType.ListIndex = 1, "neon2", "classic")
     SaveSetting "NeonCenterline", "Cut", "Fit", IIf(chkFit.Value, "1", "0")
     SaveSetting "NeonCenterline", "Cut", "Trim", IIf(cboTrim.ListIndex = 1, "end", "both")

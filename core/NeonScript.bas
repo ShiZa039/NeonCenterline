@@ -38,6 +38,9 @@ Private Const BIG As Double = 1E+30
 Private Const PI_ As Double = 3.14159265358979
 
 Private gW As Double, gTool As Double, gTol As Double, gH As Double
+' режим «шрифт — образец»: 0 — фрезеровка самого контура (как раньше), 1 — линия до кончика штриха,
+' 2 — с отступом на полширины штриха; фреза не учитывается (нет отталкивания от краёв)
+Private gRefEnd As Long, gToolBase As Double
 
 ' --- все кольца объекта ---
 Private AX() As Double, AY() As Double, NAP As Long
@@ -136,7 +139,12 @@ Private Function CoreRingStart() As Long
 End Function
 
 Private Sub CoreSetParams(ByVal tool As Double, ByVal tol As Double)
-    gTool = tool: gTol = tol
+    gTool = tool: gTol = tol: gToolBase = tool
+End Sub
+
+' режим образца для следующего расчёта (см. gRefEnd)
+Public Sub NeonScriptSetRef(ByVal mode As Long)
+    gRefEnd = mode
 End Sub
 
 Private Function CoreSegCount() As Long
@@ -483,6 +491,12 @@ Private Sub RunGroup()
     End If
     gW = 2 * area / per
     gH = gW / P_HSTEP
+    gTool = gToolBase
+    If gRefEnd = 1 Then
+        gTool = 0.05 * gW
+    ElseIf gRefEnd = 2 Then
+        gTool = gW
+    End If
     s0 = NOP
     DropTinyHoles
 
@@ -2332,7 +2346,9 @@ NextChain:
         If dOk(ci) Then
             xs = cX(ci): ys = cY(ci)
             np_ = dN(ci)
-            Recenter xs, ys, np_, dCl(ci), gW
+            If gRefEnd = 0 Then
+                Recenter xs, ys, np_, dCl(ci), gW
+            End If
             dN(ci) = np_
             Deglitch xs, ys, dN(ci), dCl(ci), gW
             FitPath xs, ys, dN(ci), dCl(ci), dRef(ci)

@@ -90,6 +90,7 @@ Private Sub RunMode(ByVal mode As Long)
         rc = NeonMonoRun(tool, nIn, nOut, tAll, tCore, errText)
     Else
         mname = NeonL("mode_script")
+        NeonScriptSetRef CLng(Val(GetSetting(REG_APP, "Script", "RefEnd", "1")))
         rc = NeonScriptRun(tool, nIn, nOut, tAll, tCore, errText)
     End If
 
