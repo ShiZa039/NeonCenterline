@@ -5,6 +5,7 @@
 RU
 - Отступ свободного конца линии от края задаётся числом в мм (по умолчанию D/2, как раньше) — в окне перед запуском и в Настройках.
 - «Курсив»: режим «шрифт как образец» (по умолчанию) — линия по ходу пера без учёта фрезы, конец у кончика штриха или с отступом полширины; выбор в окне перед запуском и в Настройках.
+- «Курсив», конец «до кончика штриха»: концы больше не уходят в угол среза и не загибаются крючком — линия продолжает ход штриха (прямой или дугой у завитков и шариков) до края, высота букв как в оригинале.
 - «Моно»: линия, идущая прямо через развилку, больше не даёт «волну», когда сразу за развилкой стоит фаска или излом (буква «к» в моноширинных шрифтах).
 - Кнопка «Поддержать автора» в окне «О программе» (ведёт на страницу DONATE.md).
 - README: ручная установка, совместимость, тестовый шрифт; в архиве — папка icons.
@@ -12,6 +13,7 @@ RU
 EN
 - The free line end inset from the edge can be set in mm (default D/2, as before) — in the run window and Settings.
 - Script: "font as a reference" mode (default) — a pen-path line ignoring the cutter, ending at the stroke tip or inset by half the stroke width; choice in the run window and Settings.
+- Script, "end at the stroke tip": line ends no longer veer into the corner of a cut terminal or hook back — the line follows the stroke (straight, or an arc for curls and ball terminals) to the edge, so letter height matches the original.
 - Mono: a line running straight through a junction no longer gets a "wave" when a chamfer or bend follows right after the junction (letter "к" in monoline fonts).
 - "Support the author" in the About window (opens DONATE.md).
 - README: manual installation, compatibility, test font; icons folder in the archive.
