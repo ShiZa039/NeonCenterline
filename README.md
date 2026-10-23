@@ -43,7 +43,7 @@
 
 Бесплатно для любого использования, в том числе коммерческого (изготовление вывесок, фрезеровка на заказ). Продавать и перепаковывать плагин нельзя. Полный текст — [LICENSE.txt](LICENSE.txt).
 
-Плагин бесплатный. Если он вам помогает — можно поблагодарить автора (ссылка в окне «О программе»).
+Плагин бесплатный. Если он вам помогает — можно поблагодарить автора: [DONATE.md](DONATE.md) (та же ссылка — в окне «О программе»).
 
 ---
 
@@ -91,4 +91,4 @@ Once a day (after a run) the plugin checks GitHub for a new version. If there is
 
 Free for any use, including commercial (sign making, milling for hire). Selling or repackaging the plugin is prohibited. Full text: [LICENSE.txt](LICENSE.txt).
 
-The plugin is free. If it helps you, you can support the author (link in the "About" window).
+The plugin is free. If it helps you, you can support the author: [DONATE.md](DONATE.md) (same link in the "About" window).

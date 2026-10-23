@@ -20,8 +20,8 @@ Public Const NEON_UPDATE_URL As String = "https://raw.githubusercontent.com/ShiZ
 ' запасные адреса того же файла (raw.githubusercontent.com бывает недоступен у части провайдеров)
 Public Const NEON_UPDATE_URL2 As String = "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@main/update.json"
 Public Const NEON_UPDATE_URL3 As String = "https://github.com/ShiZa039/NeonCenterline/raw/main/update.json"
-' страница поддержки автора (пусто — пункт не показывается)
-Public Const NEON_DONATE_URL As String = ""
+' страница поддержки автора: НЕ сам сервис донатов, а DONATE.md в репозитории — ссылки там можно менять без выпуска новой версии (пусто — пункт не показывается)
+Public Const NEON_DONATE_URL As String = "https://github.com/ShiZa039/NeonCenterline/blob/main/DONATE.md"
 Private Const REG_APP As String = "NeonCenterline"
 ' результат окна перед расчётом (frmNeonRun): True — «Построить»
 Public NeonRunConfirmed As Boolean
