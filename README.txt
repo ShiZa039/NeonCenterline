@@ -14,13 +14,23 @@ RU · EN
 
 1. Скачайте последний релиз (файл NeonCenterline-<версия>.zip) и распакуйте.
 2. Закройте CorelDRAW и запустите install.cmd (попросит права администратора — для папки Addons).
-   Скрипт кладёт NeonCenterline.gms в пользовательскую папку макросов CorelDRAW и панель инструментов — в папку Addons.
+   Скрипт кладёт NeonCenterline.gms в пользовательскую папку макросов CorelDRAW и панель инструментов — в папку Addons. Если установлено несколько версий CorelDRAW, он ставит плагин только в самую новую — для другой версии см. ручную установку ниже.
 3. Запустите CorelDRAW. Появится панель «Неон (NeonCenterline)» (если нет: Окно → Панели инструментов → «Неон (NeonCenterline)»).
 
-Вручную: NeonCenterline.gms → %APPDATA%\Corel\CorelDRAW Graphics Suite <версия>\Draw\GMS\,
-папку addon\NeonCenterline → <папка CorelDRAW>\Programs64\Addons\.
-Если панель не появилась (например, установщик нашёл папку старой версии CorelDRAW) — запустите макрос NeonCenterline.NeonAddon.InstallToolbar (Инструменты → Макросы → Запуск макроса): он ставит панель в текущую версию CorelDRAW.
-Команды можно поставить на любую панель и без Addons: Инструменты → Настройка → Команды → Макросы → NeonCenterline.NeonUI.*.
+Ручная установка (если установщик не сработал, несколько версий CorelDRAW или старая версия)
+--------------------------------------------------------------------------------------------
+
+1. Файл плагина. Скопируйте NeonCenterline.gms в папку макросов пользователя:
+   %APPDATA%\Corel\CorelDRAW Graphics Suite <версия>\Draw\GMS\
+   (вставьте путь в адресную строку Проводника; <версия> — папка вашей версии, например 2026 или 27).
+2. Панель инструментов. Скопируйте папку addon\NeonCenterline целиком (5 файлов) в папку дополнений CorelDRAW:
+   C:\Program Files\Corel\CorelDRAW Graphics Suite <версия>\Programs64\Addons\
+   (нужны права администратора; там же обычно лежат другие дополнения).
+   Или, когда плагин уже загружен, запустите макрос NeonCenterline.NeonAddon.InstallToolbar (Инструменты → Макросы → Запуск макроса) — он сам положит панель в Addons той версии CorelDRAW, из которой запущен.
+3. Полностью перезапустите CorelDRAW и включите панель: Окно → Панели инструментов → «Неон (NeonCenterline)».
+4. Если панели нет или кнопки пустые (бывает в старых версиях), кнопки можно поставить вручную: Инструменты → Настройка (Ctrl+J) → Команды → категория «Макросы» → перетащить на любую панель команды NeonCenterline.NeonUI.RunMono, RunScript, ShowSettings, NeonCenterline.NeonTools.MeasureLength, SelectNeonLines, NeonCenterline.NeonCut.FitToCut. Значки — в папке icons архива (вкладка «Вид» → «Импорт»).
+
+Совместимость: проверено в CorelDRAW 2026 (27). Должно работать в 2017–2025; в X7–X8 расчёт, скорее всего, работает, панель — возможно, только вручную. Работает или нет в вашей версии — напишите в Issues на GitHub.
 
 Работа
 ------
@@ -66,13 +76,23 @@ Installation
 
 1. Download the latest release (NeonCenterline-<version>.zip) and unzip it.
 2. Close CorelDRAW and run install.cmd (it asks for administrator rights for the Addons folder).
-   It copies NeonCenterline.gms into the CorelDRAW user macro folder and the toolbar into the Addons folder.
+   It copies NeonCenterline.gms into the CorelDRAW user macro folder and the toolbar into the Addons folder. With several CorelDRAW versions installed it installs into the newest one only — for another version see manual installation below.
 3. Start CorelDRAW. The "Неон (NeonCenterline)" toolbar appears (if not: Window → Toolbars → "Неон (NeonCenterline)").
 
-Manually: NeonCenterline.gms → %APPDATA%\Corel\CorelDRAW Graphics Suite <version>\Draw\GMS\,
-the addon\NeonCenterline folder → <CorelDRAW folder>\Programs64\Addons\.
-If the toolbar does not appear (e.g. the installer found an old CorelDRAW version folder), run the macro NeonCenterline.NeonAddon.InstallToolbar (Tools → Macros → Run Macro): it installs the toolbar into the current CorelDRAW version.
-Without Addons you can still put the commands on any toolbar: Tools → Customization → Commands → Macros → NeonCenterline.NeonUI.*.
+Manual installation (if the installer did not work, several CorelDRAW versions, or an older version)
+----------------------------------------------------------------------------------------------------
+
+1. Plugin file. Copy NeonCenterline.gms to the user macro folder:
+   %APPDATA%\Corel\CorelDRAW Graphics Suite <version>\Draw\GMS\
+   (paste the path into the Explorer address bar; <version> is the folder of your version, e.g. 2026 or 27).
+2. Toolbar. Copy the whole addon\NeonCenterline folder (5 files) to the CorelDRAW add-ons folder:
+   C:\Program Files\Corel\CorelDRAW Graphics Suite <version>\Programs64\Addons\
+   (administrator rights required; other add-ons usually live there too).
+   Or, once the plugin is loaded, run the macro NeonCenterline.NeonAddon.InstallToolbar (Tools → Macros → Run Macro): it puts the toolbar into Addons of the CorelDRAW version it runs in.
+3. Fully restart CorelDRAW and turn the toolbar on: Window → Toolbars → "Неон (NeonCenterline)".
+4. If there is no toolbar or the buttons are blank (possible in older versions), add the buttons manually: Tools → Customization (Ctrl+J) → Commands → category "Macros" → drag to any toolbar NeonCenterline.NeonUI.RunMono, RunScript, ShowSettings, NeonCenterline.NeonTools.MeasureLength, SelectNeonLines, NeonCenterline.NeonCut.FitToCut. Icons are in the icons folder of the archive (Appearance tab → Import).
+
+Compatibility: tested in CorelDRAW 2026 (27). Should work in 2017–2025; in X7–X8 the computation most likely works, the toolbar may need manual setup. Please report in GitHub Issues whether it works in your version.
 
 Usage
 -----

@@ -39,6 +39,8 @@ New-Item -ItemType Directory -Force -Path "$pkg\addon" | Out-Null
 Copy-Item "release\NeonCenterline.gms", "install.cmd", "install.ps1", "LICENSE.txt", "README.md", "README.txt", "CHANGELOG.md" $pkg
 Copy-Item "addon\NeonCenterline" "$pkg\addon" -Recurse
 Copy-Item "font" "$pkg" -Recurse
+New-Item -ItemType Directory -Force -Path "$pkg\icons" | Out-Null
+Copy-Item "icons\*.ico" "$pkg\icons"
 Compress-Archive -Path "$pkg\*" -DestinationPath "release\NeonCenterline-$Version.zip" -Force
 Write-Host "release\NeonCenterline-$Version.zip  (for users)"
 Write-Host "release\NeonCenterline.gms  sha256=$hash"
