@@ -16,7 +16,7 @@ Option Explicit
 
 Public Const NEON_VERSION As String = "1.0.0"
 ' адрес файла с описанием последней версии (см. update.json в репозитории)
-Public Const NEON_UPDATE_URL As String = "https://raw.githubusercontent.com/OWNER/NeonCenterline/main/update.json"
+Public Const NEON_UPDATE_URL As String = "https://raw.githubusercontent.com/ShiZa039/NeonCenterline/main/update.json"
 ' страница поддержки автора (пусто — пункт не показывается)
 Public Const NEON_DONATE_URL As String = ""
 Private Const REG_APP As String = "NeonCenterline"

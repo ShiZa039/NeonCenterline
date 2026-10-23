@@ -16,7 +16,7 @@
 
 ## Первая сборка `.gms`
 
-1. В `src/NeonUI.bas` заменить `OWNER` в `NEON_UPDATE_URL` на имя аккаунта GitHub (и в `update.json`), при желании вписать `NEON_DONATE_URL`.
+1. Адрес обновлений уже настроен на github.com/ShiZa039/NeonCenterline (`NEON_UPDATE_URL` в `src/NeonUI.bas`); при желании вписать `NEON_DONATE_URL`.
 2. CorelDRAW → Alt+F11 → GlobalMacros → File → Import → `build/NeonBuild.bas`.
 3. Запустить макрос `NeonBuildPlugin`, указать папку `src`.
 4. В редакторе VBA выделить проект `NeonCenterline` → Ctrl+S.
@@ -29,7 +29,7 @@
 1. Поднять `NEON_VERSION` в `src/NeonUI.bas`, дописать `CHANGELOG.md`.
 2. Собрать `.gms` (шаги 2–4 выше).
 3. PowerShell в корне репозитория:
-   `.\tools\make_release.ps1 -Version 1.1.0 -Owner <аккаунт> -NotesRu "..." -NotesEn "..."`
+   `.\tools\make_release.ps1 -Version 1.1.0 -Owner ShiZa039 -NotesRu "..." -NotesEn "..."`
    — копирует `.gms` в `release\`, считает SHA-256, пишет `update.json`.
 4. GitHub → Releases → новый релиз `v1.1.0`, приложить `release\NeonCenterline.gms` (и zip для новых пользователей).
 5. Закоммитить и запушить `update.json` в `main`. С этого момента плагины предложат обновление.

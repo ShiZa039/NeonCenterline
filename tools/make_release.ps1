@@ -8,7 +8,7 @@ param(
   [Parameter(Mandatory=$true)][string]$Version,
   [string]$NotesRu = "",
   [string]$NotesEn = "",
-  [string]$Owner = "OWNER",
+  [string]$Owner = "ShiZa039",
   [string]$Repo = "NeonCenterline"
 )
 $gms = Get-ChildItem "$env:APPDATA\Corel" -Recurse -Filter "NeonCenterline.gms" -ErrorAction SilentlyContinue |
