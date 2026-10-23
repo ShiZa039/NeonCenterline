@@ -8,27 +8,34 @@ Attribute VB_Name = "NeonAddon"
 Option Explicit
 
 Public Sub InstallToolbar()
-    Dim tmp As String, dst As String, cmd As String, sh As Object
+    Dim tmp As String, dst As String, cmd As String, sh As Object, stage As String
     On Error GoTo Fail
     tmp = CreateObject("WScript.Shell").ExpandEnvironmentStrings("%TEMP%") & "\NeonCenterline_addon"
     MakeDir tmp
+    stage = "AppUI.xslt"
     WriteUtf8 tmp & "\AppUI.xslt", AddonText_AppUI_xslt()
+    stage = "UserUI.xslt"
     WriteUtf8 tmp & "\UserUI.xslt", AddonText_UserUI_xslt()
+    stage = "Coreldrw.addon"
     WriteUtf8 tmp & "\Coreldrw.addon", AddonText_Coreldrw_addon()
+    stage = "config.xml"
     WriteUtf8 tmp & "\config.xml", AddonText_config_xml()
+    stage = "Resources.dll"
     WriteBase64 tmp & "\Resources.dll", AddonBin_Resources_dll()
+    stage = "AddonPath"
     dst = Application.AddonPath
     If Right$(dst, 1) <> "\" Then
         dst = dst & "\"
     End If
     dst = dst & "NeonCenterline"
     cmd = "/c mkdir """ & dst & """ 2>nul & xcopy /Y /I """ & tmp & "\*"" """ & dst & """"
+    stage = "copy"
     Set sh = CreateObject("Shell.Application")
     sh.ShellExecute "cmd.exe", cmd, "", "runas", 0
     MsgBox NeonLF("addon_done", dst), vbInformation, NeonL("app_title")
     Exit Sub
 Fail:
-    MsgBox NeonLF("err_fail", Err.Description), vbExclamation, NeonL("app_title")
+    MsgBox NeonLF("err_fail", Err.Description & " [" & stage & "]"), vbExclamation, NeonL("app_title")
 End Sub
 
 Private Sub MakeDir(ByVal p As String)
@@ -37,7 +44,14 @@ Private Sub MakeDir(ByVal p As String)
 End Sub
 
 Private Sub WriteUtf8(ByVal path As String, ByVal txt As String)
-    Dim st As Object
+    Dim st As Object, f As Integer
+    If Len(txt) = 0 Then
+        ' пустой файл-метка (Coreldrw.addon): ADODB.Stream не принимает пустую строку
+        f = FreeFile
+        Open path For Output As #f
+        Close #f
+        Exit Sub
+    End If
     Set st = CreateObject("ADODB.Stream")
     st.Type = 2
     st.Charset = "utf-8"
