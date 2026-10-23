@@ -7,7 +7,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A = os.path.join(ROOT, 'addon', 'NeonCenterline')
 G = lambda k: str(uuid.uuid5(uuid.NAMESPACE_URL, 'sabcore/neoncenterline/' + k))
 ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
-         ('script', 'neon_script', 102, 'Неон: Курсив'),
+         ('script', 'neon_script', 102, 'Неон: Курсив (бета)'),
          ('settings', 'neon_settings', 103, 'Неон: настройки'),
          ('update', 'neon_settings', 103, 'Неон: проверить обновления'),
          ('about', 'neon_settings', 103, 'Неон: о программе')]

@@ -95,32 +95,33 @@ Private Function AddonText_AppUI_xslt() As String
     s = s & "icon=""guid://c68c5d4f-d668-5fb4-937e-adb7430cae58""" & vbLf & "                dyn"
     s = s & "amicCommand=""NeonCenterline.NeonUI.RunScript""" & vbLf & "                dynamicC"
     s = s & "ategory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "                userCap"
-    s = s & AU("74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 41A 443 440 441 438 432 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 69 74 65 6D 44 61 74 61 20 67 75")
-    s = s & "id=""ce37ed0a-544f-575c-ac35-ef4d4aab66c9""" & vbLf & "                icon=""guid:/"
-    s = s & "/ce37ed0a-544f-575c-ac35-ef4d4aab66c9""" & vbLf & "                dynamicCommand="
-    s = s & """NeonCenterline.NeonUI.ShowSettings""" & vbLf & "                dynamicCategory="""
-    s = s & AU("32 63 63 32 34 61 33 65 2D 66 65 32 34 2D 34 37 30 38 2D 39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E")
-    s = s & AU("43D 3A 20 43D 430 441 442 440 43E 439 43A 438 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 69 74 65 6D 44 61 74 61 20 67 75 69 64 3D 22 31 30")
-    s = s & "25a06f-bc40-5284-9292-2c3cf477d6a2""" & vbLf & "                icon=""guid://1025a"
-    s = s & "06f-bc40-5284-9292-2c3cf477d6a2""" & vbLf & "                dynamicCommand=""NeonC"
-    s = s & "enterline.NeonUI.CheckUpdates""" & vbLf & "                dynamicCategory=""2cc24a"
-    s = s & AU("33 65 2D 66 65 32 34 2D 34 37 30 38 2D 39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43F 440 43E")
-    s = s & AU("432 435 440 438 442 44C 20 43E 431 43D 43E 432 43B 435 43D 438 44F 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 69 74 65 6D 44 61 74 61 20 67 75 69")
-    s = s & "d=""c5cc733d-ee55-5173-b5ef-17a954845da7""" & vbLf & "                icon=""guid://"
-    s = s & "c5cc733d-ee55-5173-b5ef-17a954845da7""" & vbLf & "                dynamicCommand="""
-    s = s & "NeonCenterline.NeonUI.ShowAbout""" & vbLf & "                dynamicCategory=""2cc2"
-    s = s & AU("34 61 33 65 2D 66 65 32 34 2D 34 37 30 38 2D 39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43E")
-    s = s & AU("20 43F 440 43E 433 440 430 43C 43C 435 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 3C 2F 78 73 6C 3A 63 6F 70 79 3E A 20 20 3C 2F 78 73 6C 3A 74 65")
-    s = s & "mplate>" & vbLf & "" & vbLf & "  <xsl:template match=""uiConfig/commandBars"">" & vbLf & "    <xsl:copy>" & vbLf & ""
-    s = s & "      <xsl:apply-templates select=""node()|@*""/>" & vbLf & "      <commandBarData "
-    s = s & "guid=""772fbf90-5bc1-5c4d-93a0-d1fced7f98b5""" & vbLf & "                      nonL"
-    s = s & "ocalizableName=""NeonCenterline""" & vbLf & "                      userCaption=""Neo"
-    s = s & "nCenterline""" & vbLf & "                      type=""toolbar"">" & vbLf & "        <toolbar>" & vbLf & " "
-    s = s & "         <item guidRef=""4e6d43bf-0b2d-500c-b154-b553b6087991""/>" & vbLf & "      "
-    s = s & "    <item guidRef=""c68c5d4f-d668-5fb4-937e-adb7430cae58""/>" & vbLf & "          <"
-    s = s & "item guidRef=""ce37ed0a-544f-575c-ac35-ef4d4aab66c9""/>" & vbLf & "        </toolba"
-    s = s & "r>" & vbLf & "      </commandBarData>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "</xsl:sty"
-    s = s & "lesheet>" & vbLf & ""
+    s = s & AU("74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 41A 443 440 441 438 432 20 28 431 435 442 430 29 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 41D 435 43E 43D 3A 20 41A 443 440 441 438 432 20 2014")
+    s = s & AU("20 432 20 440 430 437 440 430 431 43E 442 43A 435 2C 20 440 430 431 43E 442 430 435 442 20 43D 435 441 442 430 431 438 43B 44C 43D 43E 2E 20 41F 440 43E 432 435 440 44F 439 442 435 20 43B 438 43D 438 438 20 43F 435 440 435 434 20 440 435 437 43A 43E 439 2E 22 A 20")
+    s = s & "               enable=""true""/>" & vbLf & "      <itemData guid=""ce37ed0a-544f-575"
+    s = s & "c-ac35-ef4d4aab66c9""" & vbLf & "                icon=""guid://ce37ed0a-544f-575c-a"
+    s = s & "c35-ef4d4aab66c9""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonU"
+    s = s & "I.ShowSettings""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a"
+    s = s & AU("37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43D 430 441 442 440 43E 439 43A 438 22 A 20 20 20 20 20 20 20")
+    s = s & "         enable=""true""/>" & vbLf & "      <itemData guid=""1025a06f-bc40-5284-9292"
+    s = s & "-2c3cf477d6a2""" & vbLf & "                icon=""guid://1025a06f-bc40-5284-9292-2c"
+    s = s & "3cf477d6a2""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonUI.Chec"
+    s = s & "kUpdates""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c7"
+    s = s & AU("35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43F 440 43E 432 435 440 438 442 44C 20 43E 431 43D 43E 432 43B 435 43D 438 44F 22 A 20 20")
+    s = s & "              enable=""true""/>" & vbLf & "      <itemData guid=""c5cc733d-ee55-5173"
+    s = s & "-b5ef-17a954845da7""" & vbLf & "                icon=""guid://c5cc733d-ee55-5173-b5"
+    s = s & "ef-17a954845da7""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonUI"
+    s = s & ".ShowAbout""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a74-9"
+    s = s & AU("63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43E 20 43F 440 43E 433 440 430 43C 43C 435 22 A 20 20 20 20 20 20 20 20 20")
+    s = s & "       enable=""true""/>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "" & vbLf & "  <xsl:templ"
+    s = s & "ate match=""uiConfig/commandBars"">" & vbLf & "    <xsl:copy>" & vbLf & "      <xsl:apply-temp"
+    s = s & "lates select=""node()|@*""/>" & vbLf & "      <commandBarData guid=""772fbf90-5bc1-5"
+    s = s & "c4d-93a0-d1fced7f98b5""" & vbLf & "                      nonLocalizableName=""NeonC"
+    s = s & "enterline""" & vbLf & "                      userCaption=""NeonCenterline""" & vbLf & "        "
+    s = s & "              type=""toolbar"">" & vbLf & "        <toolbar>" & vbLf & "          <item guidRe"
+    s = s & "f=""4e6d43bf-0b2d-500c-b154-b553b6087991""/>" & vbLf & "          <item guidRef=""c6"
+    s = s & "8c5d4f-d668-5fb4-937e-adb7430cae58""/>" & vbLf & "          <item guidRef=""ce37ed0"
+    s = s & "a-544f-575c-ac35-ef4d4aab66c9""/>" & vbLf & "        </toolbar>" & vbLf & "      </commandBar"
+    s = s & "Data>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "</xsl:stylesheet>" & vbLf & ""
     AddonText_AppUI_xslt = s
 End Function
 
@@ -178,12 +179,12 @@ End Function
 Private Function AddonBinPart0() As String
     Dim s As String
     s = s & "TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA4fug4AtAnNIbgB"
-    s = s & "TM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAAZIYDANxX22oAAAAAAAAAAPAA"
-    s = s & "LiILAgIpAAAAAABiAAAAAAAAAAAAAAAQAAAAAACAAQAAAAAQAAAAAgAABAAAAAAAAAAFAAIAAAAAAACQAAAABAAAQuoAAAIAYAEA"
-    s = s & "ACAAAAAAAAAQAAAAAAAAAAAQAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAIAAAGAAAAAAwAAAAYAAAAAAAAAAAAAAAAAAA"
+    s = s & "TM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAAZIYDALxe22oAAAAAAAAAAPAA"
+    s = s & "LiILAgIpAAAAAABkAAAAAAAAAAAAAAAQAAAAAACAAQAAAAAQAAAAAgAABAAAAAAAAAAFAAIAAAAAAACgAAAABAAA0BgBAAIAYAEA"
+    s = s & "ACAAAAAAAAAQAAAAAAAAAAAQAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAIAAAGAAAAAAwAAAQYAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAudGV4dAAAACAAAAAAEAAAAAIAAAAEAAAAAAAAAAAAAAAAAAAgAABgLmlkYXRhAAAYAAAAACAAAAAC"
-    s = s & "AAAABgAAAAAAAAAAAAAAAAAAQAAAwC5yc3JjAAAAAGAAAAAwAAAAYAAAAAgAAAAAAAAAAAAAAAAAAEAAAEAAAAAAAAAAAAAAAAAA"
+    s = s & "AAAABgAAAAAAAAAAAAAAAAAAQAAAwC5yc3JjAAAAEGAAAAAwAAAAYgAAAAgAAAAAAAAAAAAAAAAAAEAAAEAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -213,7 +214,7 @@ Private Function AddonBinPart0() As String
     s = s & "AOABAIAAAAAAAAAAAAAAAAAAAAEAAAAAAJgCAAAAAAAAAAAAAAAAAAAAAAEAAAAAAKgCAAAAAAAAAAAAAAAAAAAAAAEAAAAAALgC"
     s = s & "AADIMgAAaAQAAAAAAAAAAAAAMDcAAIgJAAAAAAAAAAAAALhAAACoEAAAAAAAAAAAAABgUQAAaAQAAAAAAAAAAAAAyFUAAIgJAAAA"
     s = s & "AAAAAAAAAFBfAACoEAAAAAAAAAAAAAD4bwAAaAQAAAAAAAAAAAAAYHQAAIgJAAAAAAAAAAAAAOh9AACoEAAAAAAAAAAAAACQjgAA"
-    s = s & "3AAAAAAAAAAAAAAAcI8AADAAAAAAAAAAAAAAAKCPAAAwAAAAAAAAAAAAAADQjwAAMAAAAAAAAAAAAAAAKAAAABAAAAAgAAAAAQAg"
+    s = s & "6gAAAAAAAAAAAAAAgI8AADAAAAAAAAAAAAAAALCPAAAwAAAAAAAAAAAAAADgjwAAMAAAAAAAAAAAAAAAKAAAABAAAAAgAAAAAQAg"
     s = s & "AAAAAABABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFVVVUGKysriEdFSOA8Oz3OJiYmTwAAAAB/f38Cf39/AgAAAAAfHx8gLCsunzk3"
     s = s & "O8YoKChyqqqqAwAAAAEAAAAALy8vh4+Qj//u8+r/2t7W/1paW/klJSU3AAAAAQEBAQAYGBgfSEhJ3rq9t//f5tn/h4eH/y0tLYAA"
     s = s & "AAAAAAAADk9PT+b////9uHT1/ejC//nM0sf/JyUpmwAAAAEiIiIPNzY5y9ja1P/54//6y5T9/P////1PT07mAAAADgAAABRcXFvq"
@@ -537,10 +538,17 @@ Private Function AddonBinPart2() As String
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVVVVAwAAAAAAAAAAAAAAAAAAAABVVVUDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////w////4H///+A///DgcP/gQCB/4AAAf+AAAH/gAAB/8AAA//gAA"
     s = s & "f/wAAD/gAAAHwAAAA8AAAAHAAAADwAAAA+AAAAf+AAA//gAAf/wAAD/4AAAf+AAAH/gAAB/4GBgf/DgcP//4H///+B////w/////"
-    s = s & "////////DgBOAGUAbwBuAEMAZQBuAHQAZQByAGwAaQBuAGUACgAdBDUEPgQ9BDoAIAAcBD4EPQQ+BAwAHQQ1BD4EPQQ6ACAAGgRD"
-    s = s & "BEAEQQQ4BDIEDwAdBDUEPgQ9BDoAIAA9BDAEQQRCBEAEPgQ5BDoEOAQaAB0ENQQ+BD0EOgAgAD8EQAQ+BDIENQRABDgEQgRMBCAA"
-    s = s & "PgQxBD0EPgQyBDsENQQ9BDgETwQRAB0ENQQ+BD0EOgAgAD4EIAA/BEAEPgQzBEAEMAQ8BDwENQQAAAAAAAAAAAAAAAAAAAAAAAAA"
-    s = s & "AAAAAAAAAAEAAwAQEAAAAQAgAGgEAAABABgYAAABACAAiAkAAAIAICAAAAEAIACoEAAAAwAAAAEAAwAQEAAAAQAgAGgEAAAEABgY"
-    s = s & "AAABACAAiAkAAAUAICAAAAEAIACoEAAABgAAAAEAAwAQEAAAAQAgAGgEAAAHABgYAAABACAAiAkAAAgAICAAAAEAIACoEAAACQA="
+    s = s & "////////DgBOAGUAbwBuAEMAZQBuAHQAZQByAGwAaQBuAGUACgAdBDUEPgQ9BDoAIAAcBD4EPQQ+BBMAHQQ1BD4EPQQ6ACAAGgRD"
+    s = s & "BEAEQQQ4BDIEIAAoADEENQRCBDAEKQAPAB0ENQQ+BD0EOgAgAD0EMARBBEIEQAQ+BDkEOgQ4BBoAHQQ1BD4EPQQ6ACAAPwRABD4E"
+    s = s & "MgQ1BEAEOARCBEwEIAA+BDEEPQQ+BDIEOwQ1BD0EOARPBBEAHQQ1BD4EPQQ6ACAAPgQgAD8EQAQ+BDMEQAQwBDwEPAQ1BAAAAAAA"
+    s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAMAEBAAAAEAIABoBAAAAQAYGAAAAQAgAIgJAAACACAgAAABACAAqBAAAAMAAAABAAMA"
+    s = s & "EBAAAAEAIABoBAAABAAYGAAAAQAgAIgJAAAFACAgAAABACAAqBAAAAYAAAABAAMAEBAAAAEAIABoBAAABwAYGAAAAQAgAIgJAAAI"
+    s = s & "ACAgAAABACAAqBAAAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
     AddonBinPart2 = s
 End Function

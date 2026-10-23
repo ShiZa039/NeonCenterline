@@ -92,8 +92,13 @@ Private Sub RunMode(ByVal mode As Long)
 
     Select Case rc
     Case 0
-        MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")), _
-               vbInformation, NeonL("app_title")
+        If mode = 1 Then
+            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & _
+                   NeonL("script_beta"), vbExclamation, NeonL("app_title")
+        Else
+            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")), _
+                   vbInformation, NeonL("app_title")
+        End If
     Case 1
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("app_title")
     Case 2

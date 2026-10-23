@@ -5,6 +5,8 @@ STRINGS = {
     'app_title':     ('Неон: центральная линия', 'Neon: centerline'),
     'mode_mono':     ('Моно', 'Mono'),
     'mode_script':   ('Курсив', 'Script'),
+    'script_beta':   ('\n\n⚠ Режим «Курсив» в разработке и работает нестабильно: на стыках букв возможны изломы и лишние куски. Проверьте линии перед резкой.',
+                      '\n\n⚠ Script mode is a work in progress and not stable yet: kinks and stray pieces may appear at letter joints. Check the lines before cutting.'),
     'err_nodoc':     ('Нет открытого документа.', 'No document is open.'),
     'err_nosel':     ('Выделите контуры букв.', 'Select the letter outlines.'),
     'err_noclosed':  ('В выделении нет замкнутых контуров.', 'The selection contains no closed outlines.'),

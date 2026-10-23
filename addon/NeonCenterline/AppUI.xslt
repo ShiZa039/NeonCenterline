@@ -30,7 +30,8 @@
                 icon="guid://c68c5d4f-d668-5fb4-937e-adb7430cae58"
                 dynamicCommand="NeonCenterline.NeonUI.RunScript"
                 dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
-                userCaption="Неон: Курсив"
+                userCaption="Неон: Курсив (бета)"
+                userToolTip="Неон: Курсив — в разработке, работает нестабильно. Проверяйте линии перед резкой."
                 enable="true"/>
       <itemData guid="ce37ed0a-544f-575c-ac35-ef4d4aab66c9"
                 icon="guid://ce37ed0a-544f-575c-ac35-ef4d4aab66c9"
