@@ -531,6 +531,16 @@ Private Sub RunGroup()
                 Exit For
             End If
         Next it
+        If gRefEnd <> 0 Then
+            ' шрифт — образец: «ушки» над местом вливания дуги в стойку перо не рисует
+            For it = 1 To 2
+                chg = PruneEars(1.8)
+                DissolveJunctions
+                If Not chg Then
+                    Exit For
+                End If
+            Next it
+        End If
         MergeJunctions P_JMERGE
         MergeBridges P_MERGEANG
         DropSmall
@@ -1184,6 +1194,237 @@ Private Function PruneLeaves(ByVal kprune As Double) As Boolean
         End If
     Next i
 End Function
+
+' режим образца (как _prune_ears): висячая ветка короче kear*W, продолжающая одну из веток
+' развилки почти по прямой (выступ стойки за место вливания дуги), удаляется
+Private Function PruneEars(ByVal kear As Double) As Boolean
+    Dim lf As Long, prv As Long, cur As Long, nxt As Long, L As Double
+    Dim path() As Long, npth As Long, k As Long, leaves() As Long, nl As Long, i As Long, jw As Double
+    Dim dlx As Double, dly As Double, o As Long, m As Long, bdx As Double, bdy As Double
+    Dim fX As Double, fY As Double, nX As Double, nY As Double, mX As Double, mY As Double, rr As Double
+    Dim kq As Long, tmpL As Long, dmin As Double, dmax As Double, dd As Double
+    ReDim leaves(0 To NG): ReDim path(0 To NG)
+    For i = 0 To NG - 1
+        If GLive(i) And GDeg(i) = 1 Then
+            leaves(nl) = i: nl = nl + 1
+        End If
+    Next i
+    For i = 1 To nl - 1
+        tmpL = leaves(i): kq = i - 1
+        Do While kq >= 0
+            If Not LeafBefore(tmpL, leaves(kq)) Then
+                Exit Do
+            End If
+            leaves(kq + 1) = leaves(kq): kq = kq - 1
+        Loop
+        leaves(kq + 1) = tmpL
+    Next i
+    For i = 0 To nl - 1
+        lf = leaves(i)
+        If GLive(lf) And GDeg(lf) = 1 Then
+            npth = 0: path(npth) = lf: npth = npth + 1
+            L = 0: prv = -1: cur = lf
+            Do
+                nxt = OtherNb(cur, prv)
+                If nxt < 0 Then
+                    Exit Do
+                End If
+                L = L + Dist(GX(cur), GY(cur), GX(nxt), GY(nxt))
+                prv = cur: cur = nxt
+                path(npth) = cur: npth = npth + 1
+                If GDeg(cur) <> 2 Then
+                    Exit Do
+                End If
+            Loop
+            If GDeg(cur) = 3 And L < kear * gW And npth >= 2 Then
+                jw = JWidth(cur)
+                BranchDir cur, path(npth - 2), jw, dlx, dly, fX, fY, nX, nY, mX, mY, rr
+                dmin = BIG: dmax = -BIG
+                For m = 0 To GDeg(cur) - 1
+                    o = GAdj(m, cur)
+                    If o <> path(npth - 2) Then
+                        BranchDir cur, o, jw, bdx, bdy, fX, fY, nX, nY, mX, mY, rr
+                        dd = bdx * dlx + bdy * dly
+                        If dd < dmin Then
+                            dmin = dd
+                        End If
+                        If dd > dmax Then
+                            dmax = dd
+                        End If
+                    End If
+                Next m
+                ' соосна с одной веткой и не соосна с другой (иначе перекрёсток)
+                If dmin <= -0.75 And dmax >= -0.9 Then
+                    For k = 0 To npth - 2
+                        KillNode path(k)
+                    Next k
+                    PruneEars = True
+                End If
+            End If
+        End If
+    Next i
+End Function
+
+' точка ломаной на длине sv (как at() в _fillet)
+Private Sub FilAt(xs() As Double, ys() As Double, cum() As Double, ByVal n As Long, ByVal sv As Double, x As Double, y As Double)
+    Dim j As Long, L As Double, t As Double
+    If sv < 0 Then
+        sv = 0
+    End If
+    If sv > cum(n - 1) Then
+        sv = cum(n - 1)
+    End If
+    j = 0
+    Do While j < n
+        If cum(j) >= sv Then
+            Exit Do
+        End If
+        j = j + 1
+    Loop
+    If j < 1 Then
+        j = 1
+    End If
+    If j > n - 1 Then
+        j = n - 1
+    End If
+    L = cum(j) - cum(j - 1)
+    t = 0
+    If L >= 1E-12 Then
+        t = (sv - cum(j - 1)) / L
+    End If
+    x = xs(j - 1) + (xs(j) - xs(j - 1)) * t: y = ys(j - 1) + (ys(j) - ys(j - 1)) * t
+End Sub
+
+' режим образца (как _fillet): острые изломы оси (> 35 град по участкам ~0.6W) скругляются
+' квадратичной кривой, срез c = kr*W*tan(угол/2)
+Private Sub FilletPts(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double, ByVal kr As Double)
+    Dim n As Long, i As Long, cum() As Double, angA() As Double, done() As Boolean
+    Dim ax As Double, ay As Double, bx As Double, by As Double, d1x As Double, d1y As Double, d2x As Double, d2y As Double
+    Dim cs As Double, ang As Double, best As Double, bi As Long, ok As Boolean, u As Long
+    Dim used() As Long, nu As Long, c0() As Double, c1() As Double, ci_() As Long, nc As Long
+    Dim c As Double, lim As Double, ox() As Double, oy() As Double, no As Long, k As Long, q As Long, m As Long, t As Long
+    Dim uu As Double, tmpD As Double, tmpL As Long, cx As Double, cy As Double
+    n = np_
+    If n < 5 Then
+        Exit Sub
+    End If
+    ReDim cum(0 To n - 1): ReDim angA(0 To n - 1): ReDim done(0 To n - 1)
+    For i = 1 To n - 1
+        cum(i) = cum(i - 1) + Dist(xs(i - 1), ys(i - 1), xs(i), ys(i))
+    Next i
+    For i = 0 To n - 1
+        angA(i) = -1
+    Next i
+    For i = 1 To n - 2
+        If cum(i) >= 0.3 * w And cum(n - 1) - cum(i) >= 0.3 * w Then
+            FilAt xs, ys, cum, n, cum(i) - 0.6 * w, ax, ay
+            FilAt xs, ys, cum, n, cum(i) + 0.6 * w, bx, by
+            d1x = xs(i) - ax: d1y = ys(i) - ay: Norm d1x, d1y
+            d2x = bx - xs(i): d2y = by - ys(i): Norm d2x, d2y
+            cs = d1x * d2x + d1y * d2y
+            If cs > 1 Then
+                cs = 1
+            ElseIf cs < -1 Then
+                cs = -1
+            End If
+            angA(i) = ArcCos(cs)
+        End If
+    Next i
+    ReDim used(0 To n): ReDim c0(0 To n): ReDim c1(0 To n): ReDim ci_(0 To n)
+    Do
+        best = -1: bi = -1
+        For i = 1 To n - 2
+            If Not done(i) And angA(i) > best Then
+                best = angA(i): bi = i
+            End If
+        Next i
+        If bi < 0 Then
+            Exit Do
+        End If
+        If best < 35 * PI_ / 180 Then
+            Exit Do
+        End If
+        done(bi) = True
+        ok = True
+        For u = 0 To nu - 1
+            If Abs(cum(bi) - cum(used(u))) < 1.2 * w Then
+                ok = False
+            End If
+        Next u
+        If ok Then
+            used(nu) = bi: nu = nu + 1
+            ang = best
+            If ang > 150 * PI_ / 180 Then
+                ang = 150 * PI_ / 180
+            End If
+            c = kr * w * Tan(ang / 2)
+            lim = 0.45 * cum(bi)
+            If lim < c Then
+                c = lim
+            End If
+            lim = 0.45 * (cum(n - 1) - cum(bi))
+            If lim < c Then
+                c = lim
+            End If
+            If 1.2 * w < c Then
+                c = 1.2 * w
+            End If
+            c0(nc) = cum(bi) - c: c1(nc) = cum(bi) + c: ci_(nc) = bi: nc = nc + 1
+        End If
+    Loop
+    If nc = 0 Then
+        Exit Sub
+    End If
+    ' по возрастанию начала среза
+    For i = 1 To nc - 1
+        tmpD = c0(i): uu = c1(i): tmpL = ci_(i): k = i - 1
+        Do While k >= 0
+            If c0(k) <= tmpD Then
+                Exit Do
+            End If
+            c0(k + 1) = c0(k): c1(k + 1) = c1(k): ci_(k + 1) = ci_(k): k = k - 1
+        Loop
+        c0(k + 1) = tmpD: c1(k + 1) = uu: ci_(k + 1) = tmpL
+    Next i
+    ReDim ox(0 To n + 8): ReDim oy(0 To n + 8): no = 0
+    k = 0
+    For q = 0 To nc - 1
+        Do While k < n
+            If cum(k) >= c0(q) Then
+                Exit Do
+            End If
+            PushPt ox, oy, no, xs(k), ys(k): k = k + 1
+        Loop
+        FilAt xs, ys, cum, n, c0(q), ax, ay
+        FilAt xs, ys, cum, n, c1(q), bx, by
+        cx = xs(ci_(q)): cy = ys(ci_(q))
+        m = Int((c1(q) - c0(q)) / (0.08 * w))
+        If m < 4 Then
+            m = 4
+        End If
+        For t = 0 To m
+            uu = t / m
+            PushPt ox, oy, no, (1 - uu) ^ 2 * ax + 2 * uu * (1 - uu) * cx + uu * uu * bx, _
+                               (1 - uu) ^ 2 * ay + 2 * uu * (1 - uu) * cy + uu * uu * by
+        Next t
+        Do While k < n
+            If cum(k) > c1(q) Then
+                Exit Do
+            End If
+            k = k + 1
+        Loop
+    Next q
+    Do While k < n
+        PushPt ox, oy, no, xs(k), ys(k): k = k + 1
+    Loop
+    If no > UBound(xs) + 1 Then
+        ReDim xs(0 To no + 8): ReDim ys(0 To no + 8)
+    End If
+    For i = 0 To no - 1
+        xs(i) = ox(i): ys(i) = oy(i)
+    Next i
+    np_ = no
+End Sub
 
 ' стянуть путь (развилка ... развилка) в одну развилку посередине
 Private Sub ContractPath(path() As Long, ByVal npth As Long)
@@ -2372,6 +2613,8 @@ NextChain:
             np_ = dN(ci)
             If gRefEnd = 0 Then
                 Recenter xs, ys, np_, dCl(ci), gW
+            ElseIf Not dCl(ci) Then
+                FilletPts xs, ys, np_, gW, 0.5
             End If
             dN(ci) = np_
             Deglitch xs, ys, dN(ci), dCl(ci), gW
@@ -3518,6 +3761,16 @@ End Sub
 ' ---------------------------------------------------------------------
 Private Function Dist(ByVal x1 As Double, ByVal y1 As Double, ByVal x2 As Double, ByVal y2 As Double) As Double
     Dist = Sqr((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
+End Function
+
+Private Function ArcCos(ByVal c As Double) As Double
+    If c >= 1 Then
+        ArcCos = 0
+    ElseIf c <= -1 Then
+        ArcCos = PI_
+    Else
+        ArcCos = Atn(-c / Sqr(1 - c * c)) + PI_ / 2
+    End If
 End Function
 
 Private Function Norm(dx As Double, dy As Double) As Boolean
