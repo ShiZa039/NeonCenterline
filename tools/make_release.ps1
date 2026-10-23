@@ -17,9 +17,13 @@ if (-not $gms) { Write-Error "NeonCenterline.gms not found under $env:APPDATA\Co
 New-Item -ItemType Directory -Force -Path "release" | Out-Null
 Copy-Item $gms.FullName "release\NeonCenterline.gms" -Force
 $hash = (Get-FileHash "release\NeonCenterline.gms" -Algorithm SHA256).Hash.ToLower()
+# копия .gms в репозитории (dist\) — запасной адрес через CDN jsDelivr по тегу версии
+New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+Copy-Item "release\NeonCenterline.gms" "dist\NeonCenterline.gms" -Force
 $obj = [ordered]@{
   version  = $Version
   gms_url  = "https://github.com/$Owner/$Repo/releases/download/v$Version/NeonCenterline.gms"
+  gms_url2 = "https://cdn.jsdelivr.net/gh/$Owner/$Repo@v$Version/dist/NeonCenterline.gms"
   sha256   = $hash
   notes_ru = $NotesRu
   notes_en = $NotesEn
@@ -36,4 +40,4 @@ Copy-Item "font" "$pkg" -Recurse
 Compress-Archive -Path "$pkg\*" -DestinationPath "release\NeonCenterline-$Version.zip" -Force
 Write-Host "release\NeonCenterline-$Version.zip  (for users)"
 Write-Host "release\NeonCenterline.gms  sha256=$hash"
-Write-Host "update.json written. Upload NeonCenterline.gms AND NeonCenterline-$Version.zip to release v$Version, then commit update.json."
+Write-Host "update.json written. Commit update.json and dist\NeonCenterline.gms, create tag/release v$Version and upload NeonCenterline.gms + NeonCenterline-$Version.zip."

@@ -30,9 +30,9 @@
 2. Собрать `.gms` (шаги 2–4 выше).
 3. PowerShell в корне репозитория:
    `.\tools\make_release.ps1 -Version 1.1.0 -Owner ShiZa039 -NotesRu "..." -NotesEn "..."`
-   — копирует `.gms` в `release\`, считает SHA-256, пишет `update.json`.
+   — копирует `.gms` в `release\` и `dist\` (запасной адрес через CDN jsDelivr, если GitHub у пользователя недоступен), считает SHA-256, пишет `update.json`.
 4. GitHub → Releases → новый релиз `v1.1.0`, приложить `release\NeonCenterline.gms` (и zip для новых пользователей).
-5. Закоммитить и запушить `update.json` в `main`. С этого момента плагины предложат обновление.
+5. Закоммитить и запушить `update.json` и `dist\NeonCenterline.gms` в `main` (тег `v<версия>` создаётся вместе с релизом). С этого момента плагины предложат обновление.
 
 ## Build & release (English)
 

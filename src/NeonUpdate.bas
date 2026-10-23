@@ -16,6 +16,7 @@ Attribute VB_Name = "NeonUpdate"
 Option Explicit
 
 Private Const REG_APP As String = "NeonCenterline"
+Private gQuiet As Boolean                      ' тихая (ежедневная) проверка: без долгих попыток
 
 ' раз в сутки, если включено (по умолчанию — да); молча, если обновлений нет или нет сети
 Public Sub NeonDailyUpdateCheck()
@@ -35,7 +36,8 @@ End Sub
 ' quiet = True: не сообщать «обновлений нет» и ошибки сети
 Public Sub NeonUpdateCheck(ByVal quiet As Boolean)
     Dim js As String, ver As String, url As String, sha As String, notes As String, errText As String
-    Dim pending As String, target As String, tmpF As String
+    Dim pending As String, target As String, tmpF As String, url2 As String
+    gQuiet = quiet
 
     If InStr(NEON_UPDATE_URL, "/OWNER/") > 0 Or Len(NEON_UPDATE_URL) = 0 Then
         If Not quiet Then
@@ -64,10 +66,10 @@ Public Sub NeonUpdateCheck(ByVal quiet As Boolean)
         SaveSetting REG_APP, "Update", "PendingFile", ""
     End If
 
-    js = HttpGetText(NEON_UPDATE_URL & "?t=" & Format$(Now, "yyyymmddhhnnss"), errText)
+    js = HttpGetAny(Array(NEON_UPDATE_URL, NEON_UPDATE_URL2, NEON_UPDATE_URL3), errText)
     If Len(js) = 0 Then
         If Not quiet Then
-            MsgBox NeonLF("upd_err", errText), vbExclamation, NeonL("app_title")
+            MsgBox NeonLF("upd_err", errText) & NeonL("upd_net_hint"), vbExclamation, NeonL("app_title")
         End If
         Exit Sub
     End If
@@ -102,8 +104,15 @@ Public Sub NeonUpdateCheck(ByVal quiet As Boolean)
     End If
     tmpF = TempDir() & "\NeonCenterline_" & ver & ".gms"
     If Not HttpDownload(url, tmpF, errText) Then
-        MsgBox NeonLF("upd_err", errText), vbExclamation, NeonL("app_title")
-        Exit Sub
+        url2 = JsonStr(js, "gms_url2")
+        If Len(url2) = 0 Then
+            MsgBox NeonLF("upd_err", errText) & NeonL("upd_net_hint"), vbExclamation, NeonL("app_title")
+            Exit Sub
+        End If
+        If Not HttpDownload(url2, tmpF, errText) Then
+            MsgBox NeonLF("upd_err", errText) & NeonL("upd_net_hint"), vbExclamation, NeonL("app_title")
+            Exit Sub
+        End If
     End If
     If Not IsOleFile(tmpF) Then
         KillQuiet tmpF
@@ -129,40 +138,112 @@ End Sub
 ' ---------------------------------------------------------------------
 '  Сеть
 ' ---------------------------------------------------------------------
-Private Function HttpGetText(ByVal url As String, errText As String) As String
-    Dim h As Object
-    On Error GoTo Fail
+' первый ответивший адрес из списка (с меткой времени против кэша)
+Private Function HttpGetAny(urls As Variant, errText As String) As String
+    Dim i As Long, r As String, e As String
+    For i = LBound(urls) To UBound(urls)
+        If Len(urls(i)) > 0 Then
+            r = HttpGetText(urls(i) & "?t=" & Format$(Now, "yyyymmddhhnnss"), e)
+            If Len(r) > 0 Then
+                HttpGetAny = r
+                Exit Function
+            End If
+            If Len(errText) = 0 Then
+                errText = e
+            End If
+        End If
+    Next i
+End Function
+
+' запрос: сначала WinHTTP с короткими таймаутами (с прокси из настроек Windows, если он включён),
+' затем — только при ручной проверке — WinINet (MSXML2.XMLHTTP: всё как у браузера, но без таймаутов)
+Private Function HttpBody(ByVal url As String, ByVal timeoutMs As Long, body As Variant, errText As String) As Boolean
+    Dim h As Object, px As String
+    On Error Resume Next
     Set h = CreateObject("WinHttp.WinHttpRequest.5.1")
-    h.SetTimeouts 3000, 3000, 5000, 5000
+    If Not h Is Nothing Then
+        h.SetTimeouts timeoutMs, timeoutMs, timeoutMs, timeoutMs
+        px = SystemProxy()
+        If Len(px) > 0 Then
+            h.SetProxy 2, px
+        End If
+        Err.Clear
+        h.Open "GET", url, False
+        h.SetRequestHeader "User-Agent", "NeonCenterline/" & NEON_VERSION
+        h.Send
+        If Err.Number = 0 Then
+            If h.Status = 200 Then
+                body = h.ResponseBody
+                HttpBody = True
+                Exit Function
+            End If
+            errText = "HTTP " & h.Status
+        Else
+            errText = Err.Description
+        End If
+    End If
+    If gQuiet Then
+        Exit Function
+    End If
+    Err.Clear
+    Set h = CreateObject("MSXML2.XMLHTTP.6.0")
+    If h Is Nothing Then
+        Exit Function
+    End If
     h.Open "GET", url, False
-    h.SetRequestHeader "User-Agent", "NeonCenterline/" & NEON_VERSION
     h.Send
+    If Err.Number <> 0 Then
+        errText = Err.Description
+        Exit Function
+    End If
     If h.Status <> 200 Then
         errText = "HTTP " & h.Status
         Exit Function
     End If
-    HttpGetText = Utf8ToStr(h.ResponseBody)
-    Exit Function
-Fail:
-    errText = Err.Description
+    body = h.ResponseBody
+    HttpBody = True
+End Function
+
+' прокси из настроек Windows (Internet Settings), если включён; пусто — нет
+Private Function SystemProxy() As String
+    Dim sh As Object, en As Variant, sv As String
+    On Error Resume Next
+    Set sh = CreateObject("WScript.Shell")
+    en = sh.RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ProxyEnable")
+    If CLng(en) = 1 Then
+        sv = sh.RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ProxyServer")
+        If InStr(sv, "=") > 0 Then
+            ' вида http=host:port;https=host:port — берём https, иначе http
+            If InStr(sv, "https=") > 0 Then
+                sv = Mid$(sv, InStr(sv, "https=") + 6)
+            ElseIf InStr(sv, "http=") > 0 Then
+                sv = Mid$(sv, InStr(sv, "http=") + 5)
+            End If
+            If InStr(sv, ";") > 0 Then
+                sv = Left$(sv, InStr(sv, ";") - 1)
+            End If
+        End If
+        SystemProxy = sv
+    End If
+End Function
+
+Private Function HttpGetText(ByVal url As String, errText As String) As String
+    Dim body As Variant
+    If HttpBody(url, 5000, body, errText) Then
+        HttpGetText = Utf8ToStr(body)
+    End If
 End Function
 
 Private Function HttpDownload(ByVal url As String, ByVal path As String, errText As String) As Boolean
-    Dim h As Object, st As Object
-    On Error GoTo Fail
-    Set h = CreateObject("WinHttp.WinHttpRequest.5.1")
-    h.SetTimeouts 5000, 5000, 30000, 60000
-    h.Open "GET", url, False
-    h.SetRequestHeader "User-Agent", "NeonCenterline/" & NEON_VERSION
-    h.Send
-    If h.Status <> 200 Then
-        errText = "HTTP " & h.Status
+    Dim body As Variant, st As Object
+    If Not HttpBody(url, 60000, body, errText) Then
         Exit Function
     End If
+    On Error GoTo Fail
     Set st = CreateObject("ADODB.Stream")
     st.Type = 1
     st.Open
-    st.Write h.ResponseBody
+    st.Write body
     st.SaveToFile path, 2
     st.Close
     HttpDownload = True

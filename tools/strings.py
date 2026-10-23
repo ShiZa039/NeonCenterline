@@ -92,6 +92,8 @@ STRINGS = {
     'trim_end':      ('только с конца линии', 'only at the line end'),
     'chk_ask_run':   ('Показывать это окно при каждом запуске (выключить — в Настройках)', 'Show this window on every run (turn back on in Settings)'),
     'btn_run':       ('Построить', 'Build'),
+    'upd_net_hint':  ('\n\nВозможно, GitHub недоступен из вашей сети (у части провайдеров он блокируется). Можно скачать новую версию вручную: github.com/ShiZa039/NeonCenterline/releases',
+                      '\n\nGitHub may be unreachable from your network. You can download the new version manually: github.com/ShiZa039/NeonCenterline/releases'),
     'fallback_lang': ('Язык интерфейса: Да — русский, Нет — English, Отмена — авто.',
                       'Interface language: Yes — Russian, No — English, Cancel — auto.'),
     'fallback_upd':  ('Проверять обновления раз в день?', 'Check for updates once a day?'),
