@@ -3,7 +3,8 @@ Attribute VB_Name = "NeonTools"
 '  NeonCenterline — инструменты:
 '    MeasureLength   — длина выделенных контуров (для резки) и центральных линий (неон),
 '                      результат можно скопировать в буфер обмена;
-'    SelectNeonLines — выделить все центральные линии, созданные плагином, на странице.
+'    SelectNeonLines — выделить все центральные линии, созданные плагином, на странице;
+'    NeonLineIds / NeonLinesNew — какие линии появились после расчёта (для подгонки под рез).
 ' =====================================================================
 Option Explicit
 
@@ -11,7 +12,7 @@ Option Explicit
 Public Sub MeasureLength()
     Dim sr As ShapeRange, oldUnit As cdrUnit, msg As String
     Dim lenC As Double, nObjC As Long, nPathC As Long
-    Dim lenN As Double, nObjN As Long, nPathN As Long, nmax As Double
+    Dim lenN As Double, nObjN As Long, nPathN As Long, nmax As Double, neonCol As Collection, cs As String
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("app_title")
         Exit Sub
@@ -35,6 +36,12 @@ Public Sub MeasureLength()
             msg = msg & vbCrLf & vbCrLf
         End If
         msg = msg & NeonLF("len_neon", nPathN, FmtLen(lenN), FmtLen(nmax))
+        Set neonCol = New Collection
+        FindNeon sr, neonCol
+        cs = NeonCutSummary(neonCol)
+        If Len(cs) > 0 Then
+            msg = msg & vbCrLf & cs
+        End If
     End If
     If Len(msg) = 0 Then
         MsgBox NeonL("len_none"), vbExclamation, NeonL("app_title")
@@ -70,6 +77,42 @@ Public Sub SelectNeonLines()
     ActiveDocument.ClearSelection
     sr.AddToSelection
 End Sub
+
+' StaticID всех центральных линий на странице (ключи коллекции)
+Public Function NeonLineIds() As Collection
+    Dim col As Collection, ids As Collection, i As Long
+    Set ids = New Collection
+    Set col = New Collection
+    If Not ActivePage Is Nothing Then
+        FindNeon ActivePage.Shapes.All, col
+    End If
+    For i = 1 To col.Count
+        On Error Resume Next
+        ids.Add CStr(col(i).StaticID), CStr(col(i).StaticID)
+        On Error GoTo 0
+    Next i
+    Set NeonLineIds = ids
+End Function
+
+' линии, которых не было в before
+Public Function NeonLinesNew(before As Collection) As Collection
+    Dim col As Collection, res As Collection, i As Long, v As Variant, found As Boolean
+    Set res = New Collection
+    Set col = New Collection
+    FindNeon ActivePage.Shapes.All, col
+    For i = 1 To col.Count
+        found = False
+        On Error Resume Next
+        v = before(CStr(col(i).StaticID))
+        found = (Err.Number = 0)
+        Err.Clear
+        On Error GoTo 0
+        If Not found Then
+            res.Add col(i)
+        End If
+    Next i
+    Set NeonLinesNew = res
+End Function
 
 ' ---------------------------------------------------------------------
 Private Sub MeasureRange(sr As ShapeRange, lenC As Double, nObjC As Long, nPathC As Long, _

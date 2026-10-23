@@ -9,6 +9,7 @@ MODS = [('NeonLang', f'{P}/src/NeonLang.bas', 'x = NeonLangCode()'),
         ('NeonUpdate', f'{P}/src/NeonUpdate.bas', 'x = VerCmp("1.2", "1.10")'),
         ('NeonAddon', f'{P}/src/NeonAddon.bas', 'x = NeonAddonProbe()'),
         ('NeonTools', f'{P}/src/NeonTools.bas', 'x = NeonToolsProbe()'),
+        ('NeonCut', f'{P}/src/NeonCut.bas', 'x = NeonCutStep()'),
         ('NeonMono', f'{P}/src/NeonMono.bas', 'x = NeonMonoRunProbe()'),
         ('NeonScript', f'{P}/src/NeonScript.bas', 'x = NeonScriptRunProbe()'),
         ('NeonBuild', f'{P}/build/NeonBuild.bas', 'x = NeonBuildProbe()'),
@@ -35,7 +36,7 @@ End Sub
 '''
 FORM_STUB = '''
 Private Me As Object, lblTool As Object, cboTool As Object, lblHint As Object, chkAsk As Object, lblLang As Object
-Private cboLang As Object, chkUpd As Object, lblVer As Object, btnUpdate As Object, btnAbout As Object, btnOK As Object, btnCancel As Object
+Private cboLang As Object, lblType As Object, cboType As Object, lblCut As Object, cboCut As Object, chkFit As Object, lblTrim As Object, cboTrim As Object, chkUpd As Object, lblVer As Object, btnUpdate As Object, btnAbout As Object, btnOK As Object, btnCancel As Object
 '''
 names = []
 for name, path, call in MODS:

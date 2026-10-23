@@ -67,6 +67,7 @@ End Sub
 Private Sub RunMode(ByVal mode As Long)
     Dim tool As Double, s As String, rc As Long, nIn As Long, nOut As Long
     Dim tAll As Double, tCore As Double, errText As String, mname As String
+    Dim before As Collection, cutRep As String, newCol As Collection
 
     tool = NeonGetTool()
     If GetSetting(REG_APP, "UI", "AskTool", "1") = "1" Then
@@ -82,6 +83,10 @@ Private Sub RunMode(ByVal mode As Long)
         SaveSetting REG_APP, "Params", "Tool", FmtNum(tool)
     End If
 
+    Set before = Nothing
+    If NeonCutFitOn() And NeonCutStep() > 0 And Not ActiveDocument Is Nothing Then
+        Set before = NeonLineIds()
+    End If
     If mode = 0 Then
         mname = NeonL("mode_mono")
         rc = NeonMonoRun(tool, nIn, nOut, tAll, tCore, errText)
@@ -90,13 +95,30 @@ Private Sub RunMode(ByVal mode As Long)
         rc = NeonScriptRun(tool, nIn, nOut, tAll, tCore, errText)
     End If
 
+    ' подгонка новых линий под кратность реза
+    If rc = 0 And Not before Is Nothing Then
+        On Error Resume Next
+        Set newCol = NeonLinesNew(before)
+        If Not newCol Is Nothing Then
+            If newCol.Count > 0 Then
+                ActiveDocument.BeginCommandGroup NeonL("cut_title")
+                cutRep = vbCrLf & vbCrLf & NeonCutFitShapes(newCol)
+                ActiveDocument.EndCommandGroup
+            End If
+        End If
+        If Err.Number <> 0 Then
+            cutRep = vbCrLf & vbCrLf & NeonLF("err_fail", Err.Description)
+        End If
+        On Error GoTo 0
+    End If
+
     Select Case rc
     Case 0
         If mode = 1 Then
-            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & _
+            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & cutRep & _
                    NeonL("script_beta"), vbExclamation, NeonL("app_title")
         Else
-            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")), _
+            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & cutRep, _
                    vbInformation, NeonL("app_title")
         End If
     Case 1

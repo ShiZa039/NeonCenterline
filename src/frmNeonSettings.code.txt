@@ -14,6 +14,24 @@ Private Sub UserForm_Initialize()
     lblHint.Caption = NeonL("lbl_tool_hint")
     chkAsk.Caption = NeonL("chk_ask")
     chkAsk.Value = (GetSetting("NeonCenterline", "UI", "AskTool", "1") = "1")
+    lblType.Caption = NeonL("lbl_type")
+    cboType.Clear
+    cboType.AddItem NeonL("type_classic")
+    cboType.AddItem NeonL("type_neon2")
+    cboType.ListIndex = IIf(NeonCutType() = "neon2", 1, 0)
+    lblCut.Caption = NeonL("lbl_cut")
+    cboCut.Clear
+    cboCut.AddItem "10"
+    cboCut.AddItem "25"
+    cboCut.AddItem "50"
+    cboCut.Text = FmtNum(NeonCutStep())
+    chkFit.Caption = NeonL("chk_fit")
+    chkFit.Value = NeonCutFitOn()
+    lblTrim.Caption = NeonL("lbl_trim")
+    cboTrim.Clear
+    cboTrim.AddItem NeonL("trim_both")
+    cboTrim.AddItem NeonL("trim_end")
+    cboTrim.ListIndex = IIf(GetSetting("NeonCenterline", "Cut", "Trim", "both") = "end", 1, 0)
     lblLang.Caption = NeonL("lbl_lang")
     cboLang.Clear
     cboLang.AddItem NeonL("lang_auto")
@@ -37,13 +55,22 @@ Private Sub UserForm_Initialize()
 End Sub
 
 Private Sub btnOK_Click()
-    Dim t As Double, lg As String
+    Dim t As Double, c As Double, lg As String
     t = ParseNum(cboTool.Text)
     If t <= 0 Or t > 100 Then
         MsgBox NeonL("bad_tool"), vbExclamation, NeonL("settings_title")
         Exit Sub
     End If
+    c = ParseNum(cboCut.Text)
+    If c < 0 Or c > 1000 Then
+        MsgBox NeonL("bad_tool"), vbExclamation, NeonL("settings_title")
+        Exit Sub
+    End If
     SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
+    SaveSetting "NeonCenterline", "Cut", "Step", FmtNum(c)
+    SaveSetting "NeonCenterline", "Cut", "Type", IIf(cboType.ListIndex = 1, "neon2", "classic")
+    SaveSetting "NeonCenterline", "Cut", "Fit", IIf(chkFit.Value, "1", "0")
+    SaveSetting "NeonCenterline", "Cut", "Trim", IIf(cboTrim.ListIndex = 1, "end", "both")
     SaveSetting "NeonCenterline", "UI", "AskTool", IIf(chkAsk.Value, "1", "0")
     SaveSetting "NeonCenterline", "Update", "Daily", IIf(chkUpd.Value, "1", "0")
     Select Case cboLang.ListIndex

@@ -64,7 +64,7 @@ Public Sub NeonBuildPlugin()
         End If
     Next i
 
-    mods = Array("NeonLang.bas", "NeonUI.bas", "NeonUpdate.bas", "NeonAddon.bas", "NeonTools.bas", "NeonMono.bas", "NeonScript.bas")
+    mods = Array("NeonLang.bas", "NeonUI.bas", "NeonUpdate.bas", "NeonAddon.bas", "NeonTools.bas", "NeonCut.bas", "NeonMono.bas", "NeonScript.bas")
     For Each m In mods
         If Len(Dir$(src & "\" & m)) = 0 Then
             MsgBox "Missing file: " & src & "\" & m, vbExclamation, "NeonBuild"
@@ -121,23 +121,32 @@ Private Sub BuildSettingsForm(vp As Object, ByVal codeFile As String)
     Dim fc As Object, d As Object, code As String
     Set fc = vp.VBComponents.Add(3)
     fc.Name = "frmNeonSettings"
-    fc.Properties("Width") = 330
-    fc.Properties("Height") = 262
+    fc.Properties("Width") = 360
+    fc.Properties("Height") = 380
     fc.Properties("Caption") = "NeonCenterline"
     Set d = fc.Designer
-    AddCtl d, "Forms.Label.1", "lblTool", 12, 14, 150, 18
-    AddCtl d, "Forms.ComboBox.1", "cboTool", 170, 10, 70, 20
-    AddCtl d, "Forms.Label.1", "lblHint", 12, 36, 296, 26
-    AddCtl d, "Forms.CheckBox.1", "chkAsk", 12, 64, 296, 18
-    AddCtl d, "Forms.Label.1", "lblLang", 12, 94, 150, 18
-    AddCtl d, "Forms.ComboBox.1", "cboLang", 170, 90, 138, 20
+    AddCtl d, "Forms.Label.1", "lblTool", 12, 14, 170, 18
+    AddCtl d, "Forms.ComboBox.1", "cboTool", 190, 10, 70, 20
+    AddCtl d, "Forms.Label.1", "lblHint", 12, 36, 326, 26
+    AddCtl d, "Forms.CheckBox.1", "chkAsk", 12, 64, 326, 18
+    AddCtl d, "Forms.Label.1", "lblType", 12, 94, 170, 18
+    AddCtl d, "Forms.ComboBox.1", "cboType", 12, 112, 326, 20
+    AddCtl d, "Forms.Label.1", "lblCut", 12, 142, 170, 18
+    AddCtl d, "Forms.ComboBox.1", "cboCut", 190, 138, 70, 20
+    AddCtl d, "Forms.CheckBox.1", "chkFit", 12, 164, 326, 18
+    AddCtl d, "Forms.Label.1", "lblTrim", 30, 188, 100, 18
+    AddCtl d, "Forms.ComboBox.1", "cboTrim", 130, 184, 208, 20
+    AddCtl d, "Forms.Label.1", "lblLang", 12, 218, 170, 18
+    AddCtl d, "Forms.ComboBox.1", "cboLang", 190, 214, 148, 20
+    AddCtl d, "Forms.CheckBox.1", "chkUpd", 12, 242, 326, 18
+    AddCtl d, "Forms.Label.1", "lblVer", 12, 268, 326, 18
+    AddCtl d, "Forms.CommandButton.1", "btnUpdate", 12, 290, 160, 24
+    AddCtl d, "Forms.CommandButton.1", "btnAbout", 178, 290, 160, 24
+    AddCtl d, "Forms.CommandButton.1", "btnOK", 180, 324, 76, 24
+    AddCtl d, "Forms.CommandButton.1", "btnCancel", 262, 324, 76, 24
     d.Controls("cboLang").Style = 2
-    AddCtl d, "Forms.CheckBox.1", "chkUpd", 12, 120, 296, 18
-    AddCtl d, "Forms.Label.1", "lblVer", 12, 148, 296, 18
-    AddCtl d, "Forms.CommandButton.1", "btnUpdate", 12, 172, 146, 24
-    AddCtl d, "Forms.CommandButton.1", "btnAbout", 162, 172, 146, 24
-    AddCtl d, "Forms.CommandButton.1", "btnOK", 150, 206, 76, 24
-    AddCtl d, "Forms.CommandButton.1", "btnCancel", 232, 206, 76, 24
+    d.Controls("cboType").Style = 2
+    d.Controls("cboTrim").Style = 2
     d.Controls("lblHint").WordWrap = True
     d.Controls("btnOK").Default = True
     d.Controls("btnCancel").Cancel = True
