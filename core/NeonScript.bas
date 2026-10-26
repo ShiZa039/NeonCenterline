@@ -1655,19 +1655,28 @@ Private Sub ComputePairs(ByVal mergeAng As Double)
             d = GDeg(i): wi = GJW(i)
             For a = 0 To d - 1
                 nb(a) = GAdj(a, i)
-                BranchDir i, nb(a), wi, ddx(a), ddy(a), fxA(a), fyA(a), nxA(a), nyA(a), mxA(a), myA(a), rdA(a)
+                If gRefEnd <> 0 Then
+                    ' шрифт — образец: направления по дальним окнам (за зоной искажения стыка)
+                    BranchDirFar i, nb(a), wi, ddx(a), ddy(a), fxA(a), fyA(a), nxA(a), nyA(a), mxA(a), myA(a), rdA(a)
+                Else
+                    BranchDir i, nb(a), wi, ddx(a), ddy(a), fxA(a), fyA(a), nxA(a), nyA(a), mxA(a), myA(a), rdA(a)
+                End If
                 used(a) = False
             Next a
             nc = 0
-            For a = 0 To d - 2
-                For b = a + 1 To d - 1
-                    If Aimed(ddx(a), ddy(a), nxA(a), nyA(a), rdA(a), mxA(b), myA(b), rdA(b), wi) And _
-                       Aimed(ddx(b), ddy(b), nxA(b), nyA(b), rdA(b), mxA(a), myA(a), rdA(a), wi) Then
-                        cd(nc) = -(ddx(a) * ddx(b) + ddy(a) * ddy(b))
-                        ca(nc) = a: cb(nc) = b: nc = nc + 1
-                    End If
-                Next b
-            Next a
+            If gRefEnd <> 0 Then
+                PairByFit i, nb, d, wi, ddx, ddy, nxA, nyA, mxA, myA, rdA, cd, ca, cb, nc
+            Else
+                For a = 0 To d - 2
+                    For b = a + 1 To d - 1
+                        If Aimed(ddx(a), ddy(a), nxA(a), nyA(a), rdA(a), mxA(b), myA(b), rdA(b), wi) And _
+                           Aimed(ddx(b), ddy(b), nxA(b), nyA(b), rdA(b), mxA(a), myA(a), rdA(a), wi) Then
+                            cd(nc) = -(ddx(a) * ddx(b) + ddy(a) * ddy(b))
+                            ca(nc) = a: cb(nc) = b: nc = nc + 1
+                        End If
+                    Next b
+                Next a
+            End If
             For p = 1 To nc - 1
                 For q = p To 1 Step -1
                     If cd(q) > cd(q - 1) Then
@@ -1738,6 +1747,212 @@ Private Sub ComputePairs(ByVal mergeAng As Double)
             End If
         End If
     Next i
+End Sub
+
+' режим образца (как _branch_dir_far): направление ветки развилки i через соседа j по дальнему
+' окну 1.2..3.2w (прямая или дуга по узлам окна); у свободного конца без последних 0.7w;
+' короткая ветка — обычным BranchDir. near = mid = начало окна
+Private Sub BranchDirFar(ByVal i As Long, ByVal j As Long, ByVal w As Double, dx As Double, dy As Double, _
+                         farX As Double, farY As Double, nearX As Double, nearY As Double, _
+                         midX As Double, midY As Double, rad As Double)
+    Dim prv As Long, cur As Long, L As Double, px_() As Double, py_() As Double, pl() As Double, np_ As Long
+    Dim wx() As Double, wy() As Double, nw As Long, k As Long, hi As Double, leaf As Boolean
+    Dim chx As Double, chy As Double, cx As Double, cy As Double, rr As Double, rms As Double, mx As Double, my As Double
+    ReDim px_(0 To 63): ReDim py_(0 To 63): ReDim pl(0 To 63)
+    prv = i: cur = j: L = Dist(GX(i), GY(i), GX(j), GY(j))
+    px_(0) = GX(cur): py_(0) = GY(cur): pl(0) = L: np_ = 1
+    leaf = (GDeg(cur) = 1)
+    Do While L < 3.2 * w And GDeg(cur) = 2
+        k = OtherNb(cur, prv)
+        If k < 0 Then
+            Exit Do
+        End If
+        prv = cur: cur = k: L = L + Dist(GX(prv), GY(prv), GX(cur), GY(cur))
+        If np_ > UBound(px_) Then
+            ReDim Preserve px_(0 To 2 * np_): ReDim Preserve py_(0 To 2 * np_): ReDim Preserve pl(0 To 2 * np_)
+        End If
+        px_(np_) = GX(cur): py_(np_) = GY(cur): pl(np_) = L: np_ = np_ + 1
+        leaf = (GDeg(cur) = 1)
+    Loop
+    hi = 3.2 * w
+    If leaf Then
+        If pl(np_ - 1) - 0.7 * w < hi Then
+            hi = pl(np_ - 1) - 0.7 * w
+        End If
+    End If
+    ReDim wx(0 To np_): ReDim wy(0 To np_): nw = 0
+    For k = 0 To np_ - 1
+        If pl(k) >= 1.2 * w And pl(k) <= hi Then
+            wx(nw) = px_(k): wy(nw) = py_(k): nw = nw + 1
+        End If
+    Next k
+    If nw < 3 Then
+        BranchDir i, j, w, dx, dy, farX, farY, nearX, nearY, midX, midY, rad
+        Exit Sub
+    End If
+    If Dist(wx(0), wy(0), wx(nw - 1), wy(nw - 1)) < 0.6 * w Then
+        BranchDir i, j, w, dx, dy, farX, farY, nearX, nearY, midX, midY, rad
+        Exit Sub
+    End If
+    nearX = wx(0): nearY = wy(0): farX = wx(nw - 1): farY = wy(nw - 1): midX = nearX: midY = nearY: rad = 0
+    chx = farX - nearX: chy = farY - nearY: Norm chx, chy
+    If nw >= 4 Then
+        If FitCircle(wx, wy, nw, cx, cy, rr, rms) Then
+            If rr < 25 * w And rms < 0.03 * w And Bent(wx, wy, 0, nw - 1, rr, w) Then
+                dx = -(nearY - cy): dy = nearX - cx: Norm dx, dy
+                If dx * chx + dy * chy < 0 Then
+                    dx = -dx: dy = -dy
+                End If
+                rad = rr
+                Exit Sub
+            End If
+        End If
+    End If
+    FitLineLS wx, wy, nw, mx, my, dx, dy, rms
+    If dx * chx + dy * chy < 0 Then
+        dx = -dx: dy = -dy
+    End If
+End Sub
+
+' узлы ветки развилки i через соседа j на lo..hi w от развилки (как _far_pts): у другой
+' развилки без последних 0.8w, у свободного конца без последних 0.5w (короткой ветке окно
+' сдвигается к развилке, но не ближе 0.4w)
+Private Sub FarPts(ByVal i As Long, ByVal j As Long, ByVal w As Double, ox() As Double, oy() As Double, n As Long)
+    Dim prv As Long, cur As Long, L As Double, px_() As Double, py_() As Double, pl() As Double, np_ As Long
+    Dim k As Long, top As Double, lo As Double, leaf As Boolean
+    ReDim px_(0 To 63): ReDim py_(0 To 63): ReDim pl(0 To 63)
+    prv = i: cur = j: L = Dist(GX(i), GY(i), GX(j), GY(j))
+    px_(0) = GX(cur): py_(0) = GY(cur): pl(0) = L: np_ = 1
+    leaf = (GDeg(cur) = 1)
+    Do While L < 3 * w And GDeg(cur) = 2
+        k = OtherNb(cur, prv)
+        If k < 0 Then
+            Exit Do
+        End If
+        prv = cur: cur = k: L = L + Dist(GX(prv), GY(prv), GX(cur), GY(cur))
+        If np_ > UBound(px_) Then
+            ReDim Preserve px_(0 To 2 * np_): ReDim Preserve py_(0 To 2 * np_): ReDim Preserve pl(0 To 2 * np_)
+        End If
+        px_(np_) = GX(cur): py_(np_) = GY(cur): pl(np_) = L: np_ = np_ + 1
+        leaf = (GDeg(cur) = 1)
+    Loop
+    top = 3 * w: lo = 0.8
+    If (Not leaf) And GDeg(cur) >= 3 Then
+        If pl(np_ - 1) - 0.8 * w < top Then
+            top = pl(np_ - 1) - 0.8 * w
+        End If
+    End If
+    If leaf Then
+        If pl(np_ - 1) - 0.5 * w < top Then
+            top = pl(np_ - 1) - 0.5 * w
+        End If
+        If top / w - 0.6 < lo Then
+            lo = top / w - 0.6
+        End If
+        If lo < 0.4 Then
+            lo = 0.4
+        End If
+    End If
+    ReDim ox(0 To np_): ReDim oy(0 To np_): n = 0
+    For k = 0 To np_ - 1
+        If pl(k) >= lo * w And pl(k) <= top Then
+            ox(n) = px_(k): oy(n) = py_(k): n = n + 1
+        End If
+    Next k
+End Sub
+
+' режим образца (как _pair_by_fit): кандидаты сквозных пар, лучшие первыми (cd — score,
+' сравнивается с cos(mergeAng)). Пара сквозная, если дальние участки веток вместе ложатся
+' на одну прямую (score = 1 - rms/w) или дугу (0.9 - rms/w, излом < 50 град), или направления
+' (по дальним окнам либо обычные, у входа в развилку) почти встречные и ветки целятся друг
+' в друга (score = cos(излом) - 0.08)
+Private Sub PairByFit(ByVal i As Long, nb() As Long, ByVal d As Long, ByVal w As Double, _
+                      ddx() As Double, ddy() As Double, nxA() As Double, nyA() As Double, _
+                      mxA() As Double, myA() As Double, rdA() As Double, _
+                      cd() As Double, ca() As Long, cb() As Long, nc As Long)
+    Dim a As Long, b As Long, k As Long, q As Long, p As Long, tmpD As Double, tmpL As Long
+    Dim fpx() As Variant, fpy() As Variant, fpn() As Long, ax() As Double, ay() As Double, na As Long
+    Dim ndx(0 To MAXD - 1) As Double, ndy(0 To MAXD - 1) As Double, nfx(0 To MAXD - 1) As Double, nfy(0 To MAXD - 1) As Double
+    Dim nnx(0 To MAXD - 1) As Double, nny(0 To MAXD - 1) As Double, nmx(0 To MAXD - 1) As Double, nmy(0 To MAXD - 1) As Double
+    Dim nrd(0 To MAXD - 1) As Double
+    Dim px_() As Double, py_() As Double, n As Long, bxs As Variant, bys As Variant
+    Dim mx As Double, my As Double, ldx As Double, ldy As Double, rl As Double, score As Double, has As Boolean
+    Dim minA As Double, maxA As Double, minB As Double, maxB As Double, pr As Double, apart As Boolean
+    Dim cx As Double, cy As Double, rr As Double, rms As Double, dot As Double, dot2 As Double
+    ReDim fpx(0 To d - 1): ReDim fpy(0 To d - 1): ReDim fpn(0 To d - 1)
+    For a = 0 To d - 1
+        FarPts i, nb(a), w, ax, ay, na
+        fpx(a) = CopyD(ax, na): fpy(a) = CopyD(ay, na): fpn(a) = na
+        BranchDir i, nb(a), w, ndx(a), ndy(a), nfx(a), nfy(a), nnx(a), nny(a), nmx(a), nmy(a), nrd(a)
+    Next a
+    nc = 0
+    For a = 0 To d - 2
+        For b = a + 1 To d - 1
+            dot = -(ddx(a) * ddx(b) + ddy(a) * ddy(b))
+            has = False: score = -9
+            If fpn(a) >= 2 And fpn(b) >= 2 Then
+                n = fpn(a) + fpn(b)
+                ReDim px_(0 To n): ReDim py_(0 To n)
+                bxs = fpx(a): bys = fpy(a)
+                For k = 0 To fpn(a) - 1
+                    px_(k) = bxs(k): py_(k) = bys(k)
+                Next k
+                bxs = fpx(b): bys = fpy(b)
+                For k = 0 To fpn(b) - 1
+                    px_(fpn(a) + k) = bxs(k): py_(fpn(a) + k) = bys(k)
+                Next k
+                FitLineLS px_, py_, n, mx, my, ldx, ldy, rl
+                ' ветки по разные стороны (не шпилька): проекции участков не перекрываются
+                minA = BIG: maxA = -BIG: minB = BIG: maxB = -BIG
+                For k = 0 To n - 1
+                    pr = px_(k) * ldx + py_(k) * ldy
+                    If k < fpn(a) Then
+                        If pr < minA Then
+                            minA = pr
+                        End If
+                        If pr > maxA Then
+                            maxA = pr
+                        End If
+                    Else
+                        If pr < minB Then
+                            minB = pr
+                        End If
+                        If pr > maxB Then
+                            maxB = pr
+                        End If
+                    End If
+                Next k
+                apart = (maxA <= minB + 0.2 * w) Or (maxB <= minA + 0.2 * w)
+                If apart And rl <= 0.08 * w Then
+                    score = 1 - rl / w: has = True
+                ElseIf apart And n >= 5 And dot >= 0.64 Then
+                    If FitCircle(px_, py_, n, cx, cy, rr, rms) Then
+                        If rr > 1.5 * w And rms <= 0.06 * w Then
+                            score = 0.9 - rms / w: has = True
+                        End If
+                    End If
+                End If
+            End If
+            If Not has Then
+                If Aimed(ddx(a), ddy(a), nxA(a), nyA(a), rdA(a), mxA(b), myA(b), rdA(b), w) And _
+                   Aimed(ddx(b), ddy(b), nxA(b), nyA(b), rdA(b), mxA(a), myA(a), rdA(a), w) Then
+                    If dot - 0.08 > score Then
+                        score = dot - 0.08: has = True
+                    End If
+                End If
+                dot2 = -(ndx(a) * ndx(b) + ndy(a) * ndy(b))
+                If Aimed(ndx(a), ndy(a), nnx(a), nny(a), nrd(a), nmx(b), nmy(b), nrd(b), w) And _
+                   Aimed(ndx(b), ndy(b), nnx(b), nny(b), nrd(b), nmx(a), nmy(a), nrd(a), w) Then
+                    If dot2 - 0.08 > score Then
+                        score = dot2 - 0.08: has = True
+                    End If
+                End If
+            End If
+            If has Then
+                cd(nc) = score: ca(nc) = a: cb(nc) = b: nc = nc + 1
+            End If
+        Next b
+    Next a
 End Sub
 
 ' все направления разбиваются на соосные пары?
@@ -2264,6 +2479,14 @@ Private Sub ProcessChains()
                     If sz > JWOf(j, cref) Then
                         sz = JWOf(j, cref)
                     End If
+                    If gRefEnd <> 0 Then
+                        ' шрифт — образец: ось заглушки у острого стыка искажена на ~1.5 ширины
+                        ' (уходит в пазуху) — отбрасываем, штрих достраивается по своему ходу
+                        zj = 1.5 * JWOf(j, cref)
+                        If sz < zj Then
+                            sz = zj
+                        End If
+                    End If
                 End If
                 For dirn = -1 To 1 Step 2
                     lr = RunLen(ids, hard, n, closed, k, dirn)
@@ -2610,6 +2833,8 @@ NextChain:
     Dim bestD As Double, d As Double, dvx As Double, dvy As Double, v0 As Long, v1 As Long
     Dim svx As Variant, svy As Variant, svn As Long, e0x As Double, e0y As Double, okSt As Boolean
     Dim chIds As Variant, rwX() As Double, rwY() As Double, nrw As Long
+    Dim defC() As Long, defS() As Long, defJ() As Long, nDef As Long, p As Long, tmpD As Double, tmpL As Long
+    ReDim defC(0 To 15): ReDim defS(0 To 15): ReDim defJ(0 To 15): nDef = 0
     For ci = 0 To NCh - 1
         If dOk(ci) Then
             For side = 0 To 1
@@ -2691,6 +2916,19 @@ NextChain:
                             xs = svx: ys = svy: np_ = svn: npl = 0: okSt = False
                         End If
                     End If
+                    If (Not okSt) And gRefEnd <> 0 Then
+                        ' шрифт — образец: сквозной линии не достать — отложить, после всех заглушек
+                        ' попробовать упереться в любую другую линию у развилки (чаша «с» в диагональ «ж»)
+                        If nDef > UBound(defC) Then
+                            ReDim Preserve defC(0 To 2 * nDef): ReDim Preserve defS(0 To 2 * nDef): ReDim Preserve defJ(0 To 2 * nDef)
+                        End If
+                        defC(nDef) = ci: defS(nDef) = side: defJ(nDef) = j: nDef = nDef + 1
+                        If side = 0 Then
+                            ReversePts xs, ys, np_
+                        End If
+                        cX(ci) = CopyD(xs, np_): cY(ci) = CopyD(ys, np_): dN(ci) = np_
+                        GoTo NextSide
+                    End If
                     If Not okSt Then
                         ' запасной вариант: плавно к точке сквозной линии у центра развилки
                         chIds = ChI(ci): nrw = 0
@@ -2711,9 +2949,102 @@ NextChain:
                     End If
                     cX(ci) = CopyD(xs, np_): cY(ci) = CopyD(ys, np_): dN(ci) = np_
                 End If
+NextSide:
             Next side
         End If
     Next ci
+    ' отложенные заглушки: по кругу, пока кто-то цепляется (чаша «с» ждёт, когда диагональ
+    ' «ж» достроится до стойки, и упирается уже в неё); остальные — к центру развилки
+    Dim progress As Boolean, di As Long, c2 As Long, nearD As Double, bestC As Long, tried() As Boolean
+    Dim cands() As Long, cdist() As Double, ncd As Long, step2 As Long
+    Do While nDef > 0
+        progress = False
+        For di = 0 To nDef - 1
+            If defC(di) >= 0 Then
+                ci = defC(di): side = defS(di): j = defJ(di)
+                xs = cX(ci): ys = cY(ci): np_ = dN(ci)
+                If side = 0 Then
+                    ReversePts xs, ys, np_
+                End If
+                ' другие линии в 3jw от развилки, ближние первыми
+                ReDim cands(0 To NCh): ReDim cdist(0 To NCh): ncd = 0
+                For c2 = 0 To NCh - 1
+                    If c2 <> ci And dOk(c2) Then
+                        bx = cX(c2): by = cY(c2): nb = dN(c2)
+                        nearD = BIG
+                        step2 = nb \ 40
+                        If step2 < 1 Then
+                            step2 = 1
+                        End If
+                        For m = 0 To nb - 1 Step step2
+                            d = Dist(bx(m), by(m), GX(j), GY(j))
+                            If d < nearD Then
+                                nearD = d
+                            End If
+                        Next m
+                        If nearD <= 3 * GJW(j) Then
+                            cands(ncd) = c2: cdist(ncd) = nearD: ncd = ncd + 1
+                        End If
+                    End If
+                Next c2
+                For p = 1 To ncd - 1
+                    tmpD = cdist(p): tmpL = cands(p): q = p - 1
+                    Do While q >= 0
+                        If cdist(q) <= tmpD Then
+                            Exit Do
+                        End If
+                        cdist(q + 1) = cdist(q): cands(q + 1) = cands(q): q = q - 1
+                    Loop
+                    cdist(q + 1) = tmpD: cands(q + 1) = tmpL
+                Next p
+                okSt = False
+                For p = 0 To ncd - 1
+                    bx = cX(cands(p)): by = cY(cands(p)): nb = dN(cands(p))
+                    If RefStub(xs, ys, np_, dRef(ci), bx, by, nb, GJW(j), GX(j), GY(j)) Then
+                        okSt = True
+                        Exit For
+                    End If
+                Next p
+                If okSt Then
+                    If side = 0 Then
+                        ReversePts xs, ys, np_
+                    End If
+                    cX(ci) = CopyD(xs, np_): cY(ci) = CopyD(ys, np_): dN(ci) = np_
+                    defC(di) = -1: progress = True
+                End If
+            End If
+        Next di
+        If Not progress Then
+            Exit Do
+        End If
+    Loop
+    For di = 0 To nDef - 1
+        If defC(di) >= 0 Then
+            ci = defC(di): side = defS(di): j = defJ(di)
+            xs = cX(ci): ys = cY(ci): np_ = dN(ci)
+            If side = 0 Then
+                ReversePts xs, ys, np_
+            End If
+            chIds = ChI(ci): nrw = 0
+            ReDim rwX(0 To UBound(chIds) + 1): ReDim rwY(0 To UBound(chIds) + 1)
+            If side = 1 Then
+                For m = LBound(chIds) To UBound(chIds)
+                    PushPt rwX, rwY, nrw, GX(chIds(m)), GY(chIds(m))
+                Next m
+            Else
+                For m = UBound(chIds) To LBound(chIds) Step -1
+                    PushPt rwX, rwY, nrw, GX(chIds(m)), GY(chIds(m))
+                Next m
+            End If
+            npl = 0
+            ReDim plx(0 To 1): ReDim ply(0 To 1)
+            StubToJunction xs, ys, np_, dRef(ci), plx, ply, npl, 0, 0, GX(j), GY(j), GJW(j), rwX, rwY, nrw
+            If side = 0 Then
+                ReversePts xs, ys, np_
+            End If
+            cX(ci) = CopyD(xs, np_): cY(ci) = CopyD(ys, np_): dN(ci) = np_
+        End If
+    Next di
 
     ' аппроксимация (курсив: сетка контура для Recenter)
     CGMaxR = 0.5 * gTool + 1 * gW
@@ -4535,17 +4866,61 @@ Private Function PolyClosest(px_() As Double, py_() As Double, ByVal n As Long, 
 End Function
 
 
-' режим образца (как _ref_stub): заглушку продолжить прямой по направлению её конца (прямая по
-' последним 1w пути, отклонение < 0.02w) до пересечения со сквозной линией; только отход под
-' углом > 25 град к сквозной (Т-стык), касательное слияние — обычной заглушкой
+' точка продолжения заглушки: kind 0 — прямая, 1 — дуга (см. RefAt)
+' проверка попадания заглушки в линию poly (как accept в _ref_stub): точка внутри контура,
+' подход под углом > 12 град к poly, за poly выход из контура быстрее 1.2 jw
+Private Function RefAccept(px_() As Double, py_() As Double, ByVal npl As Long, ByVal hx As Double, ByVal hy As Double, _
+                           ByVal dvx As Double, ByVal dvy As Double, ByVal jwJ As Double, ByVal stp As Double) As Boolean
+    Dim i As Long, bi As Long, bd As Double, ex As Double, ey As Double, L2 As Double, t As Double, d As Double
+    Dim tdx As Double, tdy As Double, exl As Double
+    If Not InUnion(hx, hy, -1) Then
+        Exit Function
+    End If
+    bd = BIG: bi = 0
+    For i = 0 To npl - 2
+        ex = px_(i + 1) - px_(i): ey = py_(i + 1) - py_(i): L2 = ex * ex + ey * ey
+        t = 0
+        If L2 >= 1E-18 Then
+            t = ((hx - px_(i)) * ex + (hy - py_(i)) * ey) / L2
+            If t < 0 Then
+                t = 0
+            ElseIf t > 1 Then
+                t = 1
+            End If
+        End If
+        d = Dist(px_(i) + ex * t, py_(i) + ey * t, hx, hy)
+        If d < bd Then
+            bd = d: bi = i
+        End If
+    Next i
+    tdx = px_(bi + 1) - px_(bi): tdy = py_(bi + 1) - py_(bi): Norm tdx, tdy
+    If Abs(tdx * dvx + tdy * dvy) > Cos(12 * PI_ / 180) Then
+        Exit Function
+    End If
+    exl = 0
+    Do While exl <= 1.2 * jwJ
+        exl = exl + stp
+        If Not InUnion(hx + dvx * exl, hy + dvy * exl, -1) Then
+            Exit Do
+        End If
+    Loop
+    RefAccept = (exl <= 1.2 * jwJ)
+End Function
+
+' режим образца (как _ref_stub): заглушку продолжить по её собственному ходу (прямая или дуга
+' по последним ~1.5w) до пересечения с линией px_/py_; если продолжение не доходит — отрезком
+' прямо от конца к точке линии с наименьшим отклонением от касательной (< 35 град), целиком
+' внутри контура. Попадание — по RefAccept
 Private Function RefStub(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double, px_() As Double, py_() As Double, _
                          ByVal npl As Long, ByVal jwJ As Double, ByVal jx As Double, ByVal jy As Double) As Boolean
     Dim fx() As Double, fy() As Double, nf As Long, i As Long, s As Double
     Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double
-    Dim sx As Double, sy As Double, stp As Double, maxhit As Double, k As Long
+    Dim sx As Double, sy As Double, stp As Double, maxhit As Double, k As Long, kind As Long
     Dim pvx As Double, pvy As Double, x As Double, y As Double, hx As Double, hy As Double
-    Dim ax0() As Double, ay0() As Double, na As Long, bi As Long, bd As Double, d As Double
-    Dim tdx As Double, tdy As Double, ex As Double, ey As Double, L2 As Double, t As Double
+    Dim ax0() As Double, ay0() As Double, na As Long, p(0 To 4) As Double, hasAt As Boolean
+    Dim cx As Double, cy As Double, rr As Double, a0 As Double, ap As Double, dvx As Double, dvy As Double
+    Dim t As Long, L As Double, dev As Double, bestDev As Double, bestL As Double, bestX As Double, bestY As Double, hasBest As Boolean
+    Dim m As Long
     If npl < 2 Or np_ < 3 Then
         Exit Function
     End If
@@ -4554,68 +4929,95 @@ Private Function RefStub(xs() As Double, ys() As Double, np_ As Long, ByVal w As
     For i = np_ - 1 To 1 Step -1
         s = s + Dist(xs(i), ys(i), xs(i - 1), ys(i - 1))
         fx(nf) = xs(i - 1): fy(nf) = ys(i - 1): nf = nf + 1
-        If s >= w Then
+        If s >= 1.5 * w Then
             Exit For
         End If
     Next i
     If nf < 3 Or s < 0.4 * w Then
         Exit Function
     End If
+    sx = xs(np_ - 1): sy = ys(np_ - 1): stp = gH / 2
+    maxhit = Dist(sx, sy, jx, jy) + 1.5 * jwJ
     FitLineLS fx, fy, nf, mx, my, dx, dy, rms
-    If rms > 0.02 * w Then
-        Exit Function
-    End If
     If (fx(0) - fx(nf - 1)) * dx + (fy(0) - fy(nf - 1)) * dy < 0 Then
         dx = -dx: dy = -dy
     End If
-    sx = xs(np_ - 1): sy = ys(np_ - 1): stp = gH / 2
-    maxhit = Dist(sx, sy, jx, jy) + 1.5 * jwJ
-    pvx = sx: pvy = sy: na = 0
-    ReDim ax0(0 To 16): ReDim ay0(0 To 16)
-    k = 1
-    Do While k * stp <= maxhit
-        x = sx + dx * k * stp: y = sy + dy * k * stp
-        If SegHit(px_, py_, npl, pvx, pvy, x, y, hx, hy) Then
-            If Not InUnion(hx, hy, -1) Then
-                Exit Function
+    hasAt = False
+    If rms <= 0.03 * w Then
+        kind = 0: p(0) = sx: p(1) = sy: p(2) = dx: p(3) = dy: hasAt = True
+    ElseIf nf >= 4 Then
+        If FitCircle(fx, fy, nf, cx, cy, rr, rms) Then
+            If rr > 0.8 * w And rms <= 0.03 * w Then
+                a0 = Atan2(sy - cy, sx - cx)
+                ap = Atan2(fy(1) - cy, fx(1) - cx)
+                kind = 1: p(0) = cx: p(1) = cy: p(2) = rr: p(3) = a0
+                If Sin(a0 - ap) > 0 Then
+                    p(4) = 1
+                Else
+                    p(4) = -1
+                End If
+                ' касательная в начале — для проверки угла подхода
+                dx = -p(4) * Sin(a0): dy = p(4) * Cos(a0): Norm dx, dy
+                hasAt = True
             End If
-            ' направление сквозной в точке попадания — по ближайшему отрезку
-            bd = BIG: bi = 0
-            For i = 0 To npl - 2
-                ex = px_(i + 1) - px_(i): ey = py_(i + 1) - py_(i): L2 = ex * ex + ey * ey
-                t = 0
-                If L2 >= 1E-18 Then
-                    t = ((hx - px_(i)) * ex + (hy - py_(i)) * ey) / L2
-                    If t < 0 Then
-                        t = 0
-                    ElseIf t > 1 Then
-                        t = 1
+        End If
+    End If
+    If hasAt Then
+        pvx = sx: pvy = sy: na = 0
+        ReDim ax0(0 To 16): ReDim ay0(0 To 16)
+        k = 1
+        Do While k * stp <= maxhit
+            RefAt kind, p, k * stp, x, y
+            If SegHit(px_, py_, npl, pvx, pvy, x, y, hx, hy) Then
+                dvx = x - pvx: dvy = y - pvy: Norm dvx, dvy
+                If RefAccept(px_, py_, npl, hx, hy, dvx, dvy, jwJ, stp) Then
+                    For i = 0 To na - 1
+                        PushPt xs, ys, np_, ax0(i), ay0(i)
+                    Next i
+                    PushPt xs, ys, np_, hx, hy
+                    RefStub = True
+                    Exit Function
+                End If
+                Exit Do
+            End If
+            If Not InUnion(x, y, -1) Then
+                Exit Do
+            End If
+            PushPt ax0, ay0, na, x, y
+            pvx = x: pvy = y: k = k + 1
+        Loop
+    End If
+    ' отрезок прямо от конца к точке линии
+    hasBest = False: bestDev = -2: bestL = BIG
+    For t = 0 To npl - 1
+        L = Dist(sx, sy, px_(t), py_(t))
+        If L >= 0.3 * w And L <= maxhit Then
+            dvx = (px_(t) - sx) / L: dvy = (py_(t) - sy) / L
+            dev = dvx * dx + dvy * dy
+            If dev >= Cos(35 * PI_ / 180) Then
+                If (Not hasBest) Or dev > bestDev + 0.000000001 Or (Abs(dev - bestDev) <= 0.000000001 And L < bestL) Then
+                    If SegInside(sx, sy, px_(t), py_(t)) Then
+                        If RefAccept(px_, py_, npl, px_(t), py_(t), dvx, dvy, jwJ, stp) Then
+                            hasBest = True: bestDev = dev: bestL = L: bestX = px_(t): bestY = py_(t)
+                        End If
                     End If
                 End If
-                d = Dist(px_(i) + ex * t, py_(i) + ey * t, hx, hy)
-                If d < bd Then
-                    bd = d: bi = i
-                End If
-            Next i
-            tdx = px_(bi + 1) - px_(bi): tdy = py_(bi + 1) - py_(bi): Norm tdx, tdy
-            If Abs(tdx * dx + tdy * dy) > Cos(25 * PI_ / 180) Then
-                Exit Function
             End If
-            For i = 0 To na - 1
-                PushPt xs, ys, np_, ax0(i), ay0(i)
-            Next i
-            PushPt xs, ys, np_, hx, hy
-            RefStub = True
-            Exit Function
         End If
-        If Not InUnion(x, y, -1) Then
-            Exit Function
-        End If
-        PushPt ax0, ay0, na, x, y
-        pvx = x: pvy = y: k = k + 1
-    Loop
+    Next t
+    If Not hasBest Then
+        Exit Function
+    End If
+    m = Int(bestL / stp)
+    If m < 1 Then
+        m = 1
+    End If
+    For i = 1 To m - 1
+        PushPt xs, ys, np_, sx + (bestX - sx) * i / m, sy + (bestY - sy) * i / m
+    Next i
+    PushPt xs, ys, np_, bestX, bestY
+    RefStub = True
 End Function
-
 
 Private Function StubExtend(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double, px_() As Double, py_() As Double, _
                             ByVal npl As Long, ByVal v0 As Long, ByVal v1 As Long, ByVal jwJ As Double, ByVal jx As Double, _
