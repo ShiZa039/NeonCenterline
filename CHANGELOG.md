@@ -10,6 +10,7 @@ RU
 - «Курсив», режим образца: штрих, отходящий от стойки под углом (вторая и третья дуга «т», «м», «п»), идёт прямой диагональю до стойки, без S-изгиба.
 - «Курсив», режим образца: две близкие развилки, которые вместе образуют крест (перетяжка «з», петли), сливаются в одну — штрихи проходят крест насквозь, без «паука» из коротких кусков.
 - «Курсив», режим образца, острые стыки (ж, т, к): штрихи собираются по продолжению, а не по срединной оси у стыка. Сквозь развилку идёт пара веток, чьи дальние участки ложатся на одну прямую (или дугу), — стойка «ж» теперь сплошная сверху донизу, диагонали упираются в неё; отходящий штрих достраивается по своему ходу (прямой или дугой, при необходимости — отрезком к ближайшей линии), а если его сквозная линия недостижима — к любой соседней линии (чаша «с» в диагональ «ж»).
+- «Курсив», режим образца: штрих, подходящий к стойке сбоку по касательной (язычок «з», вход «т», выход «ь», чаша «а»), больше не рвёт стойку — стойка сплошная, штрих примыкает к ней у самого стыка (без «горба» выше стыка, «в»). Крутая гладкая дуга (шпилька «ы», «в») больше не ломается на два куска с зазубриной.
 - «Моно»: линия, идущая прямо через развилку, больше не даёт «волну», когда сразу за развилкой стоит фаска или излом (буква «к» в моноширинных шрифтах).
 - Кнопка «Поддержать автора» в окне «О программе» (ведёт на страницу DONATE.md).
 - README: ручная установка, совместимость, тестовый шрифт; в архиве — папка icons.
@@ -22,6 +23,7 @@ EN
 - Script, reference mode: a stroke leaving a stem at an angle (second and third arch of "т", "м", "п") runs as a straight diagonal into the stem, without an S-bend.
 - Script, reference mode: two nearby junctions that together form a crossing (waist of "з", loops) are merged into one, so strokes run straight through instead of a "spider" of short pieces.
 - Script, reference mode, acute joins (ж, т, к): strokes are assembled by continuation rather than by the medial axis at the join. The pass-through pair at a junction is the one whose far sections lie on a single line (or arc) — the stem of "ж" is now continuous top to bottom with the diagonals ending on it; a departing stroke is extended along its own course (line or arc, or a straight segment to the nearest line), and if its pass-through line is out of reach, to any neighbouring line (the bowl of "с" into the diagonal of "ж").
+- Script, reference mode: a stroke joining a stem tangentially from the side (the tongue of "з", the entry of "т", the exit of "ь", the bowl of "а") no longer breaks the stem — the stem stays continuous and the stroke lands right at the join (no "hump" above it, "в"). A tight smooth arc (the hairpin of "ы", "в") is no longer split into two pieces with a notch.
 - Mono: a line running straight through a junction no longer gets a "wave" when a chamfer or bend follows right after the junction (letter "к" in monoline fonts).
 - "Support the author" in the About window (opens DONATE.md).
 - README: manual installation, compatibility, test font; icons folder in the archive.
