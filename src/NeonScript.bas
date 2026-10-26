@@ -2572,7 +2572,15 @@ NextChain:
                     End If
                     svx = CopyD(xs, np_): svy = CopyD(ys, np_): svn = np_
                     e0x = xs(np_ - 1): e0y = ys(np_ - 1)
-                    okSt = StubExtend(xs, ys, np_, dRef(ci), plx, ply, npl, v0, v1, GJW(j), GX(j), GY(j), nmx)
+                    okSt = False
+                    If gRefEnd <> 0 Then
+                        ' шрифт — образец: штрих, отходящий от стойки, — прямой по своему ходу
+                        ' до сквозной линии (диагональ к дуге «т», «м»), без S-изгиба
+                        okSt = RefStub(xs, ys, np_, dRef(ci), plx, ply, npl, GJW(j), GX(j), GY(j))
+                    End If
+                    If Not okSt Then
+                        okSt = StubExtend(xs, ys, np_, dRef(ci), plx, ply, npl, v0, v1, GJW(j), GX(j), GY(j), nmx)
+                    End If
                     If okSt And thru(j) = ci Then
                         If Dist(xs(np_ - 1), ys(np_ - 1), e0x, e0y) < 0.05 * dRef(ci) Then
                             ' сквозная — эта же цепочка: «попадание» в собственный конец (з) не продление;
@@ -4421,6 +4429,88 @@ Private Function PolyClosest(px_() As Double, py_() As Double, ByVal n As Long, 
             PolyClosest = d: cx = qx: cy = qy
         End If
     Next i
+End Function
+
+
+' режим образца (как _ref_stub): заглушку продолжить прямой по направлению её конца (прямая по
+' последним 1w пути, отклонение < 0.02w) до пересечения со сквозной линией; только отход под
+' углом > 25 град к сквозной (Т-стык), касательное слияние — обычной заглушкой
+Private Function RefStub(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double, px_() As Double, py_() As Double, _
+                         ByVal npl As Long, ByVal jwJ As Double, ByVal jx As Double, ByVal jy As Double) As Boolean
+    Dim fx() As Double, fy() As Double, nf As Long, i As Long, s As Double
+    Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double
+    Dim sx As Double, sy As Double, stp As Double, maxhit As Double, k As Long
+    Dim pvx As Double, pvy As Double, x As Double, y As Double, hx As Double, hy As Double
+    Dim ax0() As Double, ay0() As Double, na As Long, bi As Long, bd As Double, d As Double
+    Dim tdx As Double, tdy As Double, ex As Double, ey As Double, L2 As Double, t As Double
+    If npl < 2 Or np_ < 3 Then
+        Exit Function
+    End If
+    ReDim fx(0 To np_): ReDim fy(0 To np_)
+    fx(0) = xs(np_ - 1): fy(0) = ys(np_ - 1): nf = 1: s = 0
+    For i = np_ - 1 To 1 Step -1
+        s = s + Dist(xs(i), ys(i), xs(i - 1), ys(i - 1))
+        fx(nf) = xs(i - 1): fy(nf) = ys(i - 1): nf = nf + 1
+        If s >= w Then
+            Exit For
+        End If
+    Next i
+    If nf < 3 Or s < 0.4 * w Then
+        Exit Function
+    End If
+    FitLineLS fx, fy, nf, mx, my, dx, dy, rms
+    If rms > 0.02 * w Then
+        Exit Function
+    End If
+    If (fx(0) - fx(nf - 1)) * dx + (fy(0) - fy(nf - 1)) * dy < 0 Then
+        dx = -dx: dy = -dy
+    End If
+    sx = xs(np_ - 1): sy = ys(np_ - 1): stp = gH / 2
+    maxhit = Dist(sx, sy, jx, jy) + 1.5 * jwJ
+    pvx = sx: pvy = sy: na = 0
+    ReDim ax0(0 To 16): ReDim ay0(0 To 16)
+    k = 1
+    Do While k * stp <= maxhit
+        x = sx + dx * k * stp: y = sy + dy * k * stp
+        If SegHit(px_, py_, npl, pvx, pvy, x, y, hx, hy) Then
+            If Not InUnion(hx, hy, -1) Then
+                Exit Function
+            End If
+            ' направление сквозной в точке попадания — по ближайшему отрезку
+            bd = BIG: bi = 0
+            For i = 0 To npl - 2
+                ex = px_(i + 1) - px_(i): ey = py_(i + 1) - py_(i): L2 = ex * ex + ey * ey
+                t = 0
+                If L2 >= 1E-18 Then
+                    t = ((hx - px_(i)) * ex + (hy - py_(i)) * ey) / L2
+                    If t < 0 Then
+                        t = 0
+                    ElseIf t > 1 Then
+                        t = 1
+                    End If
+                End If
+                d = Dist(px_(i) + ex * t, py_(i) + ey * t, hx, hy)
+                If d < bd Then
+                    bd = d: bi = i
+                End If
+            Next i
+            tdx = px_(bi + 1) - px_(bi): tdy = py_(bi + 1) - py_(bi): Norm tdx, tdy
+            If Abs(tdx * dx + tdy * dy) > Cos(25 * PI_ / 180) Then
+                Exit Function
+            End If
+            For i = 0 To na - 1
+                PushPt xs, ys, np_, ax0(i), ay0(i)
+            Next i
+            PushPt xs, ys, np_, hx, hy
+            RefStub = True
+            Exit Function
+        End If
+        If Not InUnion(x, y, -1) Then
+            Exit Function
+        End If
+        PushPt ax0, ay0, na, x, y
+        pvx = x: pvy = y: k = k + 1
+    Loop
 End Function
 
 

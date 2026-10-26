@@ -7,6 +7,7 @@ RU
 - «Курсив»: режим «шрифт как образец» (по умолчанию) — линия по ходу пера без учёта фрезы, конец у кончика штриха или с отступом полширины; выбор в окне перед запуском и в Настройках.
 - «Курсив», конец «до кончика штриха»: концы больше не уходят в угол среза и не загибаются крючком — линия продолжает ход штриха (прямой или дугой у завитков и шариков) до края, высота букв как в оригинале.
 - «Курсив», режим образца: перо не рисует «ушки» (короткий выступ стойки над местом, где в неё вливается дуга) — дуга поворачивает прямо в стойку; острые изломы линии скругляются, как поворот пера.
+- «Курсив», режим образца: штрих, отходящий от стойки под углом (вторая и третья дуга «т», «м», «п»), идёт прямой диагональю до стойки, без S-изгиба.
 - «Моно»: линия, идущая прямо через развилку, больше не даёт «волну», когда сразу за развилкой стоит фаска или излом (буква «к» в моноширинных шрифтах).
 - Кнопка «Поддержать автора» в окне «О программе» (ведёт на страницу DONATE.md).
 - README: ручная установка, совместимость, тестовый шрифт; в архиве — папка icons.
@@ -16,6 +17,7 @@ EN
 - Script: "font as a reference" mode (default) — a pen-path line ignoring the cutter, ending at the stroke tip or inset by half the stroke width; choice in the run window and Settings.
 - Script, "end at the stroke tip": line ends no longer veer into the corner of a cut terminal or hook back — the line follows the stroke (straight, or an arc for curls and ball terminals) to the edge, so letter height matches the original.
 - Script, reference mode: the pen no longer draws "ears" (the short stub of a stem above where an arch flows into it) — the arch turns straight into the stem; sharp bends of the line are rounded like a pen turn.
+- Script, reference mode: a stroke leaving a stem at an angle (second and third arch of "т", "м", "п") runs as a straight diagonal into the stem, without an S-bend.
 - Mono: a line running straight through a junction no longer gets a "wave" when a chamfer or bend follows right after the junction (letter "к" in monoline fonts).
 - "Support the author" in the About window (opens DONATE.md).
 - README: manual installation, compatibility, test font; icons folder in the archive.
