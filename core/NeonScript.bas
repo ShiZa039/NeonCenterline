@@ -542,6 +542,11 @@ Private Sub RunGroup()
             Next it
         End If
         MergeJunctions P_JMERGE
+        If gRefEnd <> 0 Then
+            ' шрифт — образец: две близкие развилки, вместе образующие крест (перетяжка «з»),
+            ' сливаются в одну — штрихи проходят крест насквозь
+            MergeX 1#, 50#
+        End If
         MergeBridges P_MERGEANG
         DropSmall
         BuildChains P_MERGEANG
@@ -1495,6 +1500,104 @@ Private Sub MergeJunctions(ByVal kmerge As Double)
                 End If
             End If
         Next j
+        guard = guard + 1
+    Loop While changed And guard < 2000
+End Sub
+
+' режим образца (как _merge_x): две тройные развилки на перемычке короче kmerge*jw, у которых
+' внешние ветки попарно (по одной от каждой) идут почти по прямой (излом < ang) и пары
+' пересекаются, стягиваются в одну развилку-крест
+Private Sub MergeX(ByVal kmerge As Double, ByVal ang As Double)
+    Dim changed As Boolean, guard As Long, js() As Long, nj As Long, i As Long, q As Long, tmpL As Long
+    Dim j As Long, nb(0 To 2) As Long, nn As Long, a As Long, k As Long, prv As Long, cur As Long, L As Double
+    Dim path() As Long, npth As Long, wj As Double, wc As Double, aa(0 To 1) As Long, bb(0 To 1) As Long, na As Long, nbb As Long
+    Dim adx(0 To 1) As Double, ady(0 To 1) As Double, afx(0 To 1) As Double, afy(0 To 1) As Double
+    Dim bdx(0 To 1) As Double, bdy(0 To 1) As Double, bfx(0 To 1) As Double, bfy(0 To 1) As Double
+    Dim t1 As Double, t2 As Double, t3 As Double, t4 As Double, t5 As Double, lim As Double, ok As Boolean, sw As Long
+    Dim b0 As Long, b1 As Long
+    lim = Cos(ang * PI_ / 180)
+    Do
+        changed = False
+        ReDim path(0 To NG + 16): ReDim js(0 To NG)
+        nj = 0
+        For i = 0 To NG - 1
+            If GLive(i) And GDeg(i) = 3 Then
+                js(nj) = i: nj = nj + 1
+            End If
+        Next i
+        For i = 1 To nj - 1
+            tmpL = js(i): q = i - 1
+            Do While q >= 0
+                If Not LeafBefore(tmpL, js(q)) Then
+                    Exit Do
+                End If
+                js(q + 1) = js(q): q = q - 1
+            Loop
+            js(q + 1) = tmpL
+        Next i
+        For i = 0 To nj - 1
+            j = js(i)
+            If GLive(j) And GDeg(j) = 3 Then
+                wj = JWidth(j)
+                For k = 0 To 2
+                    nb(k) = GAdj(k, j)
+                Next k
+                For k = 1 To 2
+                    tmpL = nb(k): q = k - 1
+                    Do While q >= 0
+                        If Not LeafBefore(tmpL, nb(q)) Then
+                            Exit Do
+                        End If
+                        nb(q + 1) = nb(q): q = q - 1
+                    Loop
+                    nb(q + 1) = tmpL
+                Next k
+                For nn = 0 To 2
+                    WalkToJ j, nb(nn), kmerge * wj, path, npth, prv, cur, L
+                    If cur <> j And L <= kmerge * wj Then
+                        If GDeg(cur) = 3 Then
+                            wc = JWidth(cur)
+                            na = 0
+                            For k = 0 To 2
+                                If GAdj(k, j) <> nb(nn) And na < 2 Then
+                                    aa(na) = GAdj(k, j): na = na + 1
+                                End If
+                            Next k
+                            nbb = 0
+                            For k = 0 To 2
+                                If GAdj(k, cur) <> prv And nbb < 2 Then
+                                    bb(nbb) = GAdj(k, cur): nbb = nbb + 1
+                                End If
+                            Next k
+                            If na = 2 And nbb = 2 Then
+                                For k = 0 To 1
+                                    BranchDir j, aa(k), wj, adx(k), ady(k), afx(k), afy(k), t1, t2, t3, t4, t5
+                                    BranchDir cur, bb(k), wc, bdx(k), bdy(k), bfx(k), bfy(k), t1, t2, t3, t4, t5
+                                Next k
+                                ok = False
+                                For sw = 0 To 1
+                                    b0 = sw: b1 = 1 - sw
+                                    If -(adx(0) * bdx(b0) + ady(0) * bdy(b0)) >= lim And -(adx(1) * bdx(b1) + ady(1) * bdy(b1)) >= lim Then
+                                        If SegsCross(afx(0), afy(0), bfx(b0), bfy(b0), afx(1), afy(1), bfx(b1), bfy(b1)) Then
+                                            ok = True
+                                        End If
+                                    End If
+                                Next sw
+                                If ok Then
+                                    path(npth) = cur: npth = npth + 1
+                                    ContractPath path, npth
+                                    changed = True
+                                    Exit For
+                                End If
+                            End If
+                        End If
+                    End If
+                Next nn
+                If changed Then
+                    Exit For
+                End If
+            End If
+        Next i
         guard = guard + 1
     Loop While changed And guard < 2000
 End Sub
