@@ -2020,15 +2020,53 @@ Private Sub MergeBridges(ByVal mergeAng As Double)
     Dim L As Double, path() As Long, npth As Long, guard As Long, maxl As Double
     Dim ddx(0 To 2 * MAXD) As Double, ddy(0 To 2 * MAXD) As Double, fxA(0 To 2 * MAXD) As Double, fyA(0 To 2 * MAXD) As Double
     Dim nd As Long, k As Long, o As Long, t1 As Double, t2 As Double, t3 As Double, t4 As Double, t5 As Double, t6 As Double, t7 As Double
+    Dim js() As Long, nj As Long, jj As Long, i As Long, q As Long, tmpL As Long, nbs(0 To MAXD - 1) As Long, nbn As Long
     Do
         changed = False
         ClearPairs
-        ReDim path(0 To NG + 16)
-        For j = 0 To NG - 1
+        ReDim path(0 To NG + 16): ReDim js(0 To NG)
+        ' порядок перебора развилок (и веток): в режиме образца — по координатам, как в
+        ' прототипе (от порядка зависит, какая из соседних перемычек стянется, «ж»)
+        nj = 0
+        For i = 0 To NG - 1
+            If InG(i) And GDeg(i) >= 3 Then
+                js(nj) = i: nj = nj + 1
+            End If
+        Next i
+        If gRefEnd <> 0 Then
+            For i = 1 To nj - 1
+                tmpL = js(i): q = i - 1
+                Do While q >= 0
+                    If Not LeafBefore(tmpL, js(q)) Then
+                        Exit Do
+                    End If
+                    js(q + 1) = js(q): q = q - 1
+                Loop
+                js(q + 1) = tmpL
+            Next i
+        End If
+        For jj = 0 To nj - 1
+            j = js(jj)
             If InG(j) And GDeg(j) >= 3 Then
                 maxl = 2.5 * GJW(j)
-                For kk = 0 To GDeg(j) - 1
-                    n0 = GAdj(kk, j)
+                nbn = GDeg(j)
+                For kk = 0 To nbn - 1
+                    nbs(kk) = GAdj(kk, j)
+                Next kk
+                If gRefEnd <> 0 Then
+                    For i = 1 To nbn - 1
+                        tmpL = nbs(i): q = i - 1
+                        Do While q >= 0
+                            If Not LeafBefore(tmpL, nbs(q)) Then
+                                Exit Do
+                            End If
+                            nbs(q + 1) = nbs(q): q = q - 1
+                        Loop
+                        nbs(q + 1) = tmpL
+                    Next i
+                End If
+                For kk = 0 To nbn - 1
+                    n0 = nbs(kk)
                     WalkToJ j, n0, maxl, path, npth, prv, cur, L
                     If cur <> j And GDeg(cur) >= 3 And L <= maxl Then
                         nd = 0
@@ -2056,7 +2094,7 @@ Private Sub MergeBridges(ByVal mergeAng As Double)
                     Exit For
                 End If
             End If
-        Next j
+        Next jj
         guard = guard + 1
     Loop While changed And guard < 2000
 End Sub
@@ -2416,6 +2454,7 @@ Private Sub ProcessChains()
     Dim fx() As Double, fy() As Double, nf As Long, jc As Long, cp As Long, hasFill As Boolean
     Dim ax_() As Double, ay_() As Double, na As Long, nxx As Double, nxy As Double, hasNxt As Boolean
     Dim js As Long, lf As Long, q As Long, q2 As Long, allBad As Boolean, isCuspFill As Boolean
+    Dim cuspI As Long, m1 As Long, m2 As Long, tax As Double, tay As Double, tbx As Double, tby As Double
     Dim okArc As Boolean, pf(0 To 5) As Double, pT As Long, pA As Double, pB As Double, pC As Double, pD As Double
     Dim pendX As Double, pendY As Double, pendR As Double, qx As Double, qy As Double
     Dim total As Double, dirn As Long, zj As Double, sz As Double, lr As Double, cap As Double, zh As Double, zs As Double, L As Double
@@ -2687,11 +2726,38 @@ Private Sub ProcessChains()
                         cp = ids(e)
                     End If
                 Next e
-                hasFill = False: isCuspFill = False: nf = 0: fixI = -1
+                hasFill = False: isCuspFill = False: nf = 0: fixI = -1: cuspI = 0
                 ReDim fx(0 To 7): ReDim fy(0 To 7)
                 If np_ > 0 Then
                     If cp >= 0 And (k2 < n Or closed) Then
-                        PushPt fx, fy, nf, CuspX(cp), CuspY(cp)
+                        If gRefEnd <> 0 Then
+                            ' шрифт — образец: ноги шпильки — частыми точками, иначе сглаживание
+                            ' тянет конец цепочки к далёкому острию и даёт крючок у зоны развилки
+                            If k2 < n Then
+                                tbx = GX(ids(k2)): tby = GY(ids(k2))
+                            Else
+                                tbx = xs(0): tby = ys(0)
+                            End If
+                            m1 = Int(Dist(xs(np_ - 1), ys(np_ - 1), CuspX(cp), CuspY(cp)) / gH)
+                            If m1 < 1 Then
+                                m1 = 1
+                            End If
+                            m2 = Int(Dist(CuspX(cp), CuspY(cp), tbx, tby) / gH)
+                            If m2 < 1 Then
+                                m2 = 1
+                            End If
+                            tax = xs(np_ - 1): tay = ys(np_ - 1)
+                            For e = 1 To m1 - 1
+                                PushPt fx, fy, nf, tax + (CuspX(cp) - tax) * e / m1, tay + (CuspY(cp) - tay) * e / m1
+                            Next e
+                            cuspI = nf
+                            PushPt fx, fy, nf, CuspX(cp), CuspY(cp)
+                            For e = 1 To m2 - 1
+                                PushPt fx, fy, nf, CuspX(cp) + (tbx - CuspX(cp)) * e / m2, CuspY(cp) + (tby - CuspY(cp)) * e / m2
+                            Next e
+                        Else
+                            PushPt fx, fy, nf, CuspX(cp), CuspY(cp)
+                        End If
                         hasFill = True: isCuspFill = True
                     ElseIf k2 < n Then
                         na = 0: ReDim ax_(0 To n - k2): ReDim ay_(0 To n - k2)
@@ -2741,7 +2807,7 @@ Private Sub ProcessChains()
                         Next e
                     Else
                         For e = 0 To nf - 1
-                            PushPtF xs, ys, fixedF, np_, fx(e), fy(e), isCuspFill Or (e = fixI)
+                            PushPtF xs, ys, fixedF, np_, fx(e), fy(e), (isCuspFill And e = cuspI) Or (e = fixI)
                             If e = fixI Then
                                 If NSh > UBound(ShX) Then
                                     ReDim Preserve ShX(0 To 2 * NSh): ReDim Preserve ShY(0 To 2 * NSh)
@@ -4987,7 +5053,7 @@ End Function
 Private Function RefStub(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double, px_() As Double, py_() As Double, _
                          ByVal npl As Long, ByVal jwJ As Double, ByVal jx As Double, ByVal jy As Double) As Boolean
     Dim fx() As Double, fy() As Double, nf As Long, i As Long, s As Double
-    Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double
+    Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double, rmsL As Double
     Dim sx As Double, sy As Double, stp As Double, maxhit As Double, k As Long, kind As Long
     Dim pvx As Double, pvy As Double, x As Double, y As Double, hx As Double, hy As Double
     Dim ax0() As Double, ay0() As Double, na As Long, p(0 To 4) As Double, hasAt As Boolean
@@ -5019,8 +5085,9 @@ Private Function RefStub(xs() As Double, ys() As Double, np_ As Long, ByVal w As
     If rms <= 0.03 * w Then
         kind = 0: p(0) = sx: p(1) = sy: p(2) = dx: p(3) = dy: hasAt = True
     ElseIf nf >= 4 Then
+        rmsL = rms
         If FitCircle(fx, fy, nf, cx, cy, rr, rms) Then
-            If rr > 0.8 * w And rms <= 0.03 * w Then
+            If rr > 0.8 * w And rms <= 0.03 * w And rms < 0.5 * rmsL Then
                 a0 = Atan2(sy - cy, sx - cx)
                 ap = Atan2(fy(1) - cy, fx(1) - cx)
                 kind = 1: p(0) = cx: p(1) = cy: p(2) = rr: p(3) = a0
@@ -5966,7 +6033,7 @@ Private Sub RefEnd(xs() As Double, ys() As Double, np_ As Long, ByVal cref As Do
     Dim hasL As Boolean, hasC As Boolean
     Dim lx() As Double, ly() As Double, ln_ As Long, lCut As Double, lp(0 To 4) As Double
     Dim ccx() As Double, ccy() As Double, cn_ As Long, cCut As Double, cp(0 To 4) As Double, cTmax As Double
-    Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double
+    Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double, rmsL As Double
     Dim ox As Double, oy As Double, rr As Double, a0 As Double, ap As Double
     Dim exL As Double, exC As Double, reachL As Double, reachC As Double, useC As Boolean, lx_ As Double
     Dim target As Double, m As Long, x As Double, y As Double, kind As Long
@@ -6039,8 +6106,11 @@ Private Sub RefEnd(xs() As Double, ys() As Double, np_ As Long, ByVal cref As Do
                     End If
                 End If
                 If Not hasC And nf >= 4 Then
+                    FitLineLS fx, fy, nf, mx, my, dx, dy, rmsL
                     If FitCircle(fx, fy, nf, ox, oy, rr, rms) Then
-                        If rr > 0.6 * wLoc And rms < 0.03 * wLoc Then
+                        ' дуга — только если заметно лучше прямой (почти прямые точки дают
+                        ' неустойчивую окружность)
+                        If rr > 0.6 * wLoc And rms < 0.03 * wLoc And rms < 0.5 * rmsL Then
                             If Bent(fx, fy, 0, nf - 1, rr, wLoc) Then
                                 a0 = Atan2(qy(nq - 1) - oy, qx(nq - 1) - ox)
                                 ap = Atan2(fy(nf - 2) - oy, fx(nf - 2) - ox)
@@ -6071,7 +6141,8 @@ Private Sub RefEnd(xs() As Double, ys() As Double, np_ As Long, ByVal cref As Do
     Next kcI
     exL = -1: exC = -1
     If hasL Then
-        exL = RefExit(0, lp, 3 * wLoc)
+        ' прямая — до 5 ширин: конец, отрезанный далеко от торца, должен дотянуться до кончика
+        exL = RefExit(0, lp, 5 * wLoc)
     End If
     If hasC Then
         exC = RefExit(1, cp, cTmax)

@@ -122,7 +122,9 @@ def centerline(polys, prm=P, debug=None):
         # шрифт — образец: две близкие развилки, которые вместе — настоящий крест
         # (перетяжка «з», петли): сливаются в одну, штрихи проходят крест насквозь
         _merge_x(G, prm.get('xmerge', 1.0), 50.0)
-    _merge_bridges(G, prm['merge_ang'])
+    # шрифт — образец: порядок перебора перемычек — по координатам, как в VBA (от порядка
+    # зависит, какая из двух соседних перемычек стянется, «ж»)
+    _merge_bridges(G, prm['merge_ang'], prm.get('border', 'leaf' if prm.get('ref') else 'dict'))
     _drop_small(G)
 
     chains, passthru = _chains(G, prm['merge_ang'], prm['tool'], bool(prm.get('ref')))
@@ -633,16 +635,39 @@ def _merge_x(G, kmerge, ang):
             return
 
 
-def _merge_bridges(G, merge_ang):
+def _merge_bridges(G, merge_ang, order='dict'):
     adj, xy = G['adj'], G['xy']
     while True:
         jw = {j: _jwidth(G, j) for j in adj if len(adj[j]) >= 3}
         pt = _pairing(adj, xy, merge_ang, 0, jw)
         done = False
-        for j in list(adj):
+        js = list(adj)
+        if order == 'leaf':
+            js = sorted(js, key=LEAF_KEY(G))
+        elif order == 'short':
+            cands = []
+            import centerline as _C
+            for j in js:
+                if len(adj[j]) < 3:
+                    continue
+                for n0 in list(adj[j]):
+                    path, prev, cur, L = _walk_to_junction(G, j, n0, 2.5 * jw[j])
+                    if cur == j or len(adj[cur]) < 3 or L > 2.5 * jw[j]:
+                        continue
+                    ds = [_C._branch_dir(adj, xy, j, o, jw[j]) for o in adj[j] if o != n0] + \
+                         [_C._branch_dir(adj, xy, cur, o, jw[j]) for o in adj[cur] if o != prev]
+                    if _all_paired(ds, merge_ang):
+                        cands.append((L, LEAF_KEY(G)(j), path + [cur]))
+            if not cands:
+                return
+            cands.sort(key=lambda c: (c[0], c[1]))
+            _contract(G, cands[0][2])
+            continue
+        for j in js:
             if len(adj[j]) < 3:
                 continue
-            for n0 in list(adj[j]):
+            nbs = sorted(adj[j], key=LEAF_KEY(G)) if order == 'leaf' else list(adj[j])
+            for n0 in nbs:
                 # перемычка может быть и «сквозной» парой (X под острым углом: два узла
                 # степени 3 на 0.5jw и мостик между ними) — решает проверка креста ниже
                 path, prev, cur, L = _walk_to_junction(G, j, n0, 2.5 * jw[j])
@@ -1068,9 +1093,17 @@ def _process(G, chains, passthru, prm, W, h):
             jc = [ch[q] for q in range(k, k2) if len(passthru.get(ch[q], {})) >= 4]
             jc = xy[jc[0]] if jc else None
             cp = [cusp[ch[q]] for q in range(k, k2) if ch[q] in cusp]
-            fl = None
+            fl = None; tip = 0
             if cp and pts and (k2 < n or closed):
                 fl = [cp[0]]                       # шпилька: прямо в острие и обратно
+                if prm.get('ref'):
+                    # шрифт — образец: ноги шпильки — частыми точками, иначе сглаживание
+                    # тянет конец цепочки к далёкому острию и даёт крючок у зоны развилки
+                    A = pts[-1]; T = cp[0]; B = xy[ch[k2]] if k2 < n else pts[0]
+                    m1 = max(1, int(math.dist(A, T)/h)); m2 = max(1, int(math.dist(T, B)/h))
+                    fl = [(A[0] + (T[0]-A[0])*i/m1, A[1] + (T[1]-A[1])*i/m1) for i in range(1, m1)]
+                    tip = len(fl)
+                    fl += [T] + [(T[0] + (B[0]-T[0])*i/m2, T[1] + (B[1]-T[1])*i/m2) for i in range(1, m2)]
             elif pts and k2 < n:
                 aft = [xy[i] for i in ch[k2:]]
                 fl = None
@@ -1094,7 +1127,7 @@ def _process(G, chains, passthru, prm, W, h):
                 if not _poly_inside(polys, [pts[-1]] + fl + ([nxt] if nxt else []), 0.5*h):
                     fl = [xy[ch[q]] for q in range(k, k2)]   # обход вылез за контур — берём сырые узлы
                 elif cp:
-                    fixed.add(len(pts))
+                    fixed.add(len(pts) + tip)
                 pts.extend(fl)
             k = k2
         if not closed and free[0] and flags and flags[0] and pts and not tail_drop0:
@@ -1567,10 +1600,15 @@ def _ref_end(q, w, polys, tool, h):
 
                     def line_at(t, st=st, d=d):
                         return (st[0] + d[0]*t, st[1] + d[1]*t)
-                    found['L'] = (qq, cut, line_at, 3.0*wl)
+                    # прямая — до 5 ширин: конец, отрезанный далеко от торца (короткий хвост
+                    # за развилкой выброшен, «3»), должен дотянуться до кончика
+                    found['L'] = (qq, cut, line_at, 5.0*wl)
             if 'C' not in found and len(P) >= 4:
                 c = _fit_circle(P)
-                if c is not None and c[2] > 0.6*wl and c[3] < 0.03*wl and _bent(P, c[2], wl):
+                # дуга — только если она заметно лучше прямой (почти прямые точки дают
+                # неустойчивую окружность: в VBA и прототипе — разную)
+                if c is not None and c[2] > 0.6*wl and c[3] < 0.03*wl and _bent(P, c[2], wl) \
+                        and c[3] < 0.5*_fit_line(P)[4]:
                     cx, cy, R = c[:3]
                     st = qq[-1]
                     a0 = math.atan2(st[1]-cy, st[0]-cx)
@@ -2213,7 +2251,7 @@ def _ref_stub(q, w, poly, jw_j, xy_j, h, polys, v0=0, v1=0):
             return (start[0] + d[0]*t, start[1] + d[1]*t)
     elif len(P) >= 4:
         c = _fit_circle(P)
-        if c is not None and c[2] > 0.8*w and c[3] <= 0.03*w:
+        if c is not None and c[2] > 0.8*w and c[3] <= 0.03*w and c[3] < 0.5*fl[4]:
             cx, cy, R = c[:3]
             a0 = math.atan2(start[1]-cy, start[0]-cx)
             ap = math.atan2(P[1][1]-cy, P[1][0]-cx)
