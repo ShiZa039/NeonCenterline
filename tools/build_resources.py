@@ -13,7 +13,8 @@ ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
          ('select', 'neon_select', 105, 'Неон: выделить центральные линии'),
          ('cut', 'neon_cut', 106, 'Неон: подогнать под кратность реза'),
          ('update', 'neon_settings', 103, 'Неон: проверить обновления'),
-         ('about', 'neon_settings', 103, 'Неон: о программе')]
+         ('about', 'neon_settings', 103, 'Неон: о программе'),
+         ('simplify', 'neon_simplify', 107, 'Неон: упростить контур')]
 
 def bmp_entry(im):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()

@@ -1,10 +1,22 @@
 Option Explicit
 ' Окно настроек NeonCenterline. Элементы окна создаёт NeonBuild (сборщик), этот код
-' вставляется в форму при сборке.
+' вставляется в форму при сборке. Строка «Упрощение контура» добавляется при открытии окна
+' (AddSimpRow) — сборщик менять не нужно.
+
+Private lblSimp As Object, cboSimp As Object
 
 Private Sub UserForm_Initialize()
     Dim lg As String
     Me.Caption = NeonL("app_title") & " - " & NeonL("settings_title")
+    AddSimpRow
+    If Not cboSimp Is Nothing Then
+        lblSimp.Caption = NeonL("lbl_simp")
+        cboSimp.Clear
+        cboSimp.AddItem "0.05"
+        cboSimp.AddItem "0.1"
+        cboSimp.AddItem "0.25"
+        cboSimp.Text = FmtNum(NeonSimplifyTol())
+    End If
     lblTool.Caption = NeonL("lbl_tool")
     cboTool.Clear
     cboTool.AddItem "6"
@@ -72,7 +84,7 @@ Private Sub UserForm_Initialize()
 End Sub
 
 Private Sub btnOK_Click()
-    Dim t As Double, c As Double, lg As String
+    Dim t As Double, c As Double, lg As String, sm As Double
     t = ParseNum(cboTool.Text)
     If t <= 0 Or t > 100 Then
         MsgBox NeonL("bad_tool"), vbExclamation, NeonL("settings_title")
@@ -90,6 +102,14 @@ Private Sub btnOK_Click()
     Else
         MsgBox NeonL("bad_tool"), vbExclamation, NeonL("app_title")
         Exit Sub
+    End If
+    If Not cboSimp Is Nothing Then
+        sm = ParseNum(cboSimp.Text)
+        If sm < 0.01 Or sm > 5 Then
+            MsgBox NeonL("bad_simp"), vbExclamation, NeonL("settings_title")
+            Exit Sub
+        End If
+        SaveSetting "NeonCenterline", "Simplify", "Tol", FmtNum(sm)
     End If
     SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
     SaveSetting "NeonCenterline", "Cut", "Step", FmtNum(c)
@@ -113,6 +133,27 @@ End Sub
 
 Private Sub btnCancel_Click()
     Unload Me
+End Sub
+
+' строка «Упрощение контура, допуск» под выбором режима курсива: всё, что ниже, сдвигается вниз
+Private Sub AddSimpRow()
+    Dim c As Object, y As Single
+    On Error GoTo Fail
+    y = cboRef.Top + cboRef.Height + 10
+    For Each c In Me.Controls
+        If c.Top >= y - 4 Then
+            c.Top = c.Top + 26
+        End If
+    Next c
+    Me.Height = Me.Height + 26
+    Set lblSimp = Me.Controls.Add("Forms.Label.1", "lblSimp", True)
+    lblSimp.Left = 12: lblSimp.Top = y + 4: lblSimp.Width = 170: lblSimp.Height = 18
+    Set cboSimp = Me.Controls.Add("Forms.ComboBox.1", "cboSimp", True)
+    cboSimp.Left = 190: cboSimp.Top = y: cboSimp.Width = 70: cboSimp.Height = 20
+    Exit Sub
+Fail:
+    Set lblSimp = Nothing
+    Set cboSimp = Nothing
 End Sub
 
 Private Sub btnUpdate_Click()

@@ -26,7 +26,7 @@
    (нужны права администратора; там же обычно лежат другие дополнения).
    Или, когда плагин уже загружен, запустите макрос `NeonCenterline.NeonAddon.InstallToolbar` (Инструменты → Макросы → Запуск макроса) — он сам положит панель в Addons той версии CorelDRAW, из которой запущен.
 3. **Полностью перезапустите CorelDRAW** и включите панель: Окно → Панели инструментов → «Неон (NeonCenterline)».
-4. **Если панели нет или кнопки пустые** (бывает в старых версиях), кнопки можно поставить вручную: Инструменты → Настройка (Ctrl+J) → Команды → категория «Макросы» → перетащить на любую панель команды `NeonCenterline.NeonUI.RunMono`, `RunScript`, `ShowSettings`, `NeonCenterline.NeonTools.MeasureLength`, `SelectNeonLines`, `NeonCenterline.NeonCut.FitToCut`. Значки — в папке `icons` архива (вкладка «Вид» → «Импорт»).
+4. **Если панели нет или кнопки пустые** (бывает в старых версиях), кнопки можно поставить вручную: Инструменты → Настройка (Ctrl+J) → Команды → категория «Макросы» → перетащить на любую панель команды `NeonCenterline.NeonUI.RunMono`, `RunScript`, `ShowSettings`, `NeonCenterline.NeonTools.MeasureLength`, `SelectNeonLines`, `SimplifyContours`, `NeonCenterline.NeonCut.FitToCut`. Значки — в папке `icons` архива (вкладка «Вид» → «Импорт»).
 
 **Тестовый шрифт** `font\SABNeonTest.ttf` для работы плагина не нужен — он для пробы (моноширинный неоновый шрифт, на нём видно, как должен работать режим «Моно»). Установить: двойной щелчок по файлу → «Установить».
 
@@ -38,13 +38,14 @@
 
 **Длина** — отдельная кнопка: считает длину выделенного. Контуры (длина под резку) и центральные линии плагина (длина неона, число кусков, самый длинный кусок) — отдельно; результат можно скопировать в буфер обмена.
 **Выделить линии** — выделяет все центральные линии плагина на странице (например, чтобы сразу посчитать длину неона или убрать их).
+**Упростить контур** (`NeonCenterline.NeonTools.SimplifyContours`) — меньше узлов у выделенных кривых: кривая не отходит от исходной больше допуска (Настройки, по умолчанию 0.1 мм), острые углы остаются углами, гладкие места — гладкими. Кривые меняются на месте, отмена — Ctrl+Z. Полезно для трассированных логотипов и контуров из DXF/CAM (тысячи узлов → десятки), шрифты обычно сокращаются на треть. Текст и фигуры сначала переведите в кривые (Ctrl+Q).
 
 ### Тип неона и кратность реза
 В настройках: **тип неона** — светодиодный (лента внутри: кусок неона = длина паза) или **неон 2.0** (силиконовый рассеиватель в пазу, лента отдельно), и **кратность реза** (10 / 25 / 50 мм или своя).
 - Галочка **«Подгонять линии под кратность реза»**: после расчёта каждый кусок укорачивается до ближайшей меньшей кратной длины — только за счёт **свободных** концов (поровну с обоих или только с конца линии — настройка). Удлинять нельзя: конец уже на D/2 от края. Замкнутые куски и куски без свободных концов не меняются — остаток виден в отчёте.
 - Кнопка **«Длина»** для центральных линий показывает, сколько неона (или ленты для неона 2.0) получается кратно резу и сколько уйдёт в остатки.
 - Кнопка **«Подогнать под рез»** (`NeonCenterline.NeonCut.FitToCut`) — подогнать под кратность уже готовые выделенные линии.
-В **настройках** — диаметр фрезы, спрашивать ли его при каждом запуске, язык интерфейса (русский / English / как в Windows), ежедневная проверка обновлений.
+В **настройках** — диаметр фрезы, спрашивать ли его при каждом запуске, допуск упрощения контура, язык интерфейса (русский / English / как в Windows), ежедневная проверка обновлений.
 
 ## Обновления
 
@@ -85,7 +86,7 @@ A CorelDRAW plugin that builds a centerline from letter outlines for milling fle
    (administrator rights required; other add-ons usually live there too).
    Or, once the plugin is loaded, run the macro `NeonCenterline.NeonAddon.InstallToolbar` (Tools → Macros → Run Macro): it puts the toolbar into Addons of the CorelDRAW version it runs in.
 3. **Fully restart CorelDRAW** and turn the toolbar on: Window → Toolbars → "Неон (NeonCenterline)".
-4. **If there is no toolbar or the buttons are blank** (possible in older versions), add the buttons manually: Tools → Customization (Ctrl+J) → Commands → category "Macros" → drag to any toolbar `NeonCenterline.NeonUI.RunMono`, `RunScript`, `ShowSettings`, `NeonCenterline.NeonTools.MeasureLength`, `SelectNeonLines`, `NeonCenterline.NeonCut.FitToCut`. Icons are in the `icons` folder of the archive (Appearance tab → Import).
+4. **If there is no toolbar or the buttons are blank** (possible in older versions), add the buttons manually: Tools → Customization (Ctrl+J) → Commands → category "Macros" → drag to any toolbar `NeonCenterline.NeonUI.RunMono`, `RunScript`, `ShowSettings`, `NeonCenterline.NeonTools.MeasureLength`, `SelectNeonLines`, `SimplifyContours`, `NeonCenterline.NeonCut.FitToCut`. Icons are in the `icons` folder of the archive (Appearance tab → Import).
 
 **Test font** `font\SABNeonTest.ttf` is not required by the plugin — it is for trying it out (a monoline neon font that shows how Mono mode is meant to work). To install: double-click the file → Install.
 
@@ -97,13 +98,14 @@ Select outlines (curves, text, groups) and press **Mono** or **Script**.
 
 **Length** — a separate button: measures the selection. Outlines (cutting length) and plugin centerlines (neon length, number of pieces, longest piece) are reported separately; the result can be copied to the clipboard.
 **Select lines** — selects all plugin centerlines on the page (e.g. to measure the neon or remove them).
+**Simplify outline** (`NeonCenterline.NeonTools.SimplifyContours`) — fewer nodes on the selected curves: the curve deviates from the original by no more than the tolerance (Settings, 0.1 mm by default), sharp corners stay sharp, smooth parts stay smooth. Curves are changed in place, undo with Ctrl+Z. Useful for traced logos and outlines from DXF/CAM (thousands of nodes become dozens); font outlines usually lose about a third of their nodes. Convert text and shapes to curves first (Ctrl+Q).
 
 ### Neon type and cut step
 Settings: **neon type** — LED neon (strip inside: neon piece = groove length) or **Neon 2.0** (silicone diffuser in a groove, separate strip), and the **cut step** (10 / 25 / 50 mm or custom).
 - **"Fit lines to the cut step"**: after a run every piece is shortened to the nearest smaller multiple — only at **free** ends (equally at both or only at the line end — a setting). Lines are never extended: a free end is already D/2 from the edge. Closed pieces and pieces without free ends are left as is; the remainder is shown in the report.
 - The **Length** button shows how much neon (or strip, for Neon 2.0) fits in whole cut steps and how much goes to remainders.
 - The **Fit to cut** button (`NeonCenterline.NeonCut.FitToCut`) fits already selected lines to the cut step.
-**Settings**: cutter diameter, whether to ask for it on every run, interface language (Russian / English / as Windows), daily update check.
+**Settings**: cutter diameter, whether to ask for it on every run, outline simplify tolerance, interface language (Russian / English / as Windows), daily update check.
 
 ## Updates
 

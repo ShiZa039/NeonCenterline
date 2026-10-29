@@ -40,6 +40,9 @@
       <xsl:if test="not(./item[@guidRef='ce9120be-eca9-5ed0-b1c8-c43624951305'])">
         <item guidRef="ce9120be-eca9-5ed0-b1c8-c43624951305"/>
       </xsl:if>
+      <xsl:if test="not(./item[@guidRef='18048cca-273b-50eb-9d03-54111cc920ce'])">
+        <item guidRef="18048cca-273b-50eb-9d03-54111cc920ce"/>
+      </xsl:if>
       <xsl:if test="not(./item[@guidRef='ce37ed0a-544f-575c-ac35-ef4d4aab66c9'])">
         <item guidRef="ce37ed0a-544f-575c-ac35-ef4d4aab66c9"/>
       </xsl:if>

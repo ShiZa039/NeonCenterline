@@ -10,6 +10,7 @@ Attribute VB_Name = "NeonUI"
 '    NeonCenterline.NeonUI.ShowSettings — настройки
 '    NeonCenterline.NeonUI.CheckUpdates — проверить обновления
 '    NeonCenterline.NeonUI.ShowAbout    — о программе
+'  Инструменты — в модулях NeonTools (длина, выделить линии, упростить контур) и NeonCut.
 '                                                        SAB:CORE, 2026
 ' =====================================================================
 Option Explicit
@@ -196,6 +197,15 @@ Private Sub SettingsFallback()
             SaveSetting REG_APP, "Params", "Tool", FmtNum(t)
         Else
             MsgBox NeonL("bad_tool"), vbExclamation, NeonL("settings_title")
+        End If
+    End If
+    s = InputBox(NeonL("prompt_simp"), NeonL("settings_title"), FmtNum(NeonSimplifyTol()))
+    If Len(Trim$(s)) > 0 Then
+        t = ParseNum(s)
+        If t >= 0.01 And t <= 5 Then
+            SaveSetting REG_APP, "Simplify", "Tol", FmtNum(t)
+        Else
+            MsgBox NeonL("bad_simp"), vbExclamation, NeonL("settings_title")
         End If
     End If
     r = MsgBox(NeonL("fallback_ask"), vbYesNo + vbQuestion, NeonL("settings_title"))
