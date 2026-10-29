@@ -9,6 +9,7 @@
 | `src/NeonUpdate.bas` | Проверка и установка обновлений. |
 | `src/NeonLang.bas` | Строки RU/EN. **Генерируется** `tools/gen_lang.py` из `tools/strings.py` — править строки там. |
 | `src/frmNeonSettings.code.txt` | Код окна настроек (само окно создаёт сборщик). |
+| `src/ThisMacroStorage.code.txt` | Код ThisMacroStorage проекта: при запуске CorelDRAW обновляет панель «Неон» после обновления плагина (вставляет сборщик). |
 | `build/NeonBuild.bas` | Сборщик: создаёт `NeonCenterline.gms` из `src`. |
 | `addon/NeonCenterline/` | Панель инструментов (CorelDRAW Addons: `AppUI.xslt`, `UserUI.xslt`, `Coreldrw.addon`). |
 | `update.json` | Описание последней версии — его читают плагины пользователей. |
@@ -27,6 +28,7 @@
 ## Выпуск новой версии
 
 1. Поднять `NEON_VERSION` в `src/NeonUI.bas`, дописать `CHANGELOG.md`. Если менялся README.md — `python tools/gen_readme_txt.py` (README.txt для архива).
+   Если менялся **состав панели** (кнопки в `addon/NeonCenterline/AppUI.xslt`): поднять `NEON_TOOLBAR_VER` в `src/NeonUI.bas` и метку `[NeonToolbar N]` в комментарии `AppUI.xslt`, затем `python tools/build_resources.py` (если менялись значки/подписи) и `python tools/gen_addon.py` (сверяет номер). После обновления плагин сам предложит пользователю обновить файлы панели (права администратора) и при следующем запуске CorelDRAW сбросит только панель «Неон» к новому составу — без сброса рабочего пространства.
 2. Собрать `.gms` (шаги 2–4 выше).
 3. PowerShell в корне репозитория:
    `.\tools\make_release.ps1 -Version 1.1.0 -Owner ShiZa039 -NotesRu "..." -NotesEn "..."`

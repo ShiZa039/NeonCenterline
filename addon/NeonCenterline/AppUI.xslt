@@ -3,6 +3,8 @@
   NeonCenterline — команды и панель инструментов (CorelDRAW Addons).
   Команды вызывают макросы проекта NeonCenterline.gms (пользовательская папка GMS).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
+  Набор кнопок панели: [NeonToolbar 2]. При изменении состава панели поднять номер здесь и
+  NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
   <xsl:output method="xml" encoding="UTF-8" indent="yes"/>

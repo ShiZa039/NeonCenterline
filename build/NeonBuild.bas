@@ -6,7 +6,9 @@ Attribute VB_Name = "NeonBuild"
 '    2) adds modules from the 'src' folder (UTF-8 sources are read and added with
 '       AddFromString, so Russian text is converted to the Windows code page);
 '    3) creates the settings window frmNeonSettings and inserts its code;
-'    4) then SAVE the project in the VBA editor (select NeonCenterline, Ctrl+S).
+'    4) inserts the code of ThisMacroStorage (CorelDRAW start: toolbar update after a plugin
+'       update);
+'    5) then SAVE the project in the VBA editor (select NeonCenterline, Ctrl+S).
 '  Requires access to the VBA editor object model (Application.VBE).
 '  This file is ASCII-only on purpose: it is imported with File > Import.
 ' =====================================================================
@@ -83,6 +85,13 @@ Public Sub NeonBuildPlugin()
     If Len(Dir$(src & "\frmNeonRun.code.txt")) > 0 Then
         BuildRunForm vp, src & "\frmNeonRun.code.txt"
         rep = rep & "  + frmNeonRun" & vbCr
+    End If
+    If Len(Dir$(src & "\ThisMacroStorage.code.txt")) > 0 Then
+        If SetStorageCode(vp, src & "\ThisMacroStorage.code.txt") Then
+            rep = rep & "  + ThisMacroStorage (start: toolbar update)" & vbCr
+        Else
+            rep = rep & "  ! ThisMacroStorage not found: no toolbar update at start" & vbCr
+        End If
     End If
 
     On Error Resume Next
@@ -207,6 +216,28 @@ Private Sub BuildRunForm(vp As Object, ByVal codeFile As String)
         .AddFromString code
     End With
 End Sub
+
+' code of the project's ThisMacroStorage (document module: GlobalMacroStorage events)
+Private Function SetStorageCode(vp As Object, ByVal codeFile As String) As Boolean
+    Dim i As Long, comp As Object, code As String
+    For i = 1 To vp.VBComponents.Count
+        If vp.VBComponents(i).Type = 100 Then
+            Set comp = vp.VBComponents(i)
+            Exit For
+        End If
+    Next i
+    If comp Is Nothing Then
+        Exit Function
+    End If
+    code = ReadUtf8(codeFile)
+    With comp.CodeModule
+        If .CountOfLines > 0 Then
+            .DeleteLines 1, .CountOfLines
+        End If
+        .AddFromString code
+    End With
+    SetStorageCode = True
+End Function
 
 ' existing form: clear its controls and code; otherwise add a new one
 Private Function GetForm(vp As Object, ByVal nm As String) As Object

@@ -4,7 +4,13 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A = os.path.join(ROOT, 'addon', 'NeonCenterline')
 files = ['AppUI.xslt', 'UserUI.xslt', 'Coreldrw.addon', 'config.xml']
-import base64
+import base64, re
+# версия набора кнопок: метка [NeonToolbar N] в AppUI.xslt должна совпадать с NEON_TOOLBAR_VER
+# в src/NeonUI.bas — по ней плагин после обновления понимает, что панель надо сбросить
+_ver = re.search(r'NEON_TOOLBAR_VER As String = "(\w+)"',
+                 open(os.path.join(ROOT, 'src', 'NeonUI.bas'), encoding='utf-8').read()).group(1)
+if f'[NeonToolbar {_ver}]' not in open(os.path.join(A, 'AppUI.xslt'), encoding='utf-8').read():
+    raise SystemExit(f'AppUI.xslt: нет метки [NeonToolbar {_ver}] (NEON_TOOLBAR_VER в src/NeonUI.bas)')
 B64 = base64.b64encode(open(os.path.join(A, 'Resources.dll'), 'rb').read()).decode()
 L = ['Attribute VB_Name = "NeonAddon"',
      "' =====================================================================",
@@ -30,7 +36,10 @@ L += ['    dst = Application.AddonPath',
       '        dst = dst & "\\"',
       '    End If',
       '    dst = dst & "NeonCenterline"',
-      '    cmd = "/c mkdir """ & dst & """ 2>nul & xcopy /Y /I """ & tmp & "\\*"" """ & dst & """"',
+      "    ' Resources.dll занят работающим CorelDRAW: занятый файл можно переименовать, но не перезаписать",
+      '    cmd = "/c mkdir """ & dst & """ 2>nul & del /f /q """ & dst & "\\Resources.old.dll"" 2>nul & " & _',
+      '          "ren """ & dst & "\\Resources.dll"" Resources.old.dll 2>nul & " & _',
+      '          "xcopy /Y /I """ & tmp & "\\*"" """ & dst & """"',
       '    stage = "copy"',
       '    Set sh = CreateObject("Shell.Application")',
       '    sh.ShellExecute "cmd.exe", cmd, "", "runas", 0',

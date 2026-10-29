@@ -1,0 +1,11 @@
+Option Explicit
+' NeonCenterline: events of the plugin macro storage (NeonBuild inserts this code into
+' ThisMacroStorage of NeonCenterline.gms).
+' At CorelDRAW start: if a plugin update changed the button set of the "Neon" toolbar and the
+' new toolbar files are in Addons, reset only this toolbar so the new buttons appear
+' (see NeonToolbarCheck in NeonUI).
+
+Private Sub GlobalMacroStorage_Start()
+    On Error Resume Next
+    NeonToolbarCheck True
+End Sub

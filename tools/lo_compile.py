@@ -14,7 +14,8 @@ MODS = [('NeonLang', f'{P}/src/NeonLang.bas', 'x = NeonLangCode()'),
         ('NeonScript', f'{P}/src/NeonScript.bas', 'x = NeonScriptRunProbe()'),
         ('NeonBuild', f'{P}/build/NeonBuild.bas', 'x = NeonBuildProbe()'),
         ('frmCode', f'{P}/src/frmNeonSettings.code.txt', 'x = FrmProbe()'),
-        ('frmRun', f'{P}/src/frmNeonRun.code.txt', 'x = FrmRunProbe()')]
+        ('frmRun', f'{P}/src/frmNeonRun.code.txt', 'x = FrmRunProbe()'),
+        ('ThisMS', f'{P}/src/ThisMacroStorage.code.txt', 'x = StorageProbe()')]
 STUB_COREL = '''
 Private Const cdrGroupShape As Long = 1
 Private Const cdrCurveShape As Long = 2

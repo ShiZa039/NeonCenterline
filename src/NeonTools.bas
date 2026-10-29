@@ -303,6 +303,7 @@ Fin:
         msg = msg & vbCrLf & vbCrLf & NeonLF("simp_skipped", nSkip)
     End If
     MsgBox msg, vbInformation, NeonL("simp_title")
+    NeonToolbarCheck
     Exit Sub
 Fail:
     errText = Err.Description

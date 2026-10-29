@@ -120,4 +120,8 @@ STRINGS = {
                       'How far the curve may deviate from the original. 0.1 mm is invisible to the eye and the cutter; more smooths ragged traced outlines harder.'),
     'btn_simp':      ('Упростить', 'Simplify'),
     'chk_simp_ask':  ('Показывать окно упрощения при каждом запуске', 'Show the simplify window on every run'),
+    'tb_outdated':   ('Панель «Неон» в CorelDRAW устарела: в этой версии плагина на ней есть новые кнопки. Обновить панель сейчас?\n\n'
+                      'Windows попросит права администратора. Затем полностью перезапустите CorelDRAW — новые кнопки появятся сами.',
+                      'The "Neon" toolbar in CorelDRAW is outdated: this plugin version has new buttons on it. Update the toolbar now?\n\n'
+                      'Windows will ask for administrator rights. Then fully restart CorelDRAW and the new buttons appear by themselves.'),
 }

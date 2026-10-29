@@ -28,6 +28,9 @@ Private Const REG_APP As String = "NeonCenterline"
 Public NeonRunConfirmed As Boolean
 ' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура
 Public NeonRunMode As Long
+' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
+' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
+Public Const NEON_TOOLBAR_VER As String = "2"
 
 ' ---------------------------------------------------------------------
 '  Кнопки
@@ -42,6 +45,7 @@ End Sub
 
 Public Sub ShowSettings()
     Dim f As Object
+    NeonToolbarCheck
     On Error Resume Next
     Set f = VBA.UserForms.Add("frmNeonSettings")
     On Error GoTo 0
@@ -147,6 +151,7 @@ Private Sub RunMode(ByVal mode As Long)
 
     ' раз в день — тихая проверка обновлений (после расчёта, чтобы не задерживать работу)
     If rc = 0 Then
+        NeonToolbarCheck
         NeonDailyUpdateCheck
     End If
 End Sub
@@ -176,6 +181,87 @@ Private Function AskRunParams() As Boolean
     End If
     SaveSetting REG_APP, "Params", "Tool", FmtNum(tool)
     AskRunParams = True
+End Function
+
+' ---------------------------------------------------------------------
+'  Обновление панели «Неон» после обновления плагина.
+'  CorelDRAW вписывает кнопки дополнения в рабочее пространство один раз и сам новые кнопки
+'  в стоящую панель не добавляет. Поэтому:
+'    - при запуске CorelDRAW (ThisMacroStorage, atStart = True): если в Addons лежат файлы
+'      панели этой версии, а панель ещё не обновлялась — сброс только панели «Неон» к составу
+'      из AppUI.xslt (как «Сброс» в настройке панелей; остальное рабочее пространство не
+'      трогается);
+'    - при работе (кнопки плагина): если файлы панели в Addons старые — один раз предложить
+'      обновить их (InstallToolbar, права администратора) и перезапустить CorelDRAW.
+' ---------------------------------------------------------------------
+Public Sub NeonToolbarCheck(Optional ByVal atStart As Boolean = False)
+    Dim st As Long
+    If GetSetting(REG_APP, "UI", "ToolbarVer", "") = NEON_TOOLBAR_VER Then
+        Exit Sub
+    End If
+    On Error GoTo Quit
+    st = ToolbarFilesState()
+    If st = 0 Then
+        ' панель не ставилась (кнопки добавлены вручную или не нужны) — нечего обновлять
+        SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
+    ElseIf st = 1 Then
+        If Not atStart And GetSetting(REG_APP, "UI", "ToolbarAsked", "") <> NEON_TOOLBAR_VER Then
+            SaveSetting REG_APP, "UI", "ToolbarAsked", NEON_TOOLBAR_VER
+            If MsgBox(NeonL("tb_outdated"), vbYesNo + vbQuestion, NeonL("app_title")) = vbYes Then
+                InstallToolbar
+            End If
+        End If
+    ElseIf atStart Then
+        If ResetNeonBar() Then
+            SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
+        End If
+    End If
+Quit:
+End Sub
+
+' файлы панели в Addons текущего CorelDRAW: 0 — нет, 1 — старые, 2 — этой версии (метка в AppUI.xslt)
+Private Function ToolbarFilesState() As Long
+    Dim p As String, f As Integer, txt As String
+    On Error GoTo Fail
+    p = Application.AddonPath
+    If Right$(p, 1) <> "\" Then
+        p = p & "\"
+    End If
+    p = p & "NeonCenterline\AppUI.xslt"
+    If Len(Dir$(p)) = 0 Then
+        Exit Function
+    End If
+    f = FreeFile
+    Open p For Binary Access Read As #f
+    txt = Space$(LOF(f))
+    Get #f, , txt
+    Close #f
+    If InStr(1, txt, "[NeonToolbar " & NEON_TOOLBAR_VER & "]", vbBinaryCompare) > 0 Then
+        ToolbarFilesState = 2
+    Else
+        ToolbarFilesState = 1
+    End If
+    Exit Function
+Fail:
+    ToolbarFilesState = 0
+End Function
+
+' сбросить панель «Неон» к составу из AppUI.xslt; True — панель найдена и сброшена
+Private Function ResetNeonBar() As Boolean
+    Dim cb As Object, nm As String, nl As String
+    On Error Resume Next
+    For Each cb In Application.CommandBars
+        nm = "": nl = ""
+        nm = cb.Name
+        nl = cb.NameLocal
+        If InStr(1, nm, "NeonCenterline", vbTextCompare) > 0 Or InStr(1, nl, "NeonCenterline", vbTextCompare) > 0 Then
+            Err.Clear
+            cb.Reset
+            If Err.Number = 0 Then
+                ResetNeonBar = True
+            End If
+        End If
+    Next cb
 End Function
 
 ' окно перед упрощением контура (то же окно frmNeonRun в режиме 1): допуск, показывать ли окно;
