@@ -1,8 +1,14 @@
 Option Explicit
 ' Окно перед расчётом (если включено «Спрашивать при каждом запуске»): диаметр фрезы,
 ' тип неона, кратность реза, подгонка. Элементы окна создаёт NeonBuild, код вставляется при сборке.
+' NeonRunMode = 1 — то же окно перед упрощением контура: допуск и «показывать окно» (лишние
+' элементы скрываются, окно становится короче — сборщик менять не нужно).
 
 Private Sub UserForm_Initialize()
+    If NeonRunMode = 1 Then
+        InitSimplify
+        Exit Sub
+    End If
     Me.Caption = NeonL("app_title")
     lblTool.Caption = NeonL("lbl_tool")
     cboTool.Clear
@@ -53,8 +59,52 @@ Private Sub UserForm_Initialize()
     NeonRunConfirmed = False
 End Sub
 
+Private Sub InitSimplify()
+    Dim c As Object
+    For Each c In Me.Controls
+        c.Visible = False
+    Next c
+    Me.Caption = NeonL("simp_title")
+    lblTool.Caption = NeonL("lbl_simp_tol")
+    lblTool.Visible = True
+    cboTool.Clear
+    cboTool.AddItem "0.05"
+    cboTool.AddItem "0.1"
+    cboTool.AddItem "0.25"
+    cboTool.Text = FmtNum(NeonSimplifyTol())
+    cboTool.Visible = True
+    lblHint.WordWrap = True
+    lblHint.Height = 42
+    lblHint.Caption = NeonL("simp_hint")
+    lblHint.Visible = True
+    chkAsk.Top = lblHint.Top + lblHint.Height + 8
+    chkAsk.Caption = NeonL("chk_simp_ask")
+    chkAsk.Value = True
+    chkAsk.Visible = True
+    btnOK.Top = chkAsk.Top + chkAsk.Height + 12
+    btnCancel.Top = btnOK.Top
+    btnOK.Caption = NeonL("btn_simp")
+    btnCancel.Caption = NeonL("btn_cancel")
+    btnOK.Visible = True
+    btnCancel.Visible = True
+    Me.Height = btnOK.Top + btnOK.Height + 50
+    NeonRunConfirmed = False
+End Sub
+
 Private Sub btnOK_Click()
     Dim t As Double, c As Double
+    If NeonRunMode = 1 Then
+        t = ParseNum(cboTool.Text)
+        If t < 0.01 Or t > 5 Then
+            MsgBox NeonL("bad_simp"), vbExclamation, NeonL("simp_title")
+            Exit Sub
+        End If
+        SaveSetting "NeonCenterline", "Simplify", "Tol", FmtNum(t)
+        SaveSetting "NeonCenterline", "Simplify", "Ask", IIf(chkAsk.Value, "1", "0")
+        NeonRunConfirmed = True
+        Me.Hide
+        Exit Sub
+    End If
     t = ParseNum(cboTool.Text)
     If t <= 0 Or t > 100 Then
         MsgBox NeonL("bad_tool"), vbExclamation, NeonL("app_title")

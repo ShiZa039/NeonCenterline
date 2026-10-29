@@ -16,7 +16,7 @@ RU
 - «Курсив», режим образца: стойка, через которую проходят другие штрихи («ж», «р», «ф», основание «1»), больше не «виляет» у развилок — штрих идёт сквозь развилку по своему ходу: прямой, если штрих прямой, иначе плавной дугой.
 - «Курсив», режим образца: тонкий прямой соединительный штрих перед дугой (диагональ от стойки к арке «т», «м») идёт прямой от стойки и плавно переходит в дугу, как в образце, — раньше он начинался выше и ломался у дуги.
 - «Моно»: линия, идущая прямо через развилку, больше не даёт «волну», когда сразу за развилкой стоит фаска или излом (буква «к» в моноширинных шрифтах).
-- Новая кнопка «Неон: упростить контур»: меньше узлов у выделенных кривых в пределах допуска (Настройки, по умолчанию 0.1 мм), острые углы сохраняются, гладкие места остаются гладкими; кривые меняются на месте, отмена — Ctrl+Z. Трассированные логотипы и контуры из DXF/CAM — с тысяч узлов до десятков.
+- Новая кнопка «Неон: упростить контур»: меньше узлов у выделенных кривых в пределах допуска (окно перед запуском, как у центральных линий, и Настройки; по умолчанию 0.1 мм), острые углы сохраняются, гладкие места остаются гладкими; кривые меняются на месте, отмена — Ctrl+Z. Трассированные логотипы и контуры из DXF/CAM — с тысяч узлов до десятков.
 - Кнопка «Поддержать автора» в окне «О программе» (ведёт на страницу DONATE.md).
 - README: ручная установка, совместимость, тестовый шрифт; в архиве — папка icons.
 
@@ -34,7 +34,7 @@ EN
 - Script, reference mode: a stem crossed by other strokes ("ж", "р", "ф", the base of "1") no longer wobbles at the junctions — the stroke runs through the junction along its own course: straight if the stroke is straight, otherwise a smooth arc.
 - Script, reference mode: a thin straight connecting stroke before an arch (the diagonal from the stem to the arch of "т", "м") now runs straight from the stem and flows smoothly into the arch, as in the reference; it used to start higher and kink at the arch.
 - Mono: a line running straight through a junction no longer gets a "wave" when a chamfer or bend follows right after the junction (letter "к" in monoline fonts).
-- New button "Neon: simplify outline": fewer nodes on the selected curves within a tolerance (Settings, 0.1 mm by default); sharp corners are kept and smooth parts stay smooth; curves are changed in place, undo with Ctrl+Z. Traced logos and DXF/CAM outlines go from thousands of nodes to dozens.
+- New button "Neon: simplify outline": fewer nodes on the selected curves within a tolerance (a window before the run, like for centerlines, and Settings; 0.1 mm by default); sharp corners are kept and smooth parts stay smooth; curves are changed in place, undo with Ctrl+Z. Traced logos and DXF/CAM outlines go from thousands of nodes to dozens.
 - "Support the author" in the About window (opens DONATE.md).
 - README: manual installation, compatibility, test font; icons folder in the archive.
 

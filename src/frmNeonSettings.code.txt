@@ -3,7 +3,7 @@ Option Explicit
 ' вставляется в форму при сборке. Строка «Упрощение контура» добавляется при открытии окна
 ' (AddSimpRow) — сборщик менять не нужно.
 
-Private lblSimp As Object, cboSimp As Object
+Private lblSimp As Object, cboSimp As Object, chkSimpAsk As Object
 
 Private Sub UserForm_Initialize()
     Dim lg As String
@@ -16,6 +16,8 @@ Private Sub UserForm_Initialize()
         cboSimp.AddItem "0.1"
         cboSimp.AddItem "0.25"
         cboSimp.Text = FmtNum(NeonSimplifyTol())
+        chkSimpAsk.Caption = NeonL("chk_simp_ask")
+        chkSimpAsk.Value = (GetSetting("NeonCenterline", "Simplify", "Ask", "1") = "1")
     End If
     lblTool.Caption = NeonL("lbl_tool")
     cboTool.Clear
@@ -110,6 +112,7 @@ Private Sub btnOK_Click()
             Exit Sub
         End If
         SaveSetting "NeonCenterline", "Simplify", "Tol", FmtNum(sm)
+        SaveSetting "NeonCenterline", "Simplify", "Ask", IIf(chkSimpAsk.Value, "1", "0")
     End If
     SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
     SaveSetting "NeonCenterline", "Cut", "Step", FmtNum(c)
@@ -135,25 +138,29 @@ Private Sub btnCancel_Click()
     Unload Me
 End Sub
 
-' строка «Упрощение контура, допуск» под выбором режима курсива: всё, что ниже, сдвигается вниз
+' строки «Упрощение контура, допуск» и «показывать окно упрощения» под выбором режима курсива:
+' всё, что ниже, сдвигается вниз
 Private Sub AddSimpRow()
     Dim c As Object, y As Single
     On Error GoTo Fail
     y = cboRef.Top + cboRef.Height + 10
     For Each c In Me.Controls
         If c.Top >= y - 4 Then
-            c.Top = c.Top + 26
+            c.Top = c.Top + 48
         End If
     Next c
-    Me.Height = Me.Height + 26
+    Me.Height = Me.Height + 48
     Set lblSimp = Me.Controls.Add("Forms.Label.1", "lblSimp", True)
     lblSimp.Left = 12: lblSimp.Top = y + 4: lblSimp.Width = 170: lblSimp.Height = 18
     Set cboSimp = Me.Controls.Add("Forms.ComboBox.1", "cboSimp", True)
     cboSimp.Left = 190: cboSimp.Top = y: cboSimp.Width = 70: cboSimp.Height = 20
+    Set chkSimpAsk = Me.Controls.Add("Forms.CheckBox.1", "chkSimpAsk", True)
+    chkSimpAsk.Left = 12: chkSimpAsk.Top = y + 24: chkSimpAsk.Width = 326: chkSimpAsk.Height = 18
     Exit Sub
 Fail:
     Set lblSimp = Nothing
     Set cboSimp = Nothing
+    Set chkSimpAsk = Nothing
 End Sub
 
 Private Sub btnUpdate_Click()

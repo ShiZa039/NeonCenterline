@@ -41,7 +41,7 @@ RU · EN
 
 Длина — отдельная кнопка: считает длину выделенного. Контуры (длина под резку) и центральные линии плагина (длина неона, число кусков, самый длинный кусок) — отдельно; результат можно скопировать в буфер обмена.
 Выделить линии — выделяет все центральные линии плагина на странице (например, чтобы сразу посчитать длину неона или убрать их).
-Упростить контур (NeonCenterline.NeonTools.SimplifyContours) — меньше узлов у выделенных кривых: кривая не отходит от исходной больше допуска (Настройки, по умолчанию 0.1 мм), острые углы остаются углами, гладкие места — гладкими. Кривые меняются на месте, отмена — Ctrl+Z. Полезно для трассированных логотипов и контуров из DXF/CAM (тысячи узлов → десятки), шрифты обычно сокращаются на треть. Текст и фигуры сначала переведите в кривые (Ctrl+Q).
+Упростить контур (NeonCenterline.NeonTools.SimplifyContours) — меньше узлов у выделенных кривых: кривая не отходит от исходной больше допуска (окно перед запуском, как у центральных линий, и Настройки; по умолчанию 0.1 мм), острые углы остаются углами, гладкие места — гладкими. Кривые меняются на месте, отмена — Ctrl+Z. Полезно для трассированных логотипов и контуров из DXF/CAM (тысячи узлов → десятки), шрифты обычно сокращаются на треть. Текст и фигуры сначала переведите в кривые (Ctrl+Q).
 
 Тип неона и кратность реза
 --------------------------
@@ -106,7 +106,7 @@ Select outlines (curves, text, groups) and press Mono or Script.
 
 Length — a separate button: measures the selection. Outlines (cutting length) and plugin centerlines (neon length, number of pieces, longest piece) are reported separately; the result can be copied to the clipboard.
 Select lines — selects all plugin centerlines on the page (e.g. to measure the neon or remove them).
-Simplify outline (NeonCenterline.NeonTools.SimplifyContours) — fewer nodes on the selected curves: the curve deviates from the original by no more than the tolerance (Settings, 0.1 mm by default), sharp corners stay sharp, smooth parts stay smooth. Curves are changed in place, undo with Ctrl+Z. Useful for traced logos and outlines from DXF/CAM (thousands of nodes become dozens); font outlines usually lose about a third of their nodes. Convert text and shapes to curves first (Ctrl+Q).
+Simplify outline (NeonCenterline.NeonTools.SimplifyContours) — fewer nodes on the selected curves: the curve deviates from the original by no more than the tolerance (a window before the run, like for centerlines, and Settings; 0.1 mm by default), sharp corners stay sharp, smooth parts stay smooth. Curves are changed in place, undo with Ctrl+Z. Useful for traced logos and outlines from DXF/CAM (thousands of nodes become dozens); font outlines usually lose about a third of their nodes. Convert text and shapes to curves first (Ctrl+Q).
 
 Neon type and cut step
 ----------------------

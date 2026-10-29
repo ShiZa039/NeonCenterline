@@ -115,4 +115,9 @@ STRINGS = {
     'prompt_simp':   ('Упрощение контура: допуск, мм\n(насколько кривая может отойти от исходной; 0.1 — незаметно)',
                       'Simplify outline: tolerance, mm\n(how far the curve may deviate from the original; 0.1 is invisible)'),
     'bad_simp':      ('Допуск упрощения — число от 0.01 до 5 мм.', 'The simplify tolerance must be a number from 0.01 to 5 mm.'),
+    'lbl_simp_tol':  ('Допуск, мм:', 'Tolerance, mm:'),
+    'simp_hint':     ('Насколько кривая может отойти от исходной. 0.1 мм — незаметно на глаз и для фрезы; больше — сильнее сглаживает «рваные» контуры после трассировки.',
+                      'How far the curve may deviate from the original. 0.1 mm is invisible to the eye and the cutter; more smooths ragged traced outlines harder.'),
+    'btn_simp':      ('Упростить', 'Simplify'),
+    'chk_simp_ask':  ('Показывать окно упрощения при каждом запуске', 'Show the simplify window on every run'),
 }

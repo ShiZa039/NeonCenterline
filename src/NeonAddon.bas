@@ -149,22 +149,22 @@ Private Function AddonText_AppUI_xslt() As String
     s = s & "SimplifyContours""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-"
     s = s & AU("39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 443 43F 440 43E 441 442 438 442 44C 20 43A 43E 43D 442 443 440")
     s = s & AU("22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 41C 435 43D 44C 448 435 20 443 437 43B 43E 432 20 443 20 432 44B 434 435 43B 435 43D 43D 44B 445 20 43A 440 438 432 44B 445 3A 20 43E 442 445 43E 434")
-    s = s & AU("20 43E 442 20 438 441 445 43E 434 43D 43E 439 20 43D 435 20 431 43E 43B 44C 448 435 20 434 43E 43F 443 441 43A 430 20 438 437 20 43D 430 441 442 440 43E 435 43A 20 28 43F 43E 20 443 43C 43E 43B 447 430 43D 438 44E 20 30 2E 31 20 43C 43C 29 2C 20 443 433 43B 44B")
-    s = s & AU("20 43E 441 442 430 44E 442 441 44F 20 443 433 43B 430 43C 438 2E 20 41E 442 43C 435 43D 430 20 2014 20 43 74 72 6C 2B 5A 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20")
-    s = s & " </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "" & vbLf & "  <xsl:template match=""uiConfig/comman"
-    s = s & "dBars"">" & vbLf & "    <xsl:copy>" & vbLf & "      <xsl:apply-templates select=""node()|@*""/>"
-    s = s & "" & vbLf & "      <commandBarData guid=""3d22040b-4ee7-596d-91ae-1653ffb39f77""" & vbLf & "   "
-    s = s & "                   nonLocalizableName=""NeonCenterline2""" & vbLf & "              "
-    s = s & AU("20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 20 28 4E 65 6F 6E 43 65 6E 74 65 72 6C 69 6E 65 29 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 74 79 70 65")
-    s = s & "=""toolbar"">" & vbLf & "        <toolbar>" & vbLf & "          <item guidRef=""4e6d43bf-0b2d-5"
-    s = s & "00c-b154-b553b6087991""/>" & vbLf & "          <item guidRef=""c68c5d4f-d668-5fb4-9"
-    s = s & "37e-adb7430cae58""/>" & vbLf & "          <item guidRef=""0b33ce77-31ad-5c46-bb8b-2"
-    s = s & "cd2e362084f""/>" & vbLf & "          <item guidRef=""c913505c-324e-543b-b2b1-a55c9b"
-    s = s & "cbc9eb""/>" & vbLf & "          <item guidRef=""ce9120be-eca9-5ed0-b1c8-c4362495130"
-    s = s & "5""/>" & vbLf & "          <item guidRef=""18048cca-273b-50eb-9d03-54111cc920ce""/>" & vbLf & ""
-    s = s & "          <item guidRef=""ce37ed0a-544f-575c-ac35-ef4d4aab66c9""/>" & vbLf & "     "
-    s = s & "   </toolbar>" & vbLf & "      </commandBarData>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template"
-    s = s & ">" & vbLf & "</xsl:stylesheet>" & vbLf & ""
+    s = s & AU("20 43E 442 20 438 441 445 43E 434 43D 43E 439 20 43D 435 20 431 43E 43B 44C 448 435 20 434 43E 43F 443 441 43A 430 20 28 43F 43E 20 443 43C 43E 43B 447 430 43D 438 44E 20 30 2E 31 20 43C 43C 29 2C 20 443 433 43B 44B 20 43E 441 442 430 44E 442 441 44F 20 443 433")
+    s = s & AU("43B 430 43C 438 2E 20 41E 442 43C 435 43D 430 20 2014 20 43 74 72 6C 2B 5A 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 3C 2F 78 73 6C 3A 63 6F 70 79 3E")
+    s = s & "" & vbLf & "  </xsl:template>" & vbLf & "" & vbLf & "  <xsl:template match=""uiConfig/commandBars"">" & vbLf & "    "
+    s = s & "<xsl:copy>" & vbLf & "      <xsl:apply-templates select=""node()|@*""/>" & vbLf & "      <comm"
+    s = s & "andBarData guid=""3d22040b-4ee7-596d-91ae-1653ffb39f77""" & vbLf & "               "
+    s = s & "       nonLocalizableName=""NeonCenterline2""" & vbLf & "                      user"
+    s = s & AU("43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 20 28 4E 65 6F 6E 43 65 6E 74 65 72 6C 69 6E 65 29 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 74 79 70 65 3D 22 74 6F 6F 6C 62 61 72 22 3E A")
+    s = s & "        <toolbar>" & vbLf & "          <item guidRef=""4e6d43bf-0b2d-500c-b154-b55"
+    s = s & "3b6087991""/>" & vbLf & "          <item guidRef=""c68c5d4f-d668-5fb4-937e-adb7430c"
+    s = s & "ae58""/>" & vbLf & "          <item guidRef=""0b33ce77-31ad-5c46-bb8b-2cd2e362084f"""
+    s = s & "/>" & vbLf & "          <item guidRef=""c913505c-324e-543b-b2b1-a55c9bcbc9eb""/>" & vbLf & "  "
+    s = s & "        <item guidRef=""ce9120be-eca9-5ed0-b1c8-c43624951305""/>" & vbLf & "       "
+    s = s & "   <item guidRef=""18048cca-273b-50eb-9d03-54111cc920ce""/>" & vbLf & "          <i"
+    s = s & "tem guidRef=""ce37ed0a-544f-575c-ac35-ef4d4aab66c9""/>" & vbLf & "        </toolbar"
+    s = s & ">" & vbLf & "      </commandBarData>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "</xsl:styl"
+    s = s & "esheet>" & vbLf & ""
     AddonText_AppUI_xslt = s
 End Function
 

@@ -24,8 +24,10 @@ Public Const NEON_UPDATE_URL3 As String = "https://github.com/ShiZa039/NeonCente
 ' страница поддержки автора: НЕ сам сервис донатов, а DONATE.md в репозитории — ссылки там можно менять без выпуска новой версии (пусто — пункт не показывается)
 Public Const NEON_DONATE_URL As String = "https://github.com/ShiZa039/NeonCenterline/blob/main/DONATE.md"
 Private Const REG_APP As String = "NeonCenterline"
-' результат окна перед расчётом (frmNeonRun): True — «Построить»
+' результат окна перед расчётом (frmNeonRun): True — «Построить» / «Упростить»
 Public NeonRunConfirmed As Boolean
+' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура
+Public NeonRunMode As Long
 
 ' ---------------------------------------------------------------------
 '  Кнопки
@@ -152,6 +154,7 @@ End Sub
 ' окно параметров перед расчётом; без собранной формы — прежний вопрос о диаметре
 Private Function AskRunParams() As Boolean
     Dim f As Object, s As String, tool As Double
+    NeonRunMode = 0
     On Error Resume Next
     Set f = VBA.UserForms.Add("frmNeonRun")
     On Error GoTo 0
@@ -173,6 +176,40 @@ Private Function AskRunParams() As Boolean
     End If
     SaveSetting REG_APP, "Params", "Tool", FmtNum(tool)
     AskRunParams = True
+End Function
+
+' окно перед упрощением контура (то же окно frmNeonRun в режиме 1): допуск, показывать ли окно;
+' без собранной формы — вопрос о допуске стандартным окном. False — отмена
+Public Function AskSimplifyParams() As Boolean
+    Dim f As Object, s As String, t As Double
+    If GetSetting(REG_APP, "Simplify", "Ask", "1") <> "1" Then
+        AskSimplifyParams = True
+        Exit Function
+    End If
+    NeonRunMode = 1
+    On Error Resume Next
+    Set f = VBA.UserForms.Add("frmNeonRun")
+    On Error GoTo 0
+    If Not f Is Nothing Then
+        NeonRunConfirmed = False
+        f.Show
+        AskSimplifyParams = NeonRunConfirmed
+        Unload f
+        NeonRunMode = 0
+        Exit Function
+    End If
+    NeonRunMode = 0
+    s = InputBox(NeonL("prompt_simp"), NeonL("simp_title"), FmtNum(NeonSimplifyTol()))
+    If Len(Trim$(s)) = 0 Then
+        Exit Function
+    End If
+    t = ParseNum(s)
+    If t < 0.01 Or t > 5 Then
+        MsgBox NeonL("bad_simp"), vbExclamation, NeonL("simp_title")
+        Exit Function
+    End If
+    SaveSetting REG_APP, "Simplify", "Tol", FmtNum(t)
+    AskSimplifyParams = True
 End Function
 
 ' ---------------------------------------------------------------------

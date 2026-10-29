@@ -75,7 +75,7 @@
                 dynamicCommand="NeonCenterline.NeonTools.SimplifyContours"
                 dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
                 userCaption="Неон: упростить контур"
-                userToolTip="Меньше узлов у выделенных кривых: отход от исходной не больше допуска из настроек (по умолчанию 0.1 мм), углы остаются углами. Отмена — Ctrl+Z"
+                userToolTip="Меньше узлов у выделенных кривых: отход от исходной не больше допуска (по умолчанию 0.1 мм), углы остаются углами. Отмена — Ctrl+Z"
                 enable="true"/>
     </xsl:copy>
   </xsl:template>
