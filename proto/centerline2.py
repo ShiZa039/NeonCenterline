@@ -937,6 +937,107 @@ def _end_trim(G, ids, k_trim):
 STUBZ = 0.5
 
 
+def _ref_straighten(pts, zones, fixed, w, polys, h, free):
+    """Шрифт — образец: штрих идёт сквозь развилку по своему ходу. Окно вокруг зон развилок
+    (до 3w в обе стороны, не дальше острого угла); фит в осях хорды окна по дальним точкам
+    (>= 0.5w от зон): сначала прямая (отклонение <= 0.1w), иначе парабола (<= 0.08w); если ложится —
+    точки окна переносятся на неё (на краях окна — плавный переход): ось не «виляет» к центрам
+    развилок (стойки ж, р, ф)."""
+    n = len(pts)
+    zs = [(a, b) for a, b in zones if 0 <= a < b < n and not any(a < f < b for f in fixed)]
+    if n < 4 or not zs:
+        return False
+    s = [0.0]
+    for p, q in zip(pts[:-1], pts[1:]):
+        s.append(s[-1] + math.dist(p, q))
+    wins = []
+    for a, b in zs:
+        lo = a
+        while lo > 0 and s[a] - s[lo-1] <= 3.0*w and lo not in fixed:
+            lo -= 1
+        hi = b
+        while hi < n-1 and s[hi+1] - s[b] <= 3.0*w and hi not in fixed:
+            hi += 1
+        if wins and lo <= wins[-1][1]:
+            wins[-1][1] = max(wins[-1][1], hi); wins[-1][2].append((a, b))
+        else:
+            wins.append([lo, hi, [(a, b)]])
+    done = False
+    for lo, hi, zz in wins:
+        o = pts[lo]; L = math.dist(pts[lo], pts[hi])
+        if L < 2.0*w:
+            continue
+        u = ((pts[hi][0]-o[0])/L, (pts[hi][1]-o[1])/L)
+        X = [(p[0]-o[0])*u[0] + (p[1]-o[1])*u[1] for p in pts[lo:hi+1]]
+        Y = [-(p[0]-o[0])*u[1] + (p[1]-o[1])*u[0] for p in pts[lo:hi+1]]
+        if any(X[i+1] < X[i] - 0.05*w for i in range(len(X)-1)):
+            continue
+        def near(i):
+            si = s[lo+i]
+            return any(s[a] - 0.5*w < si < s[b] + 0.5*w for a, b in zz)
+        far = [i for i in range(len(X)) if not near(i)]
+        a0, b1 = zz[0][0], zz[-1][1]
+        nb_ = [i for i in far if lo+i < a0]; na_ = [i for i in far if lo+i > b1]
+        if len(nb_) < 3 or len(na_) < 3:
+            continue
+        if s[a0] - s[lo+nb_[0]] < 0.9*w or s[lo+na_[-1]] - s[b1] < 0.9*w:
+            continue
+        best = None
+        for deg in (1, 2):
+            t = [X[i]/L for i in far]; yv = [Y[i] for i in far]
+            m = deg + 1
+            A = [[sum(tt**(r_+c_) for tt in t) for c_ in range(m)] for r_ in range(m)]
+            B = [sum(yy*tt**r_ for tt, yy in zip(t, yv)) for r_ in range(m)]
+            try:
+                cf = _solve(A, B)
+            except ZeroDivisionError:
+                continue
+            f = lambda x, cf=cf: sum(c*(x/L)**e for e, c in enumerate(cf))
+            dev = max(abs(f(X[i]) - Y[i]) for i in far)
+            if _DBG is not None:
+                _DBG.append(('rs', pts[lo], pts[hi], deg, round(dev/w, 3), [round(c, 2) for c in cf], round(L/w, 2), len(far), [(a, b) for a, b in zz], lo, hi, n))
+            if dev <= (0.1 if deg == 1 else 0.08)*w:
+                if deg == 2:
+                    # кривизна параболы — не круче 1.5w (иначе это не «гладкий ход»)
+                    if abs(2*cf[2])/(L*L) > 1.0/(1.5*w):
+                        continue
+                best = f
+                break
+        if best is None:
+            continue
+        new = list(pts[lo:hi+1])
+        rlo = not (lo == 0 and free[0]); rhi = not (hi == n-1 and free[1])
+        for i in range(len(X)):
+            g = lo + i
+            wt = 1.0
+            if rlo:
+                wt = min(wt, (s[g] - s[lo])/(0.7*w))
+            if rhi:
+                wt = min(wt, (s[hi] - s[g])/(0.7*w))
+            wt = max(0.0, min(1.0, wt))
+            dy = (best(X[i]) - Y[i]) * wt
+            new[i] = (pts[g][0] - u[1]*dy, pts[g][1] + u[0]*dy)
+        if not _poly_inside(polys, new, 0.5*h):
+            continue
+        pts[lo:hi+1] = new
+        done = True
+    return done
+
+
+def _solve(A, B):
+    n = len(B); M = [list(A[i]) + [B[i]] for i in range(n)]
+    for c in range(n):
+        p = max(range(c, n), key=lambda r_: abs(M[r_][c]))
+        if abs(M[p][c]) < 1e-12:
+            raise ZeroDivisionError
+        M[c], M[p] = M[p], M[c]
+        for r_ in range(n):
+            if r_ != c:
+                k_ = M[r_][c]/M[c][c]
+                M[r_] = [x - k_*y for x, y in zip(M[r_], M[c])]
+    return [M[i][n]/M[i][i] for i in range(n)]
+
+
 def _process(G, chains, passthru, prm, W, h):
     adj, xy, r, kind, polys = G['adj'], G['xy'], G['r'], G['kind'], G['polys']
     jw = G['jw']; cusp = G['cusp']
@@ -1076,7 +1177,7 @@ def _process(G, chains, passthru, prm, W, h):
             continue
         if closed and flags[0]:
             r0 = flags.index(False); ch = ch[r0:]+ch[:r0]; flags = flags[r0:]+flags[:r0]
-        pts = []; k = 0; fixed = set(); pend = None
+        pts = []; k = 0; fixed = set(); pend = None; zones = []
         tail_drop0 = locals().get('tail_drop0', False); tail_drop1 = locals().get('tail_drop1', False)
         while k < n:
             if not flags[k]:
@@ -1128,16 +1229,23 @@ def _process(G, chains, passthru, prm, W, h):
                     fl = [xy[ch[q]] for q in range(k, k2)]   # обход вылез за контур — берём сырые узлы
                 elif cp:
                     fixed.add(len(pts) + tip)
+                if not cp and pts and k2 < n:
+                    zones.append((len(pts) - 1, len(pts) + len(fl)))
                 pts.extend(fl)
             k = k2
         if not closed and free[0] and flags and flags[0] and pts and not tail_drop0:
             q = 0
             while q < n and flags[q]:
                 q += 1
+            n0 = len(pts)
             if _poly_inside(polys, [xy[ch[0]], pts[0]], 0.5*h):
                 pts.insert(0, xy[ch[0]])
             else:
                 pts[0:0] = [xy[ch[t]] for t in range(q)]
+            # индексы углов и зон развилок сдвигаются вместе с точками (как в VBA)
+            dn = len(pts) - n0
+            fixed = {f + dn for f in fixed}
+            zones = [(a + dn, b + dn) for a, b in zones]
         if len(pts) < 2:
             if not closed and (free[0] or free[1]) and (stub[0] is not None or stub[1] is not None):
                 js = stub[0] if stub[0] is not None else stub[1]
@@ -1150,6 +1258,8 @@ def _process(G, chains, passthru, prm, W, h):
                 stub = [None, None]
             else:
                 continue
+        if prm.get('ref') and not closed:
+            _ref_straighten(pts, zones, fixed, cref, polys, h, free)
         pts = _smooth(pts, closed, prm['smooth_it'], fixed)
         pts, fixed = _sharpen(pts, fixed, closed, cref, polys, G['bcorners'], h)
         pts = _merge_collinear(pts, fixed, closed, cref)

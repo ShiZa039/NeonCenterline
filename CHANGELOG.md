@@ -13,6 +13,7 @@ RU
 - «Курсив», режим образца: штрих, подходящий к стойке сбоку по касательной (язычок «з», вход «т», выход «ь», чаша «а»), больше не рвёт стойку — стойка сплошная, штрих примыкает к ней у самого стыка (без «горба» выше стыка, «в»). Крутая гладкая дуга (шпилька «ы», «в») больше не ломается на два куска с зазубриной.
 - «Курсив», режим образца: диагональ «3» доходит прямой до кончика перетяжки, нижняя чаша упирается в неё; острый возврат пера («и», «я») — без крючка у основания; стыки «ж» строятся одинаково в плагине и на стенде.
 - «Курсив», режим образца: арка, вливающаяся в стойку под углом без продолжения по прямой или дуге (последняя «т» в «текст» мелким кеглем), снова проходит в стойку насквозь — угол в развилке выбирается по касательным у самой развилки.
+- «Курсив», режим образца: стойка, через которую проходят другие штрихи («ж», «р», «ф», основание «1»), больше не «виляет» у развилок — штрих идёт сквозь развилку по своему ходу: прямой, если штрих прямой, иначе плавной дугой.
 - «Моно»: линия, идущая прямо через развилку, больше не даёт «волну», когда сразу за развилкой стоит фаска или излом (буква «к» в моноширинных шрифтах).
 - Кнопка «Поддержать автора» в окне «О программе» (ведёт на страницу DONATE.md).
 - README: ручная установка, совместимость, тестовый шрифт; в архиве — папка icons.
@@ -28,6 +29,7 @@ EN
 - Script, reference mode: a stroke joining a stem tangentially from the side (the tongue of "з", the entry of "т", the exit of "ь", the bowl of "а") no longer breaks the stem — the stem stays continuous and the stroke lands right at the join (no "hump" above it, "в"). A tight smooth arc (the hairpin of "ы", "в") is no longer split into two pieces with a notch.
 - Script, reference mode: the diagonal of "3" runs straight to the tip of the waist with the lower bowl ending on it; a sharp pen return ("и", "я") has no hook at its base; joins in "ж" are built identically in the plugin and the test bench.
 - Script, reference mode: an arch flowing into a stem at an angle with no straight or arc continuation (the last "т" of "текст" at a small size) again runs through into the stem — the corner at the junction is chosen by the tangents right at the junction.
+- Script, reference mode: a stem crossed by other strokes ("ж", "р", "ф", the base of "1") no longer wobbles at the junctions — the stroke runs through the junction along its own course: straight if the stroke is straight, otherwise a smooth arc.
 - Mono: a line running straight through a junction no longer gets a "wave" when a chamfer or bend follows right after the junction (letter "к" in monoline fonts).
 - "Support the author" in the About window (opens DONATE.md).
 - README: manual installation, compatibility, test font; icons folder in the archive.

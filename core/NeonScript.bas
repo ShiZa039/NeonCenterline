@@ -2469,6 +2469,7 @@ Private Sub ProcessChains()
     Dim rx() As Double, ry() As Double, nr_ As Long, xi As Long, fixI As Long, minF As Long, maxF As Long, hasF As Boolean
     Dim nm0 As Long, nm1 As Long, okDrop As Boolean, o3 As Long, sdx As Double, sdy As Double, edx As Double, edy As Double
     Dim t1 As Double, t2 As Double, t3 As Double, t4 As Double, t5 As Double, t6 As Double, t7 As Double
+    Dim zA() As Long, zB() As Long, nZ As Long, np0z As Long
 
     If NCh = 0 Then
         Exit Sub
@@ -2702,6 +2703,7 @@ Private Sub ProcessChains()
 
         ' сборка точек; дыры в зонах развилок — дуга/угол/Эрмит/в острие
         np_ = 0: ReDim xs(0 To n + 16): ReDim ys(0 To n + 16): ReDim fixedF(0 To n + 16)
+        nZ = 0: ReDim zA(0 To 7): ReDim zB(0 To 7)
         pT = 0
         k = 0
         Do While k < n
@@ -2807,6 +2809,7 @@ Private Sub ProcessChains()
                     ElseIf closed Then
                         nxx = xs(0): nxy = ys(0): hasNxt = True
                     End If
+                    np0z = np_
                     If Not PathInside(xs(np_ - 1), ys(np_ - 1), fx, fy, nf, nxx, nxy, hasNxt) Then
                         ' обход вылез за контур — берём сырые узлы
                         For e = k To k2 - 1
@@ -2823,11 +2826,19 @@ Private Sub ProcessChains()
                             End If
                         Next e
                     End If
+                    ' зона развилки на сквозной линии (для выпрямления штриха в режиме образца)
+                    If cp < 0 And k2 < n And np0z > 0 Then
+                        If nZ > UBound(zA) Then
+                            ReDim Preserve zA(0 To 2 * nZ): ReDim Preserve zB(0 To 2 * nZ)
+                        End If
+                        zA(nZ) = np0z - 1: zB(nZ) = np_: nZ = nZ + 1
+                    End If
                 End If
                 k = k2
             End If
         Loop
         ' зона развилки в самом начале у свободного конца
+        np0z = np_
         If Not closed And free0 And np_ > 0 And Not td0 Then
             If flags(0) Then
                 If SegInside(GX(ids(0)), GY(ids(0)), xs(0), ys(0)) Then
@@ -2845,6 +2856,12 @@ Private Sub ProcessChains()
                     Next e
                 End If
             End If
+        End If
+        ' индексы зон развилок сдвигаются вместе с точками
+        If np_ > np0z Then
+            For q = 0 To nZ - 1
+                zA(q) = zA(q) + (np_ - np0z): zB(q) = zB(q) + (np_ - np0z)
+            Next q
         End If
         If np_ < 2 Then
             If Not closed And (free0 Or free1) And (stub0(ci) >= 0 Or stub1(ci) >= 0) Then
@@ -2876,6 +2893,9 @@ Private Sub ProcessChains()
             End If
         End If
 
+        If gRefEnd <> 0 And Not closed Then
+            RefStraighten xs, ys, fixedF, np_, zA, zB, nZ, cref, free0, free1
+        End If
         Smooth xs, ys, fixedF, np_, closed, P_SMOOTH
         Sharpen xs, ys, fixedF, np_, closed, cref
         MergeCollinear xs, ys, fixedF, np_, closed, cref
@@ -5520,6 +5540,253 @@ Private Sub TakePts(src_x() As Double, src_y() As Double, ByVal n As Long, ByVal
         ox(no) = src_x(i): oy(no) = src_y(i): no = no + 1
     Loop
 End Sub
+
+
+' Шрифт — образец: штрих идёт сквозь развилку по своему ходу. Окно вокруг зон развилок (до 3w
+' в обе стороны, не дальше острого угла); фит в осях хорды окна по дальним точкам
+' (>= 0.5w от зон): сначала прямая (отклонение <= 0.1w), иначе парабола (<= 0.08w); если ложится —
+' точки окна переносятся на неё (на краях окна — плавный переход): ось не «виляет» к центрам
+' развилок (стойки ж, р, ф)
+Private Function RefStraighten(xs() As Double, ys() As Double, fixedF() As Boolean, ByVal np_ As Long, _
+                               zA() As Long, zB() As Long, ByVal nZ As Long, ByVal w As Double, _
+                               ByVal free0 As Boolean, ByVal free1 As Boolean) As Boolean
+    Dim fa() As Long, fb() As Long, nfz As Long, i As Long, f As Long, ok As Boolean, s() As Double
+    Dim wLo() As Long, wHi() As Long, wZ0() As Long, wZ1() As Long, nW As Long, lo As Long, hi As Long, a As Long, b As Long
+    Dim wi As Long, ox As Double, oy As Double, L As Double, ux As Double, uy As Double, m As Long
+    Dim X() As Double, Y() As Double, isFar() As Boolean, z As Long, si As Double, a0 As Long, b1 As Long
+    Dim nb As Long, nAf As Long, firstB As Long, lastA As Long, deg As Long, r_ As Long, c_ As Long, e As Long
+    Dim MA(0 To 2, 0 To 3) As Double, cf(0 To 2) As Double, tt As Double, dev As Double, fv As Double, got As Boolean
+    Dim rx() As Double, ry() As Double, nx() As Double, ny() As Double, rlo As Boolean, rhi As Boolean, wt As Double, dy As Double, g As Long
+    Dim mrg As Boolean
+    If np_ < 4 Or nZ = 0 Then
+        Exit Function
+    End If
+    ReDim fa(0 To nZ - 1): ReDim fb(0 To nZ - 1): nfz = 0
+    For i = 0 To nZ - 1
+        If zA(i) >= 0 And zA(i) < zB(i) And zB(i) < np_ Then
+            ok = True
+            For f = zA(i) + 1 To zB(i) - 1
+                If fixedF(f) Then
+                    ok = False: Exit For
+                End If
+            Next f
+            If ok Then
+                fa(nfz) = zA(i): fb(nfz) = zB(i): nfz = nfz + 1
+            End If
+        End If
+    Next i
+    If nfz = 0 Then
+        Exit Function
+    End If
+    ReDim s(0 To np_ - 1)
+    s(0) = 0
+    For i = 1 To np_ - 1
+        s(i) = s(i - 1) + Dist(xs(i - 1), ys(i - 1), xs(i), ys(i))
+    Next i
+    ReDim wLo(0 To nfz - 1): ReDim wHi(0 To nfz - 1): ReDim wZ0(0 To nfz - 1): ReDim wZ1(0 To nfz - 1): nW = 0
+    For i = 0 To nfz - 1
+        a = fa(i): b = fb(i)
+        lo = a
+        Do While lo > 0
+            If s(a) - s(lo - 1) > 3# * w Or fixedF(lo) Then
+                Exit Do
+            End If
+            lo = lo - 1
+        Loop
+        hi = b
+        Do While hi < np_ - 1
+            If s(hi + 1) - s(b) > 3# * w Or fixedF(hi) Then
+                Exit Do
+            End If
+            hi = hi + 1
+        Loop
+        mrg = False
+        If nW > 0 Then
+            If lo <= wHi(nW - 1) Then
+                mrg = True
+            End If
+        End If
+        If mrg Then
+            If hi > wHi(nW - 1) Then
+                wHi(nW - 1) = hi
+            End If
+            wZ1(nW - 1) = i
+        Else
+            wLo(nW) = lo: wHi(nW) = hi: wZ0(nW) = i: wZ1(nW) = i: nW = nW + 1
+        End If
+    Next i
+    For wi = 0 To nW - 1
+        lo = wLo(wi): hi = wHi(wi)
+        ox = xs(lo): oy = ys(lo): L = Dist(xs(lo), ys(lo), xs(hi), ys(hi))
+        If L < 2# * w Then
+            GoTo NextWin
+        End If
+        ux = (xs(hi) - ox) / L: uy = (ys(hi) - oy) / L
+        m = hi - lo + 1
+        ReDim X(0 To m - 1): ReDim Y(0 To m - 1): ReDim isFar(0 To m - 1)
+        For i = 0 To m - 1
+            X(i) = (xs(lo + i) - ox) * ux + (ys(lo + i) - oy) * uy
+            Y(i) = -(xs(lo + i) - ox) * uy + (ys(lo + i) - oy) * ux
+        Next i
+        For i = 0 To m - 2
+            If X(i + 1) < X(i) - 0.05 * w Then
+                GoTo NextWin
+            End If
+        Next i
+        a0 = fa(wZ0(wi)): b1 = fb(wZ1(wi))
+        nb = 0: nAf = 0: firstB = -1: lastA = -1
+        For i = 0 To m - 1
+            si = s(lo + i): isFar(i) = True
+            For z = wZ0(wi) To wZ1(wi)
+                If s(fa(z)) - 0.5 * w < si And si < s(fb(z)) + 0.5 * w Then
+                    isFar(i) = False: Exit For
+                End If
+            Next z
+            If isFar(i) Then
+                If lo + i < a0 Then
+                    nb = nb + 1
+                    If firstB < 0 Then
+                        firstB = i
+                    End If
+                ElseIf lo + i > b1 Then
+                    nAf = nAf + 1: lastA = i
+                End If
+            End If
+        Next i
+        If nb < 3 Or nAf < 3 Then
+            GoTo NextWin
+        End If
+        If s(a0) - s(lo + firstB) < 0.9 * w Or s(lo + lastA) - s(b1) < 0.9 * w Then
+            GoTo NextWin
+        End If
+        got = False
+        For deg = 1 To 2
+            For r_ = 0 To deg
+                For c_ = 0 To deg + 1
+                    MA(r_, c_) = 0
+                Next c_
+            Next r_
+            For i = 0 To m - 1
+                If isFar(i) Then
+                    tt = X(i) / L
+                    For r_ = 0 To deg
+                        For c_ = 0 To deg
+                            MA(r_, c_) = MA(r_, c_) + tt ^ (r_ + c_)
+                        Next c_
+                        MA(r_, deg + 1) = MA(r_, deg + 1) + Y(i) * tt ^ r_
+                    Next r_
+                End If
+            Next i
+            If SolveGJ(MA, deg + 1, cf) Then
+                dev = 0
+                For i = 0 To m - 1
+                    If isFar(i) Then
+                        tt = X(i) / L: fv = 0
+                        For e = 0 To deg
+                            fv = fv + cf(e) * tt ^ e
+                        Next e
+                        If Abs(fv - Y(i)) > dev Then
+                            dev = Abs(fv - Y(i))
+                        End If
+                    End If
+                Next i
+                If deg = 1 Then
+                    tt = 0.1
+                Else
+                    tt = 0.08
+                End If
+                If dev <= tt * w Then
+                    If deg = 2 Then
+                        If Abs(2 * cf(2)) / (L * L) <= 1# / (1.5 * w) Then
+                            got = True
+                        End If
+                    Else
+                        got = True
+                    End If
+                    If got Then
+                        Exit For
+                    End If
+                End If
+            End If
+        Next deg
+        If Not got Then
+            GoTo NextWin
+        End If
+        If deg > 2 Then
+            deg = 2
+        End If
+        ReDim nx(0 To m - 1): ReDim ny(0 To m - 1)
+        rlo = Not (lo = 0 And free0): rhi = Not (hi = np_ - 1 And free1)
+        For i = 0 To m - 1
+            g = lo + i
+            wt = 1#
+            If rlo Then
+                If (s(g) - s(lo)) / (0.7 * w) < wt Then
+                    wt = (s(g) - s(lo)) / (0.7 * w)
+                End If
+            End If
+            If rhi Then
+                If (s(hi) - s(g)) / (0.7 * w) < wt Then
+                    wt = (s(hi) - s(g)) / (0.7 * w)
+                End If
+            End If
+            If wt < 0 Then
+                wt = 0
+            End If
+            tt = X(i) / L: fv = 0
+            For e = 0 To deg
+                fv = fv + cf(e) * tt ^ e
+            Next e
+            dy = (fv - Y(i)) * wt
+            nx(i) = xs(g) - uy * dy: ny(i) = ys(g) + ux * dy
+        Next i
+        ReDim rx(0 To m - 1): ReDim ry(0 To m - 1)
+        For i = 1 To m - 1
+            rx(i - 1) = nx(i): ry(i - 1) = ny(i)
+        Next i
+        If Not PathInside(nx(0), ny(0), rx, ry, m - 1, 0, 0, False) Then
+            GoTo NextWin
+        End If
+        For i = 0 To m - 1
+            xs(lo + i) = nx(i): ys(lo + i) = ny(i)
+        Next i
+        RefStraighten = True
+NextWin:
+    Next wi
+End Function
+
+' Решение A * x = b (A — n x n, b — столбец n), Гаусс — Жордан с выбором главного элемента
+Private Function SolveGJ(MA() As Double, ByVal n As Long, sol() As Double) As Boolean
+    Dim c As Long, p As Long, r As Long, k As Long, t As Double, kk As Double
+    For c = 0 To n - 1
+        p = c
+        For r = c + 1 To n - 1
+            If Abs(MA(r, c)) > Abs(MA(p, c)) Then
+                p = r
+            End If
+        Next r
+        If Abs(MA(p, c)) < 0.000000000001 Then
+            Exit Function
+        End If
+        If p <> c Then
+            For k = 0 To n
+                t = MA(c, k): MA(c, k) = MA(p, k): MA(p, k) = t
+            Next k
+        End If
+        For r = 0 To n - 1
+            If r <> c Then
+                kk = MA(r, c) / MA(c, c)
+                For k = 0 To n
+                    MA(r, k) = MA(r, k) - kk * MA(c, k)
+                Next k
+            End If
+        Next r
+    Next c
+    For r = 0 To n - 1
+        sol(r) = MA(r, n) / MA(r, r)
+    Next r
+    SolveGJ = True
+End Function
 
 
 Private Function ArcFillSingle(xs() As Double, ys() As Double, ByVal np_ As Long, ax_() As Double, ay_() As Double, _
