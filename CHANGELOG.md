@@ -14,6 +14,7 @@ RU
 - «Курсив», режим образца: диагональ «3» доходит прямой до кончика перетяжки, нижняя чаша упирается в неё; острый возврат пера («и», «я») — без крючка у основания; стыки «ж» строятся одинаково в плагине и на стенде.
 - «Курсив», режим образца: арка, вливающаяся в стойку под углом без продолжения по прямой или дуге (последняя «т» в «текст» мелким кеглем), снова проходит в стойку насквозь — угол в развилке выбирается по касательным у самой развилки.
 - «Курсив», режим образца: стойка, через которую проходят другие штрихи («ж», «р», «ф», основание «1»), больше не «виляет» у развилок — штрих идёт сквозь развилку по своему ходу: прямой, если штрих прямой, иначе плавной дугой.
+- «Курсив», режим образца: тонкий прямой соединительный штрих перед дугой (диагональ от стойки к арке «т», «м») идёт прямой от стойки и плавно переходит в дугу, как в образце, — раньше он начинался выше и ломался у дуги.
 - «Моно»: линия, идущая прямо через развилку, больше не даёт «волну», когда сразу за развилкой стоит фаска или излом (буква «к» в моноширинных шрифтах).
 - Кнопка «Поддержать автора» в окне «О программе» (ведёт на страницу DONATE.md).
 - README: ручная установка, совместимость, тестовый шрифт; в архиве — папка icons.
@@ -30,6 +31,7 @@ EN
 - Script, reference mode: the diagonal of "3" runs straight to the tip of the waist with the lower bowl ending on it; a sharp pen return ("и", "я") has no hook at its base; joins in "ж" are built identically in the plugin and the test bench.
 - Script, reference mode: an arch flowing into a stem at an angle with no straight or arc continuation (the last "т" of "текст" at a small size) again runs through into the stem — the corner at the junction is chosen by the tangents right at the junction.
 - Script, reference mode: a stem crossed by other strokes ("ж", "р", "ф", the base of "1") no longer wobbles at the junctions — the stroke runs through the junction along its own course: straight if the stroke is straight, otherwise a smooth arc.
+- Script, reference mode: a thin straight connecting stroke before an arch (the diagonal from the stem to the arch of "т", "м") now runs straight from the stem and flows smoothly into the arch, as in the reference; it used to start higher and kink at the arch.
 - Mono: a line running straight through a junction no longer gets a "wave" when a chamfer or bend follows right after the junction (letter "к" in monoline fonts).
 - "Support the author" in the About window (opens DONATE.md).
 - README: manual installation, compatibility, test font; icons folder in the archive.

@@ -937,6 +937,34 @@ def _end_trim(G, ids, k_trim):
 STUBZ = 0.5
 
 
+def _stub_straight(ch, k, xy, jwj, w):
+    """Заглушка в режиме образца: ось на участке [0.6jw, 1.5jw] от развилки (его отрезает зона
+    заглушки) прямая (rms < 0.015w, отклонение < 0.03w), а сразу за ним (ещё 0.8w) штрих уходит
+    с этой прямой (> 0.12w) — тонкий прямой соединительный штрих перед дугой («т», «м»). Тогда
+    зона — 0.6jw: продление пойдёт по прямому участку, а не по дуге за ним. Иначе None."""
+    dirn = 1 if k == 0 else -1
+    a0 = 0.6*jwj; a1 = 1.5*jwj; a2 = a1 + 0.8*w
+    s = 0.0; q = k; P = []; Q = []
+    while 0 <= q + dirn < len(ch):
+        s += math.dist(xy[ch[q]], xy[ch[q+dirn]]); q += dirn
+        if s > a2:
+            break
+        if a0 <= s <= a1:
+            P.append(xy[ch[q]])
+        elif s > a1:
+            Q.append(xy[ch[q]])
+    else:
+        return None
+    if len(P) < 5 or len(Q) < 3:
+        return None
+    mx, my, dx, dy, rms = _fit_line(P)
+    dev = max(abs(-(p[0]-mx)*dy + (p[1]-my)*dx) for p in P)
+    qd = max(abs(-(p[0]-mx)*dy + (p[1]-my)*dx) for p in Q)
+    if rms < 0.015*w and dev < 0.03*w and qd > 0.12*w:
+        return a0
+    return None
+
+
 def _ref_straighten(pts, zones, fixed, w, polys, h, free):
     """Шрифт — образец: штрих идёт сквозь развилку по своему ходу. Окно вокруг зон развилок
     (до 3w в обе стороны, не дальше острого угла); фит в осях хорды окна по дальним точкам
@@ -1099,6 +1127,11 @@ def _process(G, chains, passthru, prm, W, h):
                     # шрифт — образец: ось заглушки у острого стыка искажена на ~1.5 ширины
                     # (уходит в пазуху) — отбрасываем, штрих достраивается по своему ходу
                     zj = prm.get('stubz', 1.5) * jw.get(j, cref); sz = max(sz, zj)
+                    # но если ось за 0.6jw прямая (тонкий соединительный штрих «т», «м») — она не
+                    # искажена: режем меньше, и продление идёт по ней, а не по дуге за ней
+                    zs_ = _stub_straight(ch, k, xy, jw.get(j, cref), cref)
+                    if zs_ is not None:
+                        zj = sz = zs_
             for dirn in (-1, 1):
                 Lr = run_len(k, dirn)
                 cap = Lr / 3.0

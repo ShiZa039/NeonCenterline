@@ -2553,6 +2553,12 @@ Private Sub ProcessChains()
                         If sz < zj Then
                             sz = zj
                         End If
+                        ' но тонкий прямой соединительный штрих перед дугой («т», «м») режем
+                        ' меньше — продление пойдёт по прямому участку, а не по дуге за ним
+                        t1 = StubStraight(ids, n, k, JWOf(j, cref), cref)
+                        If t1 >= 0 Then
+                            zj = t1: sz = t1
+                        End If
                     End If
                 End If
                 For dirn = -1 To 1 Step 2
@@ -5541,6 +5547,59 @@ Private Sub TakePts(src_x() As Double, src_y() As Double, ByVal n As Long, ByVal
     Loop
 End Sub
 
+
+' Заглушка в режиме образца: ось на участке [0.6jw, 1.5jw] от развилки (его отрезает зона
+' заглушки) прямая (rms < 0.015w, отклонение < 0.03w), а сразу за ним (ещё 0.8w) штрих уходит
+' с этой прямой (> 0.12w) — тонкий прямой соединительный штрих перед дугой («т», «м»). Тогда
+' зона — 0.6jw (возвращается), иначе -1
+Private Function StubStraight(ids() As Long, ByVal n As Long, ByVal k As Long, ByVal jwj As Double, _
+                              ByVal w As Double) As Double
+    Dim dirn As Long, a0 As Double, a1 As Double, a2 As Double, s As Double, q As Long, i As Long
+    Dim ppx() As Double, ppy() As Double, nP2 As Long, qqx() As Double, qqy() As Double, nQ2 As Long, full As Boolean
+    Dim mx As Double, my As Double, ddx As Double, ddy As Double, rms As Double, dev As Double, qd As Double, d As Double
+    StubStraight = -1
+    If k = 0 Then
+        dirn = 1
+    Else
+        dirn = -1
+    End If
+    a0 = 0.6 * jwj: a1 = 1.5 * jwj: a2 = a1 + 0.8 * w
+    ReDim ppx(0 To n): ReDim ppy(0 To n): ReDim qqx(0 To n): ReDim qqy(0 To n)
+    s = 0: q = k: full = False: nP2 = 0: nQ2 = 0
+    Do While q + dirn >= 0 And q + dirn < n
+        s = s + Dist(GX(ids(q)), GY(ids(q)), GX(ids(q + dirn)), GY(ids(q + dirn)))
+        q = q + dirn
+        If s > a2 Then
+            full = True
+            Exit Do
+        End If
+        If s >= a0 And s <= a1 Then
+            ppx(nP2) = GX(ids(q)): ppy(nP2) = GY(ids(q)): nP2 = nP2 + 1
+        ElseIf s > a1 Then
+            qqx(nQ2) = GX(ids(q)): qqy(nQ2) = GY(ids(q)): nQ2 = nQ2 + 1
+        End If
+    Loop
+    If Not full Or nP2 < 5 Or nQ2 < 3 Then
+        Exit Function
+    End If
+    FitLineLS ppx, ppy, nP2, mx, my, ddx, ddy, rms
+    dev = 0: qd = 0
+    For i = 0 To nP2 - 1
+        d = Abs(-(ppx(i) - mx) * ddy + (ppy(i) - my) * ddx)
+        If d > dev Then
+            dev = d
+        End If
+    Next i
+    For i = 0 To nQ2 - 1
+        d = Abs(-(qqx(i) - mx) * ddy + (qqy(i) - my) * ddx)
+        If d > qd Then
+            qd = d
+        End If
+    Next i
+    If rms < 0.015 * w And dev < 0.03 * w And qd > 0.12 * w Then
+        StubStraight = a0
+    End If
+End Function
 
 ' Шрифт — образец: штрих идёт сквозь развилку по своему ходу. Окно вокруг зон развилок (до 3w
 ' в обе стороны, не дальше острого угла); фит в осях хорды окна по дальним точкам
