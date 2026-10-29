@@ -2794,7 +2794,12 @@ Private Sub ProcessChains()
                             End If
                         Else
                             nf = 0
-                            HermiteFill xs, ys, np_, ax_, ay_, na, gH * 1.4, jc, fx, fy, nf
+                            If gRefEnd <> 0 And jc < 0 Then
+                                ' шрифт — образец: касательные концов дыры — по фиту ~1 ширины
+                                RefHermiteFill xs, ys, np_, ax_, ay_, na, gH * 1.4, cref, fx, fy, nf
+                            Else
+                                HermiteFill xs, ys, np_, ax_, ay_, na, gH * 1.4, jc, fx, fy, nf
+                            End If
                         End If
                         hasFill = True
                     ElseIf closed Then
@@ -3897,6 +3902,74 @@ Private Sub HermiteFill(xs() As Double, ys() As Double, ByVal np_ As Long, ax_()
         HermSeg fx, fy, nf, a0, a1, tax, tay, b0, b1, tbx, tby, stp
     End If
 End Sub
+
+' шрифт — образец: Эрмит через дыру зоны развилки, касательные концов — по RefEndTan (у длинной
+' зоны — утолщение «е» — окно в 6 шагов захватывает изгиб, и обычный Эрмит уходит наружу)
+Private Sub RefHermiteFill(xs() As Double, ys() As Double, ByVal np_ As Long, ax_() As Double, ay_() As Double, _
+                           ByVal na As Long, ByVal stp As Double, ByVal w As Double, fx() As Double, fy() As Double, nf As Long)
+    Dim a0 As Double, a1 As Double, b0 As Double, b1 As Double, cx As Double, cy As Double
+    Dim tax As Double, tay As Double, tbx As Double, tby As Double
+    a0 = xs(np_ - 1): a1 = ys(np_ - 1): b0 = ax_(0): b1 = ay_(0)
+    cx = b0 - a0: cy = b1 - a1: Norm cx, cy
+    If Not RefEndTan(xs, ys, np_, True, w, tax, tay) Then
+        tax = cx: tay = cy
+    End If
+    If RefEndTan(ax_, ay_, na, False, w, tbx, tby) Then
+        tbx = -tbx: tby = -tby
+    Else
+        tbx = cx: tby = cy
+    End If
+    HermSeg fx, fy, nf, a0, a1, tax, tay, b0, b1, tbx, tby, stp
+End Sub
+
+' касательная в конце ломаной (fromEnd: в последней точке, иначе в первой), направленная наружу,
+' по точкам на ~w от конца: окружность, если её rms < 0.5 rms прямой и радиус 0.5w..50w, иначе прямая
+Private Function RefEndTan(x() As Double, y() As Double, ByVal n As Long, ByVal fromEnd As Boolean, ByVal w As Double, _
+                           tx As Double, ty As Double) As Boolean
+    Dim px() As Double, py() As Double, np2 As Long, i As Long, k As Long, s As Double
+    Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double
+    Dim cx As Double, cy As Double, rr As Double, crms As Double, rx As Double, ry As Double
+    If n < 1 Then
+        Exit Function
+    End If
+    ReDim px(0 To n - 1): ReDim py(0 To n - 1)
+    If fromEnd Then
+        k = n - 1
+    Else
+        k = 0
+    End If
+    px(0) = x(k): py(0) = y(k): np2 = 1: s = 0
+    For i = 1 To n - 1
+        If fromEnd Then
+            k = n - 1 - i
+        Else
+            k = i
+        End If
+        s = s + Dist(px(np2 - 1), py(np2 - 1), x(k), y(k))
+        If s > w Then
+            Exit For
+        End If
+        px(np2) = x(k): py(np2) = y(k): np2 = np2 + 1
+    Next i
+    If np2 < 3 Then
+        Exit Function
+    End If
+    FitLineLS px, py, np2, mx, my, dx, dy, rms
+    tx = dx: ty = dy
+    If np2 >= 4 Then
+        If FitCircle(px, py, np2, cx, cy, rr, crms) Then
+            If crms < 0.5 * rms And rr > 0.5 * w And rr < 50 * w Then
+                tx = -(py(0) - cy): ty = px(0) - cx
+                Norm tx, ty
+            End If
+        End If
+    End If
+    rx = px(0) - px(np2 - 1): ry = py(0) - py(np2 - 1)
+    If tx * rx + ty * ry < 0 Then
+        tx = -tx: ty = -ty
+    End If
+    RefEndTan = True
+End Function
 
 Private Sub HermSeg(fx() As Double, fy() As Double, nf As Long, ByVal a0 As Double, ByVal a1 As Double, _
                     ByVal tax As Double, ByVal tay As Double, ByVal b0 As Double, ByVal b1 As Double, _

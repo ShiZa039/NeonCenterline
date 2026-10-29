@@ -965,6 +965,39 @@ def _stub_straight(ch, k, xy, jwj, w):
     return None
 
 
+def _ref_end_tan(seq, w):
+    """Касательная в seq[0], направленная наружу (к seq[0]), по точкам на ~1w от seq[0]:
+    окружность, если её rms заметно меньше, чем у прямой (0.5), и радиус 0.5w..50w, иначе прямая."""
+    P = [seq[0]]; s = 0.0
+    for p, q in zip(seq[:-1], seq[1:]):
+        s += math.dist(p, q)
+        if s > w:
+            break
+        P.append(q)
+    if len(P) < 3:
+        return None
+    mx, my, dx, dy, rms = _fit_line(P)
+    d = (dx, dy)
+    if len(P) >= 4:
+        c = _fit_circle(P)
+        if c is not None and c[3] < 0.5*rms and 0.5*w < c[2] < 50*w:
+            d = _norm((-(P[0][1]-c[1]), P[0][0]-c[0]))
+    ref = (P[0][0]-P[-1][0], P[0][1]-P[-1][1])
+    if d[0]*ref[0] + d[1]*ref[1] < 0:
+        d = (-d[0], -d[1])
+    return d
+
+
+def _ref_hermite_fill(before, after, step, w):
+    """Эрмит через дыру зоны развилки с касательными концов по _ref_end_tan."""
+    a = before[-1]; b = after[0]
+    chord = _norm((b[0]-a[0], b[1]-a[1]))
+    ta = _ref_end_tan(before[::-1], w) or chord
+    tb = _ref_end_tan(after, w)
+    tb = (-tb[0], -tb[1]) if tb else chord
+    return _herm(a, ta, b, tb, step)
+
+
 def _ref_straighten(pts, zones, fixed, w, polys, h, free):
     """Шрифт — образец: штрих идёт сквозь развилку по своему ходу. Окно вокруг зон развилок
     (до 3w в обе стороны, не дальше острого угла); фит в осях хорды окна по дальним точкам
@@ -1249,6 +1282,11 @@ def _process(G, chains, passthru, prm, W, h):
                     pend = (proj, xy[ch[k2]], 0.8*cref)
                 if xi is not None:
                     fixed.add(len(pts) + xi)        # угол оси в развилке — не сглаживать
+                if fl is None and prm.get('ref') and jc is None:
+                    # шрифт — образец: касательные концов дыры — по фиту ~1 ширины (окружность,
+                    # если заметно лучше прямой): у длинной зоны (утолщение «е») окно 6 шагов
+                    # захватывает изгиб, и Эрмит уходит наружу
+                    fl = _ref_hermite_fill(pts, aft, h*1.4, cref)
                 if fl is None:
                     fl = _hermite_fill(pts, aft, h*1.4, jc)
             elif pts and closed:
