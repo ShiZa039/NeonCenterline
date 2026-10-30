@@ -145,6 +145,7 @@ def centerline(polys, prm=P, debug=None):
                               concave=[c[:2] for c in G['bcorners'] if not c[2] and
                                        c[3][0]*c[4][0] + c[3][1]*c[4][1] < math.cos(math.radians(75))])
         if prm.get('ref') and not closed:
+            pts = _ref_corner_legs(pts, W, polys, h)
             pts = _fillet(pts, W, prm.get('fillet', 0.5))
         pts = _deglitch(pts, closed, W)
         C.SMOOTH_ARC = bool(prm.get('ref'))
@@ -470,6 +471,88 @@ def _prune(G, kprune):
     return changed
 
 
+def _ref_corner_legs(pts, W, polys, h):
+    """Шрифт — образец: ноги острого поворота пера (шпилька «т» в «ст», низ «и», «л») — прямые
+    до самого острия. Острия — как в _fillet (поворот > 35 град по участкам 0.6W). Нога — точки
+    до 3W от острия (не дальше соседнего острия); если её дальняя часть (1W..3W) прямая
+    (отклонение <= 0.05W), а ближняя (до 1W) отходит от этой прямой не больше 0.25W, вся нога
+    ложится на прямую, а острие — в пересечение прямых обеих ног (не дальше 0.3W от прежнего,
+    ноги не почти параллельны). Потом _fillet скругляет острие как поворот пера."""
+    n = len(pts)
+    if n < 7:
+        return pts
+    cum = [0.0]
+    for i in range(1, n):
+        cum.append(cum[-1] + math.dist(pts[i-1], pts[i]))
+    import bisect
+    def at(sv):
+        sv = max(0.0, min(cum[-1], sv))
+        j = min(max(1, bisect.bisect_left(cum, sv)), n-1)
+        L = cum[j] - cum[j-1]
+        t = 0.0 if L < 1e-12 else (sv - cum[j-1])/L
+        return (pts[j-1][0] + (pts[j][0]-pts[j-1][0])*t, pts[j-1][1] + (pts[j][1]-pts[j-1][1])*t)
+    win = 0.6*W
+    turns = []
+    for i in range(1, n-1):
+        if cum[i] < 0.3*W or cum[-1] - cum[i] < 0.3*W:
+            continue
+        a = at(cum[i] - win); b = at(cum[i] + win); c = pts[i]
+        d1 = _norm((c[0]-a[0], c[1]-a[1])); d2 = _norm((b[0]-c[0], b[1]-c[1]))
+        turns.append((math.acos(max(-1.0, min(1.0, d1[0]*d2[0] + d1[1]*d2[1]))), i))
+    turns.sort(reverse=True)
+    tips = []
+    for ang, i in turns:
+        if ang < math.radians(35):
+            break
+        if any(abs(cum[i] - cum[j]) < 1.2*W for j in tips):
+            continue
+        tips.append(i)
+    if not tips:
+        return pts
+    out = list(pts)
+    for t in sorted(tips):
+        legs = []
+        for dirn in (-1, 1):
+            idx = []; k = t
+            while 0 <= k + dirn < n:
+                k += dirn
+                if abs(cum[k] - cum[t]) > 3.0*W or (k in tips and k != t):
+                    break
+                idx.append(k)
+            far = [k for k in idx if abs(cum[k] - cum[t]) >= 1.0*W]
+            if len(far) < 5 or abs(cum[far[-1]] - cum[far[0]]) < 1.0*W:
+                break
+            mx, my, dx, dy, rms = _fit_line([out[k] for k in far])
+            perp = lambda k: abs(-(out[k][0]-mx)*dy + (out[k][1]-my)*dx)
+            if max(perp(k) for k in far) > 0.05*W:
+                break
+            near = [k for k in idx if k not in far]
+            if near and max(perp(k) for k in near) > 0.25*W:
+                break
+            legs.append((mx, my, dx, dy, idx))
+        if len(legs) < 2:
+            continue
+        (ax, ay, adx, ady, ai), (bx, by, bdx, bdy, bi) = legs
+        den = adx*bdy - ady*bdx
+        if abs(den) < 0.34:
+            continue
+        u = ((bx - ax)*bdy - (by - ay)*bdx) / den
+        X = (ax + adx*u, ay + ady*u)
+        if math.dist(X, out[t]) > 0.3*W:
+            continue
+        new = list(out)
+        new[t] = X
+        for (mx, my, dx, dy, idx) in ((ax, ay, adx, ady, ai), (bx, by, bdx, bdy, bi)):
+            for k in idx:
+                tt = (out[k][0]-mx)*dx + (out[k][1]-my)*dy
+                new[k] = (mx + dx*tt, my + dy*tt)
+        lo = min(ai + bi + [t]); hi = max(ai + bi + [t])
+        if not _poly_inside(polys, new[max(0, lo-1):hi+2], 0.5*h):
+            continue
+        out = new
+    return out
+
+
 def _fillet(pts, W, kr):
     """Режим образца: перо поворачивает плавно — острые изломы оси (> 35 град по участкам
     ~0.6W с обеих сторон) скругляются кривой радиуса ~kr*W."""
@@ -495,31 +578,60 @@ def _fillet(pts, W, kr):
         a = at(cum[i] - win); b = at(cum[i] + win); c = pts[i]
         d1 = _norm((c[0]-a[0], c[1]-a[1])); d2 = _norm((b[0]-c[0], b[1]-c[1]))
         ang = math.acos(max(-1.0, min(1.0, d1[0]*d2[0] + d1[1]*d2[1])))
-        turns.append((ang, i))
+        turns.append((ang, i, 1 if d1[0]*d2[1] - d1[1]*d2[0] > 0 else -1))
     # локальные максимумы поворота > 35 град, без перекрытия
     turns.sort(reverse=True)
     used = []; cuts = []
-    for ang, i in turns:
+    for ang, i, sg in turns:
         if ang < math.radians(35):
             break
-        if any(abs(cum[i] - cum[j]) < 1.2*W for j in used):
-            continue
-        used.append(i)
         R = kr*W
         c = min(R*math.tan(min(ang, math.radians(150))/2), 0.45*(cum[i]), 0.45*(cum[-1]-cum[i]), 1.2*W)
-        cuts.append((cum[i]-c, cum[i]+c, i))
+        lo = cum[i] - c; hi = cum[i] + c
+        near = [u for u in used if abs(cum[i] - u[0]) < 1.2*W]
+        if near:
+            # тот же излом (скругления перекрываются) — пропустить; отдельный поворот в ту же
+            # сторону рядом (крючок входа «т»: верх крючка и сразу поворот в стойку) — одно
+            # скругление на оба: дуга от начала первого до конца второго
+            u = near[0]
+            if len(near) == 1 and sg == u[2] and abs(cum[i] - u[0]) >= c + u[1]:
+                cu = u[3]
+                n0 = min(cu[0], lo); n1 = max(cu[1], hi)
+                if not any(o is not cu and o[0] < n1 and n0 < o[1] for o in cuts):
+                    cu[0] = n0; cu[1] = n1; cu[3] = True
+            continue
+        if any(o[0] < hi and lo < o[1] for o in cuts):
+            continue                               # скругления не должны налезать друг на друга
+        cu = [lo, hi, i, False]
+        used.append((cum[i], c, sg, cu))
+        cuts.append(cu)
     if not cuts:
         return pts
     cuts.sort()
     out = []; k = 0
-    for s0, s1, i in cuts:
+    for s0, s1, i, two in cuts:
         while k < n and cum[k] < s0:
             out.append(pts[k]); k += 1
         A = at(s0); B = at(s1); Cn = pts[i]
         m = max(4, int((s1-s0)/(0.08*W)))
-        for t in range(m+1):
-            u = t/m
-            out.append(((1-u)**2*A[0] + 2*u*(1-u)*Cn[0] + u*u*B[0], (1-u)**2*A[1] + 2*u*(1-u)*Cn[1] + u*u*B[1]))
+        if two:
+            # дуга по касательным концов: кубическая кривая с ручками окружности
+            ta = _norm((A[0]-at(s0 - 0.3*W)[0], A[1]-at(s0 - 0.3*W)[1])) if s0 > 0.05*W else \
+                _norm((at(s0 + 0.1*W)[0]-A[0], at(s0 + 0.1*W)[1]-A[1]))
+            tb = _norm((at(s1 + 0.3*W)[0]-B[0], at(s1 + 0.3*W)[1]-B[1])) if cum[-1] - s1 > 0.05*W else \
+                _norm((B[0]-at(s1 - 0.1*W)[0], B[1]-at(s1 - 0.1*W)[1]))
+            th = math.acos(max(-1.0, min(1.0, ta[0]*tb[0] + ta[1]*tb[1])))
+            ch = math.dist(A, B)
+            hl = ch/3 if th < 1e-3 else ch*(4/3)*math.tan(min(th, math.radians(170))/4)/(2*math.sin(min(th, math.radians(170))/2))
+            P1 = (A[0] + ta[0]*hl, A[1] + ta[1]*hl); P2 = (B[0] - tb[0]*hl, B[1] - tb[1]*hl)
+            for t in range(m+1):
+                u = t/m; v = 1-u
+                out.append((v**3*A[0] + 3*v*v*u*P1[0] + 3*v*u*u*P2[0] + u**3*B[0],
+                            v**3*A[1] + 3*v*v*u*P1[1] + 3*v*u*u*P2[1] + u**3*B[1]))
+        else:
+            for t in range(m+1):
+                u = t/m
+                out.append(((1-u)**2*A[0] + 2*u*(1-u)*Cn[0] + u*u*B[0], (1-u)**2*A[1] + 2*u*(1-u)*Cn[1] + u*u*B[1]))
         while k < n and cum[k] <= s1:
             k += 1
     while k < n:
@@ -965,6 +1077,39 @@ def _stub_straight(ch, k, xy, jwj, w):
     return None
 
 
+def _ref_end_tan(seq, w):
+    """Касательная в seq[0], направленная наружу (к seq[0]), по точкам на ~1w от seq[0]:
+    окружность, если её rms заметно меньше, чем у прямой (0.5), и радиус 0.5w..50w, иначе прямая."""
+    P = [seq[0]]; s = 0.0
+    for p, q in zip(seq[:-1], seq[1:]):
+        s += math.dist(p, q)
+        if s > w:
+            break
+        P.append(q)
+    if len(P) < 3:
+        return None
+    mx, my, dx, dy, rms = _fit_line(P)
+    d = (dx, dy)
+    if len(P) >= 4:
+        c = _fit_circle(P)
+        if c is not None and c[3] < 0.5*rms and 0.5*w < c[2] < 50*w:
+            d = _norm((-(P[0][1]-c[1]), P[0][0]-c[0]))
+    ref = (P[0][0]-P[-1][0], P[0][1]-P[-1][1])
+    if d[0]*ref[0] + d[1]*ref[1] < 0:
+        d = (-d[0], -d[1])
+    return d
+
+
+def _ref_hermite_fill(before, after, step, w):
+    """Эрмит через дыру зоны развилки с касательными концов по _ref_end_tan."""
+    a = before[-1]; b = after[0]
+    chord = _norm((b[0]-a[0], b[1]-a[1]))
+    ta = _ref_end_tan(before[::-1], w) or chord
+    tb = _ref_end_tan(after, w)
+    tb = (-tb[0], -tb[1]) if tb else chord
+    return _herm(a, ta, b, tb, step)
+
+
 def _ref_straighten(pts, zones, fixed, w, polys, h, free):
     """Шрифт — образец: штрих идёт сквозь развилку по своему ходу. Окно вокруг зон развилок
     (до 3w в обе стороны, не дальше острого угла); фит в осях хорды окна по дальним точкам
@@ -1249,6 +1394,11 @@ def _process(G, chains, passthru, prm, W, h):
                     pend = (proj, xy[ch[k2]], 0.8*cref)
                 if xi is not None:
                     fixed.add(len(pts) + xi)        # угол оси в развилке — не сглаживать
+                if fl is None and prm.get('ref') and jc is None:
+                    # шрифт — образец: касательные концов дыры — по фиту ~1 ширины (окружность,
+                    # если заметно лучше прямой): у длинной зоны (утолщение «е») окно 6 шагов
+                    # захватывает изгиб, и Эрмит уходит наружу
+                    fl = _ref_hermite_fill(pts, aft, h*1.4, cref)
                 if fl is None:
                     fl = _hermite_fill(pts, aft, h*1.4, jc)
             elif pts and closed:
@@ -2369,7 +2519,7 @@ def _ref_stub(q, w, poly, jw_j, xy_j, h, polys, v0=0, v1=0):
     """Режим образца: заглушку продолжить по её собственному ходу (прямая или дуга по
     последним ~1.5w пути) до пересечения с линией poly. Если продолжение не доходит
     (штрих гнётся к стойке сильнее), — отрезком прямо от конца к точке poly с наименьшим
-    отклонением от касательной (< 35 град). Попадание принимается, если точка внутри контура,
+    отклонением от касательной (< 12 град). Попадание принимается, если точка внутри контура,
     штрих подходит под углом (> 12 град к poly) и за poly выходит из контура быстро (< 1.2 jw):
     при касательном слиянии продолжение долго идёт внутри соседнего штриха."""
     if poly is None or len(q) < 3:
@@ -2446,7 +2596,10 @@ def _ref_stub(q, w, poly, jw_j, xy_j, h, polys, v0=0, v1=0):
             continue
         dv = ((pt[0]-start[0])/L, (pt[1]-start[1])/L)
         dev = dv[0]*d[0] + dv[1]*d[1]
-        if dev < math.cos(math.radians(35)):
+        # отрезок — почти по касательной штриха (диагональ «т» от арки к стойке — 0..5 град);
+        # круче — излом в начале и срез угла развилки у самого края (низ чаши «я» в ножку):
+        # пусть достраивает _stub_extend
+        if dev < math.cos(math.radians(12)):
             continue
         if best is not None and dev < best[0] - 1e-9:
             continue
