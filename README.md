@@ -36,15 +36,17 @@
 
 Выделите контуры (кривые, текст, группы) и нажмите **Моно** или **Курсив**.
 
-**Длина** — отдельная кнопка: считает длину выделенного. Контуры (длина под резку) и центральные линии плагина (длина неона, число кусков, самый длинный кусок) — отдельно; результат можно скопировать в буфер обмена.
-**Выделить линии** — выделяет все центральные линии плагина на странице (например, чтобы сразу посчитать длину неона или убрать их).
+На панели «Неон»: **Моно**, **Курсив** | **Упростить контур**, **Линии ▾** | **Настройки ▾**. Кнопки со стрелкой открывают список: в **«Линии»** — длина, выделить линии, подогнать под рез; в **«Настройки»** — настройки, проверить обновления, о программе.
+
+**Длина** (в «Линии ▾») — считает длину выделенного. Контуры (длина под резку) и центральные линии плагина (длина неона, число кусков, самый длинный кусок) — отдельно; результат можно скопировать в буфер обмена.
+**Выделить линии** (в «Линии ▾») — выделяет все центральные линии плагина на странице (например, чтобы сразу посчитать длину неона или убрать их).
 **Упростить контур** (`NeonCenterline.NeonTools.SimplifyContours`) — меньше узлов у выделенных кривых: кривая не отходит от исходной больше допуска (окно перед запуском, как у центральных линий, и Настройки; по умолчанию 0.1 мм), острые углы остаются углами, гладкие места — гладкими. Кривые меняются на месте, отмена — Ctrl+Z. Полезно для трассированных логотипов и контуров из DXF/CAM (тысячи узлов → десятки), шрифты обычно сокращаются на треть. Текст и фигуры сначала переведите в кривые (Ctrl+Q).
 
 ### Тип неона и кратность реза
 В настройках: **тип неона** — светодиодный (лента внутри: кусок неона = длина паза) или **неон 2.0** (силиконовый рассеиватель в пазу, лента отдельно), и **кратность реза** (10 / 25 / 50 мм или своя).
 - Галочка **«Подгонять линии под кратность реза»**: после расчёта каждый кусок укорачивается до ближайшей меньшей кратной длины — только за счёт **свободных** концов (поровну с обоих или только с конца линии — настройка). Удлинять нельзя: конец уже на D/2 от края. Замкнутые куски и куски без свободных концов не меняются — остаток виден в отчёте.
 - Кнопка **«Длина»** для центральных линий показывает, сколько неона (или ленты для неона 2.0) получается кратно резу и сколько уйдёт в остатки.
-- Кнопка **«Подогнать под рез»** (`NeonCenterline.NeonCut.FitToCut`) — подогнать под кратность уже готовые выделенные линии.
+- Команда **«Подогнать под рез»** в «Линии ▾» (`NeonCenterline.NeonCut.FitToCut`) — подогнать под кратность уже готовые выделенные линии.
 В **настройках** — диаметр фрезы, спрашивать ли его при каждом запуске, допуск упрощения контура, язык интерфейса (русский / English / как в Windows), ежедневная проверка обновлений.
 
 ## Обновления
@@ -96,15 +98,17 @@ A CorelDRAW plugin that builds a centerline from letter outlines for milling fle
 
 Select outlines (curves, text, groups) and press **Mono** or **Script**.
 
-**Length** — a separate button: measures the selection. Outlines (cutting length) and plugin centerlines (neon length, number of pieces, longest piece) are reported separately; the result can be copied to the clipboard.
-**Select lines** — selects all plugin centerlines on the page (e.g. to measure the neon or remove them).
+The "Неон" toolbar: **Mono**, **Script** | **Simplify outline**, **Lines ▾** | **Settings ▾**. Buttons with an arrow open a list: **Lines** — length, select lines, fit to cut; **Settings** — settings, check for updates, about.
+
+**Length** (in Lines ▾) — measures the selection. Outlines (cutting length) and plugin centerlines (neon length, number of pieces, longest piece) are reported separately; the result can be copied to the clipboard.
+**Select lines** (in Lines ▾) — selects all plugin centerlines on the page (e.g. to measure the neon or remove them).
 **Simplify outline** (`NeonCenterline.NeonTools.SimplifyContours`) — fewer nodes on the selected curves: the curve deviates from the original by no more than the tolerance (a window before the run, like for centerlines, and Settings; 0.1 mm by default), sharp corners stay sharp, smooth parts stay smooth. Curves are changed in place, undo with Ctrl+Z. Useful for traced logos and outlines from DXF/CAM (thousands of nodes become dozens); font outlines usually lose about a third of their nodes. Convert text and shapes to curves first (Ctrl+Q).
 
 ### Neon type and cut step
 Settings: **neon type** — LED neon (strip inside: neon piece = groove length) or **Neon 2.0** (silicone diffuser in a groove, separate strip), and the **cut step** (10 / 25 / 50 mm or custom).
 - **"Fit lines to the cut step"**: after a run every piece is shortened to the nearest smaller multiple — only at **free** ends (equally at both or only at the line end — a setting). Lines are never extended: a free end is already D/2 from the edge. Closed pieces and pieces without free ends are left as is; the remainder is shown in the report.
 - The **Length** button shows how much neon (or strip, for Neon 2.0) fits in whole cut steps and how much goes to remainders.
-- The **Fit to cut** button (`NeonCenterline.NeonCut.FitToCut`) fits already selected lines to the cut step.
+- The **Fit to cut** command in Lines ▾ (`NeonCenterline.NeonCut.FitToCut`) fits already selected lines to the cut step.
 **Settings**: cutter diameter, whether to ask for it on every run, outline simplify tolerance, interface language (Russian / English / as Windows), daily update check.
 
 ## Updates

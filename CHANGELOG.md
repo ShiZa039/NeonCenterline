@@ -18,6 +18,7 @@ RU
 - «Моно»: линия, идущая прямо через развилку, больше не даёт «волну», когда сразу за развилкой стоит фаска или излом (буква «к» в моноширинных шрифтах).
 - Новая кнопка «Неон: упростить контур»: меньше узлов у выделенных кривых в пределах допуска (окно перед запуском, как у центральных линий, и Настройки; по умолчанию 0.1 мм), острые углы сохраняются, гладкие места остаются гладкими; кривые меняются на месте, отмена — Ctrl+Z. Трассированные логотипы и контуры из DXF/CAM — с тысяч узлов до десятков.
 - Панель «Неон» обновляется сама: если в новой версии плагина на панели новые кнопки, плагин один раз предложит обновить файлы панели (права администратора), а при следующем запуске CorelDRAW сбросит только панель «Неон» к новому составу — остальное рабочее пространство не трогается. Установка панели теперь проходит и при открытом CorelDRAW (занятый файл значков подменяется).
+- Панель «Неон» собрана по инструментам: на панели Моно, Курсив, Упростить контур и две кнопки-списка — «Линии ▾» (длина, выделить линии, подогнать под рез) и «Настройки ▾» (настройки, проверить обновления, о программе); свои значки у «проверить обновления» и «о программе». Панель у пользователей перестроится сама после обновления.
 - Кнопка «Поддержать автора» в окне «О программе» (ведёт на страницу DONATE.md).
 - README: ручная установка, совместимость, тестовый шрифт; в архиве — папка icons.
 
@@ -37,6 +38,7 @@ EN
 - Mono: a line running straight through a junction no longer gets a "wave" when a chamfer or bend follows right after the junction (letter "к" in monoline fonts).
 - New button "Neon: simplify outline": fewer nodes on the selected curves within a tolerance (a window before the run, like for centerlines, and Settings; 0.1 mm by default); sharp corners are kept and smooth parts stay smooth; curves are changed in place, undo with Ctrl+Z. Traced logos and DXF/CAM outlines go from thousands of nodes to dozens.
 - The "Neon" toolbar updates itself: if a new plugin version adds buttons, the plugin offers once to update the toolbar files (administrator rights), and on the next CorelDRAW start resets only the "Neon" toolbar to the new button set; the rest of the workspace is untouched. Installing the toolbar now also works while CorelDRAW is open (the icon file in use is swapped).
+- The "Неон" toolbar is grouped by tool: Mono, Script, Simplify outline and two drop-down buttons — "Lines ▾" (length, select lines, fit to cut) and "Settings ▾" (settings, check for updates, about); check for updates and about got their own icons. Users' toolbars rebuild themselves after the update.
 - "Support the author" in the About window (opens DONATE.md).
 - README: manual installation, compatibility, test font; icons folder in the archive.
 

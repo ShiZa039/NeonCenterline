@@ -2,8 +2,10 @@
 <!--
   NeonCenterline — команды и панель инструментов (CorelDRAW Addons).
   Команды вызывают макросы проекта NeonCenterline.gms (пользовательская папка GMS).
+  Панель: Моно, Курсив | Упростить контур, Линии ▾ | Настройки ▾. «▾» — кнопка-группа:
+  itemData с flyoutBarRef на commandBarData type="menu" flyout="true" (выпадающий список).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 2]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 3]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
@@ -79,6 +81,19 @@
                 userCaption="Неон: упростить контур"
                 userToolTip="Меньше узлов у выделенных кривых: отход от исходной не больше допуска (по умолчанию 0.1 мм), углы остаются углами. Отмена — Ctrl+Z"
                 enable="true"/>
+      <!-- кнопки-группы: открывают выпадающий список команд -->
+      <itemData guid="305a1621-a721-5784-9de2-b2338e83336c"
+                flyoutBarRef="b14254e7-44de-5f90-bb10-6319042600d8"
+                icon="guid://305a1621-a721-5784-9de2-b2338e83336c"
+                userCaption="Неон: линии"
+                userToolTip="Длина контуров и линий, выделить центральные линии, подогнать под кратность реза"
+                enable="true"/>
+      <itemData guid="0392cc33-564d-537f-b0df-9d90ebfd4177"
+                flyoutBarRef="54b0af94-56f6-588f-b329-fe0cd1ba2e6b"
+                icon="guid://0392cc33-564d-537f-b0df-9d90ebfd4177"
+                userCaption="Неон: настройки и помощь"
+                userToolTip="Настройки, проверить обновления, о программе"
+                enable="true"/>
     </xsl:copy>
   </xsl:template>
 
@@ -92,12 +107,34 @@
         <toolbar>
           <item guidRef="4e6d43bf-0b2d-500c-b154-b553b6087991"/>
           <item guidRef="c68c5d4f-d668-5fb4-937e-adb7430cae58"/>
+          <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
+          <item guidRef="18048cca-273b-50eb-9d03-54111cc920ce"/>
+          <item guidRef="305a1621-a721-5784-9de2-b2338e83336c"/>
+          <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
+          <item guidRef="0392cc33-564d-537f-b0df-9d90ebfd4177"/>
+        </toolbar>
+      </commandBarData>
+      <!-- выпадающие списки кнопок-групп -->
+      <commandBarData guid="b14254e7-44de-5f90-bb10-6319042600d8"
+                      type="menu"
+                      nonLocalizableName="NeonCenterline Lines"
+                      flyout="true">
+        <menu>
           <item guidRef="0b33ce77-31ad-5c46-bb8b-2cd2e362084f"/>
           <item guidRef="c913505c-324e-543b-b2b1-a55c9bcbc9eb"/>
           <item guidRef="ce9120be-eca9-5ed0-b1c8-c43624951305"/>
-          <item guidRef="18048cca-273b-50eb-9d03-54111cc920ce"/>
+        </menu>
+      </commandBarData>
+      <commandBarData guid="54b0af94-56f6-588f-b329-fe0cd1ba2e6b"
+                      type="menu"
+                      nonLocalizableName="NeonCenterline Settings"
+                      flyout="true">
+        <menu>
           <item guidRef="ce37ed0a-544f-575c-ac35-ef4d4aab66c9"/>
-        </toolbar>
+          <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
+          <item guidRef="1025a06f-bc40-5284-9292-2c3cf477d6a2"/>
+          <item guidRef="c5cc733d-ee55-5173-b5ef-17a954845da7"/>
+        </menu>
       </commandBarData>
     </xsl:copy>
   </xsl:template>

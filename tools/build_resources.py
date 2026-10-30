@@ -12,9 +12,12 @@ ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
          ('length', 'neon_length', 104, 'Неон: длина контуров и линий'),
          ('select', 'neon_select', 105, 'Неон: выделить центральные линии'),
          ('cut', 'neon_cut', 106, 'Неон: подогнать под кратность реза'),
-         ('update', 'neon_settings', 103, 'Неон: проверить обновления'),
-         ('about', 'neon_settings', 103, 'Неон: о программе'),
-         ('simplify', 'neon_simplify', 107, 'Неон: упростить контур')]
+         ('update', 'neon_update', 109, 'Неон: проверить обновления'),
+         ('about', 'neon_about', 110, 'Неон: о программе'),
+         ('simplify', 'neon_simplify', 107, 'Неон: упростить контур'),
+         # кнопки-группы панели (выпадающие списки), с панели [NeonToolbar 3]
+         ('lines-menu', 'neon_lines', 108, 'Неон: линии'),
+         ('settings-menu', 'neon_settings', 103, 'Неон: настройки и помощь')]
 
 def bmp_entry(im):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()
@@ -61,4 +64,25 @@ cfg = ['<?xml version="1.0"?>', '<config>', '  <resources>',
 cfg += [f'        <resEntry id="{G(k)}" string="{20001 + i}" icon="{rid}"/>' for i, (k, ico, rid, cap) in enumerate(ITEMS)]
 cfg += ['      </resourceMap>', '    </resource>', '  </resources>', '</config>', '']
 open(os.path.join(A, 'config.xml'), 'w', encoding='utf-8').write('\n'.join(cfg))
+# ld с .rsrc больше 64 КБ пишет «.rsrc is too large» и не перекладывает секцию, а оставляет её как
+# собрал windres (адреса данных — через обычные релокации); проверяем, что подписи и значки читаются
+try:
+    import pefile
+    pe = pefile.PE(os.path.join(A, 'Resources.dll'))
+    d = {e.id: e for e in pe.DIRECTORY_ENTRY_RESOURCE.entries}
+    blk = d[6].directory.entries[0].directory.entries[0].data.struct
+    raw = pe.get_data(blk.OffsetToData, blk.Size); o = 0; got = []
+    for i in range(len(ITEMS) + 1):
+        n = struct.unpack_from('<H', raw, o)[0]; got.append(raw[o + 2:o + 2 + 2 * n].decode('utf-16le')); o += 2 + 2 * n
+    assert got == ['Неон (NeonCenterline)'] + [c for k, ico, r, c in ITEMS], got
+    icons = {e.id: e for e in d[3].directory.entries}
+    for g in d[14].directory.entries:
+        e = g.directory.entries[0].data.struct; gd = pe.get_data(e.OffsetToData, e.Size)
+        for i in range(struct.unpack_from('<H', gd, 4)[0]):
+            w, iid = gd[6 + 14 * i], struct.unpack_from('<H', gd, 6 + 14 * i + 12)[0]
+            ie = icons[iid].directory.entries[0].data.struct
+            assert struct.unpack_from('<Ii', pe.get_data(ie.OffsetToData, 8)) == (40, w), (g.id, iid)
+    print('Resources.dll: подписи и значки читаются')
+except ImportError:
+    print('pefile не установлен — Resources.dll не проверен')
 print('Resources.dll', os.path.getsize(os.path.join(A, 'Resources.dll')), 'bytes; config.xml')
