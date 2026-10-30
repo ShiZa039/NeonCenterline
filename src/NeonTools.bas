@@ -1150,12 +1150,15 @@ Private Function GromColor(ByVal cs As String) As Color
     End Select
 End Function
 
-' свой цвет окном выбора цвета CorelDRAW; "" — отмена
+' свой цвет окном выбора цвета CorelDRAW; "" — отмена. UserAssign в CorelDRAW 2026 — процедура
+' без результата: выбор (а не отмену) видно по тому, что цвет изменился
 Public Function NeonGromPickColor(ByVal cur As String) As String
-    Dim c As Color
+    Dim c As Color, was As String
     On Error GoTo Fail
     Set c = GromColor(cur)
-    If c.UserAssign() Then
+    was = c.ToString
+    c.UserAssign
+    If c.ToString <> was Then
         NeonGromPickColor = "S:" & c.ToString
     End If
 Fail:
