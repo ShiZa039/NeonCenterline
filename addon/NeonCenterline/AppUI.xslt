@@ -3,9 +3,10 @@
   NeonCenterline — команды и панель инструментов (CorelDRAW Addons).
   Команды вызывают макросы проекта NeonCenterline.gms (пользовательская папка GMS).
   Панель: Моно, Курсив | Упростить контур, Линии ▾ | Настройки ▾. «▾» — кнопка-группа:
-  itemData с flyoutBarRef на commandBarData type="menu" flyout="true" (выпадающий список).
+  itemData type="flyout" с flyoutBarRef на commandBarData type="menu" flyout="true" (как кнопки
+  со списком в самом CorelDRAW, DrawUI.items.xml; без type="flyout" CorelDRAW 2026 кнопку не рисует).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 3]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 4]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
@@ -83,12 +84,16 @@
                 enable="true"/>
       <!-- кнопки-группы: открывают выпадающий список команд -->
       <itemData guid="305a1621-a721-5784-9de2-b2338e83336c"
+                type="flyout"
+                arrowStyle="corner"
                 flyoutBarRef="b14254e7-44de-5f90-bb10-6319042600d8"
                 icon="guid://305a1621-a721-5784-9de2-b2338e83336c"
                 userCaption="Неон: линии"
                 userToolTip="Длина контуров и линий, выделить центральные линии, подогнать под кратность реза"
                 enable="true"/>
       <itemData guid="0392cc33-564d-537f-b0df-9d90ebfd4177"
+                type="flyout"
+                arrowStyle="corner"
                 flyoutBarRef="54b0af94-56f6-588f-b329-fe0cd1ba2e6b"
                 icon="guid://0392cc33-564d-537f-b0df-9d90ebfd4177"
                 userCaption="Неон: настройки и помощь"
