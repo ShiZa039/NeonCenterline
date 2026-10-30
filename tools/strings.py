@@ -124,4 +124,10 @@ STRINGS = {
                       'Windows попросит права администратора. Затем полностью перезапустите CorelDRAW — новые кнопки появятся сами.',
                       'The "Neon" toolbar in CorelDRAW is outdated: this plugin version has new buttons on it. Update the toolbar now?\n\n'
                       'Windows will ask for administrator rights. Then fully restart CorelDRAW and the new buttons appear by themselves.'),
+    'tb_reset_done': ('Панель «Неон» сброшена к набору кнопок этой версии плагина.\n\n{0}',
+                      'The "Neon" toolbar is reset to the button set of this plugin version.\n\n{0}'),
+    'tb_reset_none': ('Панель «Неон» не удалось сбросить.\n\n{0}\nЕсли панели нет в списке (Окно > Панели инструментов), установите её: '
+                      'макрос NeonCenterline.NeonAddon.InstallToolbar, затем полностью перезапустите CorelDRAW.',
+                      'Could not reset the "Neon" toolbar.\n\n{0}\nIf the toolbar is not listed (Window > Toolbars), install it: '
+                      'macro NeonCenterline.NeonAddon.InstallToolbar, then fully restart CorelDRAW.'),
 }

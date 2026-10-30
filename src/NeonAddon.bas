@@ -35,6 +35,8 @@ Public Sub InstallToolbar()
     stage = "copy"
     Set sh = CreateObject("Shell.Application")
     sh.ShellExecute "cmd.exe", cmd, "", "runas", 0
+    ' до перезапуска в памяти CorelDRAW старый состав панели — не сбрасывать её в этом сеансе
+    NeonTbInstalled = True
     MsgBox NeonLF("addon_done", dst), vbInformation, NeonL("app_title")
     Exit Sub
 Fail:

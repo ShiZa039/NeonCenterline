@@ -29,6 +29,7 @@ RU · EN
    Или, когда плагин уже загружен, запустите макрос NeonCenterline.NeonAddon.InstallToolbar (Инструменты → Макросы → Запуск макроса) — он сам положит панель в Addons той версии CorelDRAW, из которой запущен.
 3. Полностью перезапустите CorelDRAW и включите панель: Окно → Панели инструментов → «Неон (NeonCenterline)».
 4. Если панели нет или кнопки пустые (бывает в старых версиях), кнопки можно поставить вручную: Инструменты → Настройка (Ctrl+J) → Команды → категория «Макросы» → перетащить на любую панель команды NeonCenterline.NeonUI.RunMono, RunScript, ShowSettings, NeonCenterline.NeonTools.MeasureLength, SelectNeonLines, SimplifyContours, NeonCenterline.NeonCut.FitToCut. Значки — в папке icons архива (вкладка «Вид» → «Импорт»).
+5. Если после обновления плагина на панели старые кнопки — запустите макрос NeonCenterline.NeonUI.ResetToolbar (Инструменты → Макросы → Запуск макроса): он сбросит только панель «Неон» к новому набору кнопок.
 
 Тестовый шрифт font\SABNeonTest.ttf для работы плагина не нужен — он для пробы (моноширинный неоновый шрифт, на нём видно, как должен работать режим «Моно»). Установить: двойной щелчок по файлу → «Установить».
 
@@ -96,6 +97,7 @@ Manual installation (if the installer did not work, several CorelDRAW versions, 
    Or, once the plugin is loaded, run the macro NeonCenterline.NeonAddon.InstallToolbar (Tools → Macros → Run Macro): it puts the toolbar into Addons of the CorelDRAW version it runs in.
 3. Fully restart CorelDRAW and turn the toolbar on: Window → Toolbars → "Неон (NeonCenterline)".
 4. If there is no toolbar or the buttons are blank (possible in older versions), add the buttons manually: Tools → Customization (Ctrl+J) → Commands → category "Macros" → drag to any toolbar NeonCenterline.NeonUI.RunMono, RunScript, ShowSettings, NeonCenterline.NeonTools.MeasureLength, SelectNeonLines, SimplifyContours, NeonCenterline.NeonCut.FitToCut. Icons are in the icons folder of the archive (Appearance tab → Import).
+5. If the toolbar still shows the old buttons after a plugin update, run the macro NeonCenterline.NeonUI.ResetToolbar (Tools → Macros → Run Macro): it resets only the "Неон" toolbar to the new button set.
 
 Test font font\SABNeonTest.ttf is not required by the plugin — it is for trying it out (a monoline neon font that shows how Mono mode is meant to work). To install: double-click the file → Install.
 

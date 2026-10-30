@@ -31,6 +31,9 @@ Public NeonRunMode As Long
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
 Public Const NEON_TOOLBAR_VER As String = "3"
+' файлы панели обновлены в этом сеансе (InstallToolbar): в памяти CorelDRAW ещё старый состав
+' панели, сбрасывать её можно только после перезапуска
+Public NeonTbInstalled As Boolean
 
 ' ---------------------------------------------------------------------
 '  Кнопки
@@ -187,15 +190,17 @@ End Function
 '  Обновление панели «Неон» после обновления плагина.
 '  CorelDRAW вписывает кнопки дополнения в рабочее пространство один раз и сам новые кнопки
 '  в стоящую панель не добавляет. Поэтому:
-'    - при запуске CorelDRAW (ThisMacroStorage, atStart = True): если в Addons лежат файлы
-'      панели этой версии, а панель ещё не обновлялась — сброс только панели «Неон» к составу
-'      из AppUI.xslt (как «Сброс» в настройке панелей; остальное рабочее пространство не
-'      трогается);
+'    - при запуске CorelDRAW (ThisMacroStorage, atStart = True) и при первой команде плагина
+'      в сеансе (если VBA загружается отложенно и событие запуска не приходит): если в Addons
+'      лежат файлы панели этой версии, а панель ещё не обновлялась — сброс только панели «Неон»
+'      к составу из AppUI.xslt (как «Сброс» в настройке панелей; остальное рабочее пространство
+'      не трогается). Не в том сеансе, где файлы только что обновлены (NeonTbInstalled);
 '    - при работе (кнопки плагина): если файлы панели в Addons старые — один раз предложить
-'      обновить их (InstallToolbar, права администратора) и перезапустить CorelDRAW.
+'      обновить их (InstallToolbar, права администратора) и перезапустить CorelDRAW;
+'    - вручную: макрос ResetToolbar (сброс и отчёт, что найдено).
 ' ---------------------------------------------------------------------
 Public Sub NeonToolbarCheck(Optional ByVal atStart As Boolean = False)
-    Dim st As Long
+    Dim st As Long, rep As String
     If GetSetting(REG_APP, "UI", "ToolbarVer", "") = NEON_TOOLBAR_VER Then
         Exit Sub
     End If
@@ -211,12 +216,24 @@ Public Sub NeonToolbarCheck(Optional ByVal atStart As Boolean = False)
                 InstallToolbar
             End If
         End If
-    ElseIf atStart Then
-        If ResetNeonBar() Then
+    ElseIf Not NeonTbInstalled Then
+        If ResetNeonBar(rep) Then
             SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
         End If
     End If
 Quit:
+End Sub
+
+' сбросить панель «Неон» вручную: Инструменты > Макросы > NeonCenterline.NeonUI.ResetToolbar.
+' Показывает, какие панели найдены и что на них после сброса (для проверки)
+Public Sub ResetToolbar()
+    Dim rep As String
+    If ResetNeonBar(rep, True) Then
+        SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
+        MsgBox NeonLF("tb_reset_done", rep), vbInformation, NeonL("app_title")
+    Else
+        MsgBox NeonLF("tb_reset_none", rep), vbExclamation, NeonL("app_title")
+    End If
 End Sub
 
 ' файлы панели в Addons текущего CorelDRAW: 0 — нет, 1 — старые, 2 — этой версии (метка в AppUI.xslt)
@@ -246,19 +263,35 @@ Fail:
     ToolbarFilesState = 0
 End Function
 
-' сбросить панель «Неон» к составу из AppUI.xslt; True — панель найдена и сброшена
-Private Function ResetNeonBar() As Boolean
-    Dim cb As Object, nm As String, nl As String
+' сбросить панель «Неон» к составу из AppUI.xslt; True — панель найдена и сброшена.
+' rep — отчёт: имя панели, число кнопок до и после сброса (detail — и подписи кнопок)
+Private Function ResetNeonBar(ByRef rep As String, Optional ByVal detail As Boolean = False) As Boolean
+    Dim cb As Object, nm As String, nl As String, n0 As Long, n1 As Long, i As Long, cap As String
     On Error Resume Next
+    rep = ""
     For Each cb In Application.CommandBars
         nm = "": nl = ""
         nm = cb.Name
         nl = cb.NameLocal
         If InStr(1, nm, "NeonCenterline", vbTextCompare) > 0 Or InStr(1, nl, "NeonCenterline", vbTextCompare) > 0 Then
+            n0 = -1: n1 = -1
+            n0 = cb.Controls.Count
             Err.Clear
             cb.Reset
             If Err.Number = 0 Then
                 ResetNeonBar = True
+                n1 = cb.Controls.Count
+                rep = rep & nm & " / " & nl & ": " & n0 & " -> " & n1 & vbLf
+                If detail Then
+                    For i = 1 To n1
+                        cap = "?"
+                        cap = cb.Controls(i).Caption
+                        rep = rep & "    " & i & ". " & cap & vbLf
+                    Next i
+                End If
+            Else
+                rep = rep & nm & " / " & nl & ": " & Err.Description & vbLf
+                Err.Clear
             End If
         End If
     Next cb
