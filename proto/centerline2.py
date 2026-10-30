@@ -658,6 +658,11 @@ def _prune_ears(G, kear):
         # соосна с одной веткой и не соосна с другой (иначе это не ушко, а перекрёсток/Т)
         if min(dots) > -0.75 or max(dots) < -0.9:
             continue
+        # третья ветка отходит вбок или вперёд (cos > 0.1), а не вливается в стойку с той стороны,
+        # куда стойка идёт дальше: выступ — настоящий штрих (верх стойки «р» над чашей, ножка
+        # «а» под ней), не ушко
+        if max(dots) > 0.1:
+            continue
         # остальные две ветки — обе не висячие короткие (не срезать всё подряд)
         for k in path[:-1]:
             _kill(adj, k)
@@ -689,21 +694,25 @@ def _walk_to_junction(G, j, n0, maxd):
 
 
 def _merge_junctions(G, kmerge):
-    adj = G['adj']
+    """Развилки на перемычке короче kmerge*jw стягиваются в одну. Первой — ближайшая пара (при
+    равенстве — по координатам): итог не зависит от порядка узлов, VBA и прототип одинаковы
+    (у креста стойки и дуги «ж» из четырёх развилок сливаются две средние, а не по две с краю)."""
+    adj, xy = G['adj'], G['xy']
     while True:
-        done = False
-        for j in list(adj):
-            if j not in adj or len(adj[j]) < 3:
+        best = None
+        for j in adj:
+            if len(adj[j]) < 3:
                 continue
             maxd = kmerge * _jwidth(G, j)
-            for n0 in list(adj[j]):
+            for n0 in adj[j]:
                 path, prev, cur, L = _walk_to_junction(G, j, n0, maxd)
                 if cur != j and len(adj[cur]) >= 3 and L <= maxd:
-                    _contract(G, path + [cur]); done = True; break
-            if done:
-                break
-        if not done:
+                    k = (round(xy[j][1], 3), round(xy[j][0], 3), round(xy[cur][1], 3), round(xy[cur][0], 3))
+                    if best is None or L < best[0] - 1e-9 or (abs(L - best[0]) <= 1e-9 and k < best[1]):
+                        best = (L, k, path + [cur])
+        if best is None:
             return
+        _contract(G, best[2])
 
 
 def _merge_x(G, kmerge, ang):
@@ -1579,8 +1588,99 @@ def _process(G, chains, passthru, prm, W, h):
         if end == 0:
             rawc = rawc[::-1]
         _stub_to_junction(q, cref, poly, xy[j], h, polys, v0, v1, jw[j], rawc)
+        if poly is None:
+            # развилка без сквозной линии: остальные штрихи могли уйти из её центра (вход и
+            # левый штрих «м» сошлись острием выше) — тогда от центра развилки отрезком к их
+            # общему концу (конец другой линии у развилки, не дальше 1.5jw) или к ближайшей
+            # точке ближайшей из них, иначе остаётся разрыв
+            best = None; bend = None; held = False
+            for d2 in data:
+                if d2 is d:
+                    continue
+                P2 = d2[0]
+                if not any(math.dist(p_, xy[j]) <= 3.0*jw[j] for p_ in P2[::max(1, len(P2)//40)]):
+                    continue
+                if min(math.dist(p_, q[-1]) for p_ in P2) <= 0.25*cref:
+                    held = True
+                    break
+                p2 = min(P2, key=lambda p_: math.dist(p_, q[-1]))
+                if best is None or math.dist(p2, q[-1]) < math.dist(best, q[-1]):
+                    best = p2
+                if not d2[1]:
+                    for e2 in (P2[0], P2[-1]):
+                        if math.dist(e2, xy[j]) <= 1.5*jw[j] and \
+                                (bend is None or math.dist(e2, q[-1]) < math.dist(bend, q[-1])):
+                            bend = e2
+            if bend is not None and _poly_inside(polys, [q[-1], bend], 0.5*h):
+                best = bend
+            if not held and best is not None and math.dist(best, q[-1]) <= 1.5*jw[j] and \
+                    _poly_inside(polys, [q[-1], best], 0.5*h):
+                q.append(best)
         d[0] = q if end == 1 else q[::-1]
+    if prm.get('ref'):
+        _cut_crossed_stubs(data, jw)
     return [(d[0], d[1], d[2], d[3]) for d in data]
+
+
+def _seg_x(a, b, c, d):
+    """Точка пересечения отрезков a-b и c-d или None."""
+    ex, ey = b[0]-a[0], b[1]-a[1]; fx, fy = d[0]-c[0], d[1]-c[1]
+    den = ex*fy - ey*fx
+    if abs(den) < 1e-12:
+        return None
+    t = ((c[0]-a[0])*fy - (c[1]-a[1])*fx) / den
+    u = ((c[0]-a[0])*ey - (c[1]-a[1])*ex) / den
+    if 0.0 <= t <= 1.0 and 0.0 <= u <= 1.0:
+        return (a[0] + ex*t, a[1] + ey*t)
+    return None
+
+
+def _cut_crossed_stubs(data, jw):
+    """Шрифт — образец: две заглушки одной развилки, пересёкшие друг друга по пути к сквозной
+    линии (рука и нога «к», когда две близкие развилки у стойки слились в одну): та, что ушла
+    за точку пересечения дальше, кончается в ней — рука упирается в ногу, без треугольника
+    у стойки. Хвосты сравниваются на 2.5jw от конца."""
+    ends = []
+    for d in data:
+        if d[1]:
+            continue
+        for end in (0, 1):
+            if d[2][end] is not None:
+                ends.append((d[2][end], d, end))
+
+    def tail(d, end, L):
+        q = d[0] if end == 1 else d[0][::-1]
+        out = [q[-1]]; s = 0.0; k = len(q) - 1
+        while k > 0 and s < L:
+            s += math.dist(q[k], q[k-1]); k -= 1
+            out.append(q[k])
+        return out
+    for a in range(len(ends)):
+        for b in range(a + 1, len(ends)):
+            ja, da, ea = ends[a]; jb, db, eb = ends[b]
+            if ja != jb or da is db:
+                continue
+            ta = tail(da, ea, 2.5*jw[ja]); tb = tail(db, eb, 2.5*jw[ja])
+            hit = None
+            for i in range(len(ta)-1):
+                for k in range(len(tb)-1):
+                    X = _seg_x(ta[i], ta[i+1], tb[k], tb[k+1])
+                    if X is not None:
+                        hit = (i, k, X)
+                        break
+                if hit is not None:
+                    break
+            if hit is None:
+                continue
+            i, k, X = hit
+            la = sum(math.dist(ta[t], ta[t+1]) for t in range(i)) + math.dist(ta[i], X)
+            lb = sum(math.dist(tb[t], tb[t+1]) for t in range(k)) + math.dist(tb[k], X)
+            if min(la, lb) < 0.15*min(da[4], db[4]):
+                continue                    # сходятся концами — не пересечение
+            dd, ee, ii = (da, ea, i) if la > lb else (db, eb, k)
+            q = dd[0] if ee == 1 else dd[0][::-1]
+            q = q[:len(q) - (ii + 1)] + [X]
+            dd[0] = q if ee == 1 else q[::-1]
 
 
 def _tan(q, w):
@@ -2878,6 +2978,11 @@ def _arc_fill(before, after, step, w, polys, bcorners=(), raw=()):
                 return r
             corner = (bc, r)
     smooth = _arc_fill_single(before, after, step, w)
+    if corner is not None and len(raw) >= 2 and corner[1][2] is not None and \
+            _poly_dist([corner[1][0][corner[1][2]]], list(raw)) > 1.0*w:
+        # угол дальше 1w от сырой оси зоны: стороны — не два штриха, сходящихся в развилке,
+        # а дуги, примыкающие к стойке (низ чаш «ф»): угол дал бы шип высоко над развилкой
+        corner = None
     if corner is None and smooth is None:
         br = _tangent_bridge(before, after, step, w, polys)
         if br is not None:

@@ -1273,8 +1273,10 @@ Private Function PruneEars(ByVal kear As Double) As Boolean
                         End If
                     End If
                 Next m
-                ' соосна с одной веткой и не соосна с другой (иначе перекрёсток)
-                If dmin <= -0.75 And dmax >= -0.9 Then
+                ' соосна с одной веткой и не соосна с другой (иначе перекрёсток); третья ветка не
+                ' отходит вбок или вперёд (cos > 0.1): иначе выступ — настоящий штрих (верх стойки
+                ' «р» над чашей, ножка «а» под ней), не ушко
+                If dmin <= -0.75 And dmax >= -0.9 And dmax <= 0.1 Then
                     For k = 0 To npth - 2
                         KillNode path(k)
                     Next k
@@ -1777,31 +1779,63 @@ Private Sub WalkToJ(ByVal j As Long, ByVal n0 As Long, ByVal maxd As Double, pat
 End Sub
 
 Private Sub MergeJunctions(ByVal kmerge As Double)
-    Dim changed As Boolean, j As Long, kk As Long, prv As Long, cur As Long
+    ' первой стягивается ближайшая пара развилок (при равенстве — по координатам): итог не
+    ' зависит от порядка узлов, как в прототипе (крест стойки и дуги «ж»)
+    Dim j As Long, kk As Long, prv As Long, cur As Long, m As Long
     Dim L As Double, path() As Long, npth As Long, maxd As Double, guard As Long
+    Dim hasB As Boolean, bestL As Double, bp() As Long, nbp As Long, better As Boolean
+    Dim k1 As Double, k2 As Double, k3 As Double, k4 As Double, b1 As Double, b2 As Double, b3 As Double, b4 As Double
     Do
-        changed = False
-        ReDim path(0 To NG + 16)
+        hasB = False
+        ReDim path(0 To NG + 16): ReDim bp(0 To NG + 16)
         For j = 0 To NG - 1
             If GLive(j) And GDeg(j) >= 3 Then
                 maxd = kmerge * JWidth(j)
                 For kk = 0 To GDeg(j) - 1
                     WalkToJ j, GAdj(kk, j), maxd, path, npth, prv, cur, L
                     If cur <> j And GDeg(cur) >= 3 And L <= maxd Then
-                        path(npth) = cur: npth = npth + 1
-                        ContractPath path, npth
-                        changed = True
-                        Exit For
+                        k1 = Round(GY(j), 3): k2 = Round(GX(j), 3): k3 = Round(GY(cur), 3): k4 = Round(GX(cur), 3)
+                        If Not hasB Then
+                            better = True
+                        ElseIf L < bestL - 0.000000001 Then
+                            better = True
+                        ElseIf Abs(L - bestL) <= 0.000000001 Then
+                            better = KeyLess4(k1, k2, k3, k4, b1, b2, b3, b4)
+                        Else
+                            better = False
+                        End If
+                        If better Then
+                            hasB = True: bestL = L
+                            b1 = k1: b2 = k2: b3 = k3: b4 = k4
+                            For m = 0 To npth - 1
+                                bp(m) = path(m)
+                            Next m
+                            bp(npth) = cur: nbp = npth + 1
+                        End If
                     End If
                 Next kk
-                If changed Then
-                    Exit For
-                End If
             End If
         Next j
+        If hasB Then
+            ContractPath bp, nbp
+        End If
         guard = guard + 1
-    Loop While changed And guard < 2000
+    Loop While hasB And guard < 2000
 End Sub
+
+' (a1,a2,a3,a4) < (b1,b2,b3,b4) по порядку
+Private Function KeyLess4(ByVal a1 As Double, ByVal a2 As Double, ByVal a3 As Double, ByVal a4 As Double, _
+                          ByVal b1 As Double, ByVal b2 As Double, ByVal b3 As Double, ByVal b4 As Double) As Boolean
+    If a1 <> b1 Then
+        KeyLess4 = (a1 < b1)
+    ElseIf a2 <> b2 Then
+        KeyLess4 = (a2 < b2)
+    ElseIf a3 <> b3 Then
+        KeyLess4 = (a3 < b3)
+    Else
+        KeyLess4 = (a4 < b4)
+    End If
+End Function
 
 ' режим образца (как _merge_x): две тройные развилки на перемычке короче kmerge*jw, у которых
 ' внешние ветки попарно (по одной от каждой) идут почти по прямой (излом < ang) и пары
@@ -3498,12 +3532,18 @@ NextSide:
                 ReDim plx(0 To 1): ReDim ply(0 To 1)
             End If
             StubToJunction xs, ys, np_, dRef(ci), plx, ply, npl, defV0(di), defV1(di), GX(j), GY(j), GJW(j), rwX, rwY, nrw
+            If npl = 0 Then
+                StubJoinOthers xs, ys, np_, ci, j, dRef(ci), cX, cY, dN, dCl, dOk
+            End If
             If side = 0 Then
                 ReversePts xs, ys, np_
             End If
             cX(ci) = CopyD(xs, np_): cY(ci) = CopyD(ys, np_): dN(ci) = np_
         End If
     Next di
+    If gRefEnd <> 0 Then
+        CutCrossedStubs cX, cY, dN, dCl, dOk, stub0, stub1, dRef
+    End If
 
     ' аппроксимация (курсив: сетка контура для Recenter)
     CGMaxR = 0.5 * gTool + 1 * gW
@@ -3683,6 +3723,15 @@ Private Function ArcFill(xs() As Double, ys() As Double, ByVal np_ As Long, ax_(
     For i = 0 To np_ - 1: xsm(i) = xs(i): ysm(i) = ys(i): Next i
     ReDim fsx(0 To 7): ReDim fsy(0 To 7)
     hasS = ArcFillSingle(xsm, ysm, np_, ax_, ay_, na, stp, w, fsx, fsy, nfs, pfs)
+    If hasC And nr_ >= 2 And xic >= 0 Then
+        ' угол дальше 1w от сырой оси зоны: стороны — не два штриха, сходящихся в развилке, а дуги,
+        ' примыкающие к стойке (низ чаш «ф»): угол дал бы шип высоко над развилкой
+        ReDim tx(0 To 0): ReDim ty(0 To 0)
+        tx(0) = fcx(xic): ty(0) = fcy(xic)
+        If PolyDist(tx, ty, 1, rx, ry, nr_) > w Then
+            hasC = False
+        End If
+    End If
     If (Not hasC) And (Not hasS) Then
         If TangentBridge(xs, ys, np_, ax_, ay_, na, stp, w, fx, fy, nf, pf) Then
             ArcFill = True
@@ -7053,6 +7102,210 @@ Private Sub FreeEndFit(xs() As Double, ys() As Double, np_ As Long, ByVal cref A
         Retract xs, ys, np_, -target
     End If
 End Sub
+
+' шрифт — образец (как _cut_crossed_stubs): две заглушки одной развилки, пересёкшие друг друга
+' по пути к сквозной линии (рука и нога «к», когда две близкие развилки у стойки слились в одну):
+' та, что ушла за точку пересечения дальше, кончается в ней — рука упирается в ногу, без
+' треугольника у стойки. Хвосты сравниваются на 2.5jw от конца
+Private Sub CutCrossedStubs(cX() As Variant, cY() As Variant, dN() As Long, dCl() As Boolean, dOk() As Boolean, _
+                            stub0() As Long, stub1() As Long, dRef() As Double)
+    Dim eC() As Long, eS() As Long, eJ() As Long, ne As Long, ci As Long, a As Long, b As Long
+    Dim tax() As Double, tay() As Double, nta As Long, tbx() As Double, tby() As Double, ntb As Long
+    Dim i As Long, k As Long, hit As Boolean, hx As Double, hy As Double, hi As Long, hk As Long
+    Dim la As Double, lb As Double, t As Long, cc As Long, ss As Long, ii As Long, rr As Double
+    Dim xs() As Double, ys() As Double, n As Long, nx() As Double, ny() As Double, m As Long, nn As Long
+    ReDim eC(0 To 2 * NCh + 1): ReDim eS(0 To 2 * NCh + 1): ReDim eJ(0 To 2 * NCh + 1)
+    For ci = 0 To NCh - 1
+        If dOk(ci) And Not dCl(ci) Then
+            If stub0(ci) >= 0 Then
+                eC(ne) = ci: eS(ne) = 0: eJ(ne) = stub0(ci): ne = ne + 1
+            End If
+            If stub1(ci) >= 0 Then
+                eC(ne) = ci: eS(ne) = 1: eJ(ne) = stub1(ci): ne = ne + 1
+            End If
+        End If
+    Next ci
+    For a = 0 To ne - 1
+        For b = a + 1 To ne - 1
+            If eJ(a) = eJ(b) And eC(a) <> eC(b) Then
+                xs = cX(eC(a)): ys = cY(eC(a))
+                StubTail xs, ys, dN(eC(a)), eS(a), 2.5 * GJW(eJ(a)), tax, tay, nta
+                xs = cX(eC(b)): ys = cY(eC(b))
+                StubTail xs, ys, dN(eC(b)), eS(b), 2.5 * GJW(eJ(a)), tbx, tby, ntb
+                hit = False
+                For i = 0 To nta - 2
+                    For k = 0 To ntb - 2
+                        If SegXPt(tax(i), tay(i), tax(i + 1), tay(i + 1), tbx(k), tby(k), tbx(k + 1), tby(k + 1), hx, hy) Then
+                            hit = True: hi = i: hk = k
+                            Exit For
+                        End If
+                    Next k
+                    If hit Then
+                        Exit For
+                    End If
+                Next i
+                If hit Then
+                    la = 0
+                    For t = 0 To hi - 1
+                        la = la + Dist(tax(t), tay(t), tax(t + 1), tay(t + 1))
+                    Next t
+                    la = la + Dist(tax(hi), tay(hi), hx, hy)
+                    lb = 0
+                    For t = 0 To hk - 1
+                        lb = lb + Dist(tbx(t), tby(t), tbx(t + 1), tby(t + 1))
+                    Next t
+                    lb = lb + Dist(tbx(hk), tby(hk), hx, hy)
+                    rr = dRef(eC(a))
+                    If dRef(eC(b)) < rr Then
+                        rr = dRef(eC(b))
+                    End If
+                    ' сходятся концами — не пересечение
+                    If la >= 0.15 * rr And lb >= 0.15 * rr Then
+                        If la > lb Then
+                            cc = eC(a): ss = eS(a): ii = hi
+                        Else
+                            cc = eC(b): ss = eS(b): ii = hk
+                        End If
+                        xs = cX(cc): ys = cY(cc): n = dN(cc)
+                        ReDim nx(0 To n + 1): ReDim ny(0 To n + 1): nn = 0
+                        If ss = 1 Then
+                            For m = 0 To n - 1 - (ii + 1)
+                                nx(nn) = xs(m): ny(nn) = ys(m): nn = nn + 1
+                            Next m
+                            nx(nn) = hx: ny(nn) = hy: nn = nn + 1
+                        Else
+                            nx(nn) = hx: ny(nn) = hy: nn = nn + 1
+                            For m = ii + 1 To n - 1
+                                nx(nn) = xs(m): ny(nn) = ys(m): nn = nn + 1
+                            Next m
+                        End If
+                        cX(cc) = CopyD(nx, nn): cY(cc) = CopyD(ny, nn): dN(cc) = nn
+                    End If
+                End If
+            End If
+        Next b
+    Next a
+End Sub
+
+' хвост ломаной от конца (side 1 — последняя точка, side 0 — первая) внутрь, пока длина < L
+Private Sub StubTail(xs() As Double, ys() As Double, ByVal n As Long, ByVal side As Long, ByVal L As Double, _
+                     ox() As Double, oy() As Double, no As Long)
+    Dim k As Long, s As Double, stp As Long
+    ReDim ox(0 To n + 1): ReDim oy(0 To n + 1): no = 0
+    If n < 1 Then
+        Exit Sub
+    End If
+    If side = 1 Then
+        k = n - 1: stp = -1
+    Else
+        k = 0: stp = 1
+    End If
+    ox(0) = xs(k): oy(0) = ys(k): no = 1
+    Do While k + stp >= 0 And k + stp <= n - 1 And s < L
+        s = s + Dist(xs(k), ys(k), xs(k + stp), ys(k + stp))
+        k = k + stp
+        ox(no) = xs(k): oy(no) = ys(k): no = no + 1
+    Loop
+End Sub
+
+' пересечение отрезков (ax,ay)-(bx,by) и (cx,cy)-(dx,dy): точка (hx,hy)
+Private Function SegXPt(ByVal ax0 As Double, ByVal ay0 As Double, ByVal bx0 As Double, ByVal by0 As Double, _
+                        ByVal cx0 As Double, ByVal cy0 As Double, ByVal dx0 As Double, ByVal dy0 As Double, _
+                        hx As Double, hy As Double) As Boolean
+    Dim ex As Double, ey As Double, fx As Double, fy As Double, den As Double, t As Double, u As Double
+    ex = bx0 - ax0: ey = by0 - ay0: fx = dx0 - cx0: fy = dy0 - cy0
+    den = ex * fy - ey * fx
+    If Abs(den) < 0.000000000001 Then
+        Exit Function
+    End If
+    t = ((cx0 - ax0) * fy - (cy0 - ay0) * fx) / den
+    u = ((cx0 - ax0) * ey - (cy0 - ay0) * ex) / den
+    If t >= 0 And t <= 1 And u >= 0 And u <= 1 Then
+        hx = ax0 + ex * t: hy = ay0 + ey * t
+        SegXPt = True
+    End If
+End Function
+
+
+' развилка без сквозной линии: остальные штрихи могли уйти из её центра (вход и левый штрих «м»
+' сошлись острием выше) — тогда от конца заглушки отрезком к их общему концу (конец другой линии
+' у развилки, не дальше 1.5jw) или к ближайшей точке ближайшей из них, иначе остаётся разрыв
+Private Sub StubJoinOthers(xs() As Double, ys() As Double, np_ As Long, ByVal ci As Long, ByVal j As Long, ByVal cref As Double, _
+                           cX() As Variant, cY() As Variant, dN() As Long, dCl() As Boolean, dOk() As Boolean)
+    Dim c2 As Long, bx() As Double, by() As Double, nb As Long, m As Long, step2 As Long, nearD As Double, d As Double
+    Dim held As Boolean, hasB As Boolean, hasE As Boolean, bbx As Double, bby As Double, eex As Double, eey As Double
+    Dim e2x As Double, e2y As Double, k As Long, dmin As Double, px As Double, py As Double, qx As Double, qy As Double
+    If np_ < 1 Then
+        Exit Sub
+    End If
+    qx = xs(np_ - 1): qy = ys(np_ - 1)
+    For c2 = 0 To NCh - 1
+        If c2 <> ci And dOk(c2) Then
+            bx = cX(c2): by = cY(c2): nb = dN(c2)
+            nearD = BIG
+            step2 = nb \ 40
+            If step2 < 1 Then
+                step2 = 1
+            End If
+            For m = 0 To nb - 1 Step step2
+                d = Dist(bx(m), by(m), GX(j), GY(j))
+                If d < nearD Then
+                    nearD = d
+                End If
+            Next m
+            If nearD <= 3 * GJW(j) And nb > 0 Then
+                dmin = BIG
+                For m = 0 To nb - 1
+                    d = Dist(bx(m), by(m), qx, qy)
+                    If d < dmin Then
+                        dmin = d: px = bx(m): py = by(m)
+                    End If
+                Next m
+                If dmin <= 0.25 * cref Then
+                    held = True
+                    Exit For
+                End If
+                If Not hasB Then
+                    hasB = True: bbx = px: bby = py
+                ElseIf dmin < Dist(bbx, bby, qx, qy) Then
+                    bbx = px: bby = py
+                End If
+                If Not dCl(c2) Then
+                    For k = 0 To 1
+                        If k = 0 Then
+                            e2x = bx(0): e2y = by(0)
+                        Else
+                            e2x = bx(nb - 1): e2y = by(nb - 1)
+                        End If
+                        If Dist(e2x, e2y, GX(j), GY(j)) <= 1.5 * GJW(j) Then
+                            If Not hasE Then
+                                hasE = True: eex = e2x: eey = e2y
+                            ElseIf Dist(e2x, e2y, qx, qy) < Dist(eex, eey, qx, qy) Then
+                                eex = e2x: eey = e2y
+                            End If
+                        End If
+                    Next k
+                End If
+            End If
+        End If
+    Next c2
+    If held Then
+        Exit Sub
+    End If
+    If hasE Then
+        If SegInside(qx, qy, eex, eey) Then
+            hasB = True: bbx = eex: bby = eey
+        End If
+    End If
+    If hasB Then
+        If Dist(bbx, bby, qx, qy) <= 1.5 * GJW(j) Then
+            If SegInside(qx, qy, bbx, bby) Then
+                PushPt xs, ys, np_, bbx, bby
+            End If
+        End If
+    End If
+End Sub
+
 
 Private Sub StubToJunction(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double, px_() As Double, py_() As Double, _
                            ByVal npl As Long, ByVal v0 As Long, ByVal v1 As Long, ByVal jx As Double, ByVal jy As Double, _
