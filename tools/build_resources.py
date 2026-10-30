@@ -17,7 +17,10 @@ ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
          ('simplify', 'neon_simplify', 107, 'Неон: упростить контур'),
          # кнопки-группы панели (выпадающие списки), с панели [NeonToolbar 3]
          ('lines-menu', 'neon_lines', 108, 'Неон: линии'),
-         ('settings-menu', 'neon_settings', 103, 'Неон: настройки и помощь')]
+         ('settings-menu', 'neon_settings', 103, 'Неон: настройки и помощь'),
+         # с панели [NeonToolbar 5]: люверсы и группа «Контур»
+         ('grommets', 'neon_grommets', 111, 'Неон: люверсы'),
+         ('contour-menu', 'neon_simplify', 107, 'Неон: контур')]
 
 def bmp_entry(im):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()

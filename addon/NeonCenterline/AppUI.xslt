@@ -2,11 +2,11 @@
 <!--
   NeonCenterline — команды и панель инструментов (CorelDRAW Addons).
   Команды вызывают макросы проекта NeonCenterline.gms (пользовательская папка GMS).
-  Панель: Моно, Курсив | Упростить контур, Линии ▾ | Настройки ▾. «▾» — кнопка-группа:
+  Панель: Моно, Курсив | Контур ▾, Линии ▾ | Настройки ▾. «▾» — кнопка-группа:
   itemData type="flyout" с flyoutBarRef на commandBarData type="menu" flyout="true" (как кнопки
   со списком в самом CorelDRAW, DrawUI.items.xml; без type="flyout" CorelDRAW 2026 кнопку не рисует).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 4]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 5]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
@@ -82,7 +82,22 @@
                 userCaption="Неон: упростить контур"
                 userToolTip="Меньше узлов у выделенных кривых: отход от исходной не больше допуска (по умолчанию 0.1 мм), углы остаются углами. Отмена — Ctrl+Z"
                 enable="true"/>
+      <itemData guid="67333f2d-18b9-5925-b8bc-24d97a6dff93"
+                icon="guid://67333f2d-18b9-5925-b8bc-24d97a6dff93"
+                dynamicCommand="NeonCenterline.NeonTools.PlaceGrommets"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Неон: люверсы"
+                userToolTip="Точки под люверсы по краю выделенного баннера: в каждом углу и равномерно по сторонам, не реже заданного расстояния"
+                enable="true"/>
       <!-- кнопки-группы: открывают выпадающий список команд -->
+      <itemData guid="dfad10fb-4f88-57cc-89aa-60840ed7bfd6"
+                type="flyout"
+                arrowStyle="corner"
+                flyoutBarRef="2061e8a0-b6a1-56bb-bd4f-3c8546a0e4a2"
+                icon="guid://dfad10fb-4f88-57cc-89aa-60840ed7bfd6"
+                userCaption="Неон: контур"
+                userToolTip="Упростить контур, люверсы"
+                enable="true"/>
       <itemData guid="305a1621-a721-5784-9de2-b2338e83336c"
                 type="flyout"
                 arrowStyle="corner"
@@ -113,13 +128,22 @@
           <item guidRef="4e6d43bf-0b2d-500c-b154-b553b6087991"/>
           <item guidRef="c68c5d4f-d668-5fb4-937e-adb7430cae58"/>
           <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
-          <item guidRef="18048cca-273b-50eb-9d03-54111cc920ce"/>
+          <item guidRef="dfad10fb-4f88-57cc-89aa-60840ed7bfd6"/>
           <item guidRef="305a1621-a721-5784-9de2-b2338e83336c"/>
           <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
           <item guidRef="0392cc33-564d-537f-b0df-9d90ebfd4177"/>
         </toolbar>
       </commandBarData>
       <!-- выпадающие списки кнопок-групп -->
+      <commandBarData guid="2061e8a0-b6a1-56bb-bd4f-3c8546a0e4a2"
+                      type="menu"
+                      nonLocalizableName="NeonCenterline Contour"
+                      flyout="true">
+        <menu>
+          <item guidRef="18048cca-273b-50eb-9d03-54111cc920ce"/>
+          <item guidRef="67333f2d-18b9-5925-b8bc-24d97a6dff93"/>
+        </menu>
+      </commandBarData>
       <commandBarData guid="b14254e7-44de-5f90-bb10-6319042600d8"
                       type="menu"
                       nonLocalizableName="NeonCenterline Lines"

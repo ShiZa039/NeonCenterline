@@ -30,6 +30,8 @@ Private Function CreateShapeRange() As Object
 End Function
 Private Function CreateRGBColor(ByVal r As Long, ByVal g As Long, ByVal b As Long) As Object
 End Function
+Private Function CreateCMYKColor(ByVal c As Long, ByVal m As Long, ByVal y As Long, ByVal k As Long) As Object
+End Function
 Private Function GetSetting(ByVal a As String, ByVal b As String, ByVal c As String, Optional ByVal d As String = "") As String
     GetSetting = d
 End Function
@@ -44,7 +46,7 @@ names = []
 for name, path, call in MODS:
     s = open(path, encoding='utf-8').read()
     s = "\n".join(l for l in s.splitlines() if not l.startswith("Attribute VB_"))
-    for t in ['ShapeRange', 'Layer', 'Shape', 'Collection', 'Curve', 'SubPath', 'Segment']:
+    for t in ['ShapeRange', 'Layer', 'Shape', 'Collection', 'Curve', 'SubPath', 'Segment', 'Color']:
         s = re.sub(r'\bAs %s\b' % t, 'As Object', s)
     s = re.sub(r'\bAs cdrUnit\b', 'As Long', s)
     extra = STUB_COREL

@@ -28,7 +28,7 @@ RU · EN
    (нужны права администратора; там же обычно лежат другие дополнения).
    Или, когда плагин уже загружен, запустите макрос NeonCenterline.NeonAddon.InstallToolbar (Инструменты → Макросы → Запуск макроса) — он сам положит панель в Addons той версии CorelDRAW, из которой запущен.
 3. Полностью перезапустите CorelDRAW и включите панель: Окно → Панели инструментов → «Неон (NeonCenterline)».
-4. Если панели нет или кнопки пустые (бывает в старых версиях), кнопки можно поставить вручную: Инструменты → Настройка (Ctrl+J) → Команды → категория «Макросы» → перетащить на любую панель команды NeonCenterline.NeonUI.RunMono, RunScript, ShowSettings, NeonCenterline.NeonTools.MeasureLength, SelectNeonLines, SimplifyContours, NeonCenterline.NeonCut.FitToCut. Значки — в папке icons архива (вкладка «Вид» → «Импорт»).
+4. Если панели нет или кнопки пустые (бывает в старых версиях), кнопки можно поставить вручную: Инструменты → Настройка (Ctrl+J) → Команды → категория «Макросы» → перетащить на любую панель команды NeonCenterline.NeonUI.RunMono, RunScript, ShowSettings, NeonCenterline.NeonTools.MeasureLength, SelectNeonLines, SimplifyContours, PlaceGrommets, NeonCenterline.NeonCut.FitToCut. Значки — в папке icons архива (вкладка «Вид» → «Импорт»).
 5. Если после обновления плагина на панели старые кнопки — запустите макрос NeonCenterline.NeonUI.ResetToolbar (Инструменты → Макросы → Запуск макроса): он сбросит только панель «Неон» к новому набору кнопок.
 
 Тестовый шрифт font\SABNeonTest.ttf для работы плагина не нужен — он для пробы (моноширинный неоновый шрифт, на нём видно, как должен работать режим «Моно»). Установить: двойной щелчок по файлу → «Установить».
@@ -40,11 +40,12 @@ RU · EN
 
 Выделите контуры (кривые, текст, группы) и нажмите Моно или Курсив.
 
-На панели «Неон»: Моно, Курсив | Упростить контур, Линии ▾ | Настройки ▾. Кнопки со стрелкой открывают список: в «Линии» — длина, выделить линии, подогнать под рез; в «Настройки» — настройки, проверить обновления, о программе.
+На панели «Неон»: Моно, Курсив | Контур ▾, Линии ▾ | Настройки ▾. Кнопки со стрелкой открывают список: в «Контур» — упростить контур, люверсы; в «Линии» — длина, выделить линии, подогнать под рез; в «Настройки» — настройки, проверить обновления, о программе.
 
 Длина (в «Линии ▾») — считает длину выделенного. Контуры (длина под резку) и центральные линии плагина (длина неона, число кусков, самый длинный кусок) — отдельно; результат можно скопировать в буфер обмена.
 Выделить линии (в «Линии ▾») — выделяет все центральные линии плагина на странице (например, чтобы сразу посчитать длину неона или убрать их).
 Упростить контур (NeonCenterline.NeonTools.SimplifyContours) — меньше узлов у выделенных кривых: кривая не отходит от исходной больше допуска (окно перед запуском, как у центральных линий, и Настройки; по умолчанию 0.1 мм), острые углы остаются углами, гладкие места — гладкими. Кривые меняются на месте, отмена — Ctrl+Z. Полезно для трассированных логотипов и контуров из DXF/CAM (тысячи узлов → десятки), шрифты обычно сокращаются на треть. Текст и фигуры сначала переведите в кривые (Ctrl+Q).
+Люверсы (в «Контур ▾», NeonCenterline.NeonTools.PlaceGrommets) — точки под люверсы по краю выделенного баннера или подложки (прямоугольник, скруглённый прямоугольник, любой замкнутый контур): в каждом углу и равномерно по сторонам, не реже заданного расстояния; у круга и овала — равномерно по контуру. В окне перед запуском: расстояние от края до центра люверса, расстояние между люверсами (не больше), диаметр и цвет точки (из списка или любой через окно выбора цвета CorelDRAW), усиление углов — ещё по точке на обе стороны каждого угла на заданном расстоянии (по умолчанию 50 мм). Точки — на слое «Люверсы», по группе на объект; количество — в отчёте (можно скопировать).
 
 Тип неона и кратность реза
 --------------------------
@@ -96,7 +97,7 @@ Manual installation (if the installer did not work, several CorelDRAW versions, 
    (administrator rights required; other add-ons usually live there too).
    Or, once the plugin is loaded, run the macro NeonCenterline.NeonAddon.InstallToolbar (Tools → Macros → Run Macro): it puts the toolbar into Addons of the CorelDRAW version it runs in.
 3. Fully restart CorelDRAW and turn the toolbar on: Window → Toolbars → "Неон (NeonCenterline)".
-4. If there is no toolbar or the buttons are blank (possible in older versions), add the buttons manually: Tools → Customization (Ctrl+J) → Commands → category "Macros" → drag to any toolbar NeonCenterline.NeonUI.RunMono, RunScript, ShowSettings, NeonCenterline.NeonTools.MeasureLength, SelectNeonLines, SimplifyContours, NeonCenterline.NeonCut.FitToCut. Icons are in the icons folder of the archive (Appearance tab → Import).
+4. If there is no toolbar or the buttons are blank (possible in older versions), add the buttons manually: Tools → Customization (Ctrl+J) → Commands → category "Macros" → drag to any toolbar NeonCenterline.NeonUI.RunMono, RunScript, ShowSettings, NeonCenterline.NeonTools.MeasureLength, SelectNeonLines, SimplifyContours, PlaceGrommets, NeonCenterline.NeonCut.FitToCut. Icons are in the icons folder of the archive (Appearance tab → Import).
 5. If the toolbar still shows the old buttons after a plugin update, run the macro NeonCenterline.NeonUI.ResetToolbar (Tools → Macros → Run Macro): it resets only the "Неон" toolbar to the new button set.
 
 Test font font\SABNeonTest.ttf is not required by the plugin — it is for trying it out (a monoline neon font that shows how Mono mode is meant to work). To install: double-click the file → Install.
@@ -108,11 +109,12 @@ Usage
 
 Select outlines (curves, text, groups) and press Mono or Script.
 
-The "Неон" toolbar: Mono, Script | Simplify outline, Lines ▾ | Settings ▾. Buttons with an arrow open a list: Lines — length, select lines, fit to cut; Settings — settings, check for updates, about.
+The "Неон" toolbar: Mono, Script | Outline ▾, Lines ▾ | Settings ▾. Buttons with an arrow open a list: Outline — simplify outline, grommets; Lines — length, select lines, fit to cut; Settings — settings, check for updates, about.
 
 Length (in Lines ▾) — measures the selection. Outlines (cutting length) and plugin centerlines (neon length, number of pieces, longest piece) are reported separately; the result can be copied to the clipboard.
 Select lines (in Lines ▾) — selects all plugin centerlines on the page (e.g. to measure the neon or remove them).
 Simplify outline (NeonCenterline.NeonTools.SimplifyContours) — fewer nodes on the selected curves: the curve deviates from the original by no more than the tolerance (a window before the run, like for centerlines, and Settings; 0.1 mm by default), sharp corners stay sharp, smooth parts stay smooth. Curves are changed in place, undo with Ctrl+Z. Useful for traced logos and outlines from DXF/CAM (thousands of nodes become dozens); font outlines usually lose about a third of their nodes. Convert text and shapes to curves first (Ctrl+Q).
+Grommets (in Outline ▾, NeonCenterline.NeonTools.PlaceGrommets) — points for grommets along the edge of the selected banner or backing (rectangle, rounded rectangle, any closed outline): one in every corner and evenly along the sides, never further apart than the given distance; circles and ovals get them evenly all round. The window before the run: edge to grommet centre, distance between grommets (maximum), point diameter and colour (from the list or any via the CorelDRAW colour dialog), corner reinforcement — one more point on both sides of every corner at the given distance (50 mm by default). Points go to the "Grommets" layer, one group per object; the count is in the report (can be copied).
 
 Neon type and cut step
 ----------------------

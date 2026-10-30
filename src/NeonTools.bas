@@ -5,7 +5,8 @@ Attribute VB_Name = "NeonTools"
 '                      результат можно скопировать в буфер обмена;
 '    SelectNeonLines — выделить все центральные линии, созданные плагином, на странице;
 '    NeonLineIds / NeonLinesNew — какие линии появились после расчёта (для подгонки под рез);
-'    SimplifyContours — упростить выделенные кривые (меньше узлов в пределах допуска).
+'    SimplifyContours — упростить выделенные кривые (меньше узлов в пределах допуска);
+'    PlaceGrommets   — точки под люверсы по краю выделенных баннеров (подложек).
 ' =====================================================================
 Option Explicit
 
@@ -25,6 +26,12 @@ Private RX() As Double, RY() As Double, NR As Long
 Private OX() As Double, OY() As Double, OL() As Boolean, NO As Long
 Private CosLocal As Double, CosChord As Double
 '@@SIMP_DECL_END
+
+' ---- люверсы: ломаная контура (флаг угла), центры люверсов (см. раздел «Люверсы») ----
+'@@GROM_DECL_BEGIN
+Private GPX() As Double, GPY() As Double, GPC() As Boolean, GN As Long
+Private GRX() As Double, GRY() As Double, GRN As Long
+'@@GROM_DECL_END
 
 ' длина выделенного: контуры отдельно от центральных линий плагина
 Public Sub MeasureLength()
@@ -1065,3 +1072,740 @@ Public Function SimpTest(inX() As Double, inY() As Double, ByVal nSeg As Long, B
     SimpTest = NO
 End Function
 '@@SIMP_END
+
+'@@GROM_BEGIN
+' =====================================================================
+'  Люверсы (как proto/grommets.py): точки под люверсы по краю баннера.
+'  Контур объекта (самый большой замкнутый подпуть) -> ломаная -> смещение внутрь на отступ
+'  от края до центра люверса -> люверс в каждом углу, на сторонах между углами — равномерно,
+'  не реже шага. Без углов (круг, овал) — равномерно по контуру, первый в верхней точке.
+'  Угол — излом касательной больше 30 град или середина скругления угла. Усиление углов —
+'  ещё по точке на обе стороны угла на заданном расстоянии от угловой.
+'  Точки — кружки заданного диаметра и цвета на слое «Люверсы», по группе на объект.
+' =====================================================================
+Public Function NeonGromEdge() As Double
+    NeonGromEdge = GromNum("Edge", 20)
+End Function
+
+Public Function NeonGromStep() As Double
+    NeonGromStep = GromNum("Step", 300)
+End Function
+
+Public Function NeonGromDot() As Double
+    NeonGromDot = GromNum("Dot", 5)
+End Function
+
+' усиление углов: расстояние от угловой точки, 0 — выключено
+Public Function NeonGromReinf() As Double
+    If GetSetting("NeonCenterline", "Grommet", "Reinf", "0") = "1" Then
+        NeonGromReinf = GromNum("ReinfDist", 50)
+    End If
+End Function
+
+Public Function NeonGromReinfDist() As Double
+    NeonGromReinfDist = GromNum("ReinfDist", 50)
+End Function
+
+' цвет точки: "P:n" — из списка (0 чёрный, 1 красный, 2 пурпурный, 3 синий, 4 зелёный, 5 белый),
+' "S:строка" — свой цвет (Color.ToString)
+Public Function NeonGromColorSetting() As String
+    NeonGromColorSetting = GetSetting("NeonCenterline", "Grommet", "Color", "P:0")
+End Function
+
+Private Function GromNum(ByVal key As String, ByVal def As Double) As Double
+    Dim v As Double
+    v = ParseNum(GetSetting("NeonCenterline", "Grommet", key, FmtNum(def)))
+    If v <= 0 Then
+        v = def
+    End If
+    GromNum = v
+End Function
+
+Private Function GromColor(ByVal cs As String) As Color
+    Dim c As Color
+    If Left$(cs, 2) = "S:" Then
+        On Error Resume Next
+        Set c = CreateCMYKColor(0, 0, 0, 100)
+        c.StringAssign Mid$(cs, 3)
+        If Err.Number = 0 Then
+            Set GromColor = c
+            Exit Function
+        End If
+        Err.Clear
+        On Error GoTo 0
+    End If
+    Select Case CLng(Val(Mid$(cs, 3)))
+    Case 1
+        Set GromColor = CreateCMYKColor(0, 100, 100, 0)
+    Case 2
+        Set GromColor = CreateCMYKColor(0, 100, 0, 0)
+    Case 3
+        Set GromColor = CreateCMYKColor(100, 100, 0, 0)
+    Case 4
+        Set GromColor = CreateCMYKColor(100, 0, 100, 0)
+    Case 5
+        Set GromColor = CreateCMYKColor(0, 0, 0, 0)
+    Case Else
+        Set GromColor = CreateCMYKColor(0, 0, 0, 100)
+    End Select
+End Function
+
+' свой цвет окном выбора цвета CorelDRAW; "" — отмена
+Public Function NeonGromPickColor(ByVal cur As String) As String
+    Dim c As Color
+    On Error GoTo Fail
+    Set c = GromColor(cur)
+    If c.UserAssign() Then
+        NeonGromPickColor = "S:" & c.ToString
+    End If
+Fail:
+End Function
+
+' имя своего цвета для списка в окне
+Public Function NeonGromColorName(ByVal cs As String) As String
+    On Error Resume Next
+    NeonGromColorName = GromColor(cs).Name
+End Function
+
+' ---------------------------------------------------------------------
+'  Кнопка
+' ---------------------------------------------------------------------
+Public Sub PlaceGrommets()
+    Dim sr As ShapeRange, col As Collection, oldUnit As cdrUnit, lay As Layer, clr As Color
+    Dim edge As Double, stp As Double, dia As Double, rf As Double, i As Long, k As Long
+    Dim nAll As Long, nObj As Long, nSkip As Long, msg As String, per As String, errText As String
+    Dim grpOn As Boolean, dots As ShapeRange, dot As Shape, g As Shape, sh As Shape
+    If ActiveDocument Is Nothing Then
+        MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("grom_title")
+        Exit Sub
+    End If
+    Set sr = ActiveSelectionRange
+    If sr.Count = 0 Then
+        MsgBox NeonL("grom_nosel"), vbExclamation, NeonL("grom_title")
+        Exit Sub
+    End If
+    If Not AskGrommetParams() Then
+        Exit Sub
+    End If
+    edge = NeonGromEdge(): stp = NeonGromStep(): dia = NeonGromDot(): rf = NeonGromReinf()
+    Set clr = GromColor(NeonGromColorSetting())
+    Set col = New Collection
+    CollectGrom sr, col
+    oldUnit = ActiveDocument.Unit
+    ActiveDocument.Unit = cdrMillimeter
+    On Error GoTo Fail
+    ActiveDocument.BeginCommandGroup NeonL("grom_title")
+    grpOn = True
+    Set lay = Nothing
+    For i = 1 To col.Count
+        Set sh = col(i)
+        If ShapeGrommets(sh, edge, stp, rf) Then
+            If lay Is Nothing Then
+                Set lay = GromLayer()
+            End If
+            Set dots = CreateShapeRange
+            For k = 0 To GRN - 1
+                Set dot = lay.CreateEllipse2(GRX(k), GRY(k), dia / 2)
+                dot.Fill.ApplyUniformFill clr
+                dot.Outline.SetNoOutline
+                dot.Name = NeonL("grom_dot")
+                dots.Add dot
+            Next k
+            If dots.Count > 1 Then
+                Set g = dots.Group
+                g.Name = NeonLF("grom_group", GRN)
+            End If
+            nObj = nObj + 1: nAll = nAll + GRN
+            If nObj <= 12 Then
+                per = per & "  " & nObj & ") " & GRN & vbCrLf
+            End If
+        Else
+            nSkip = nSkip + 1
+        End If
+    Next i
+Fin:
+    If grpOn Then
+        ActiveDocument.EndCommandGroup
+    End If
+    ActiveDocument.Unit = oldUnit
+    If Len(errText) > 0 Then
+        MsgBox NeonLF("err_fail", errText), vbCritical, NeonL("grom_title")
+        Exit Sub
+    End If
+    If nObj = 0 Then
+        MsgBox NeonL("grom_none"), vbExclamation, NeonL("grom_title")
+        Exit Sub
+    End If
+    msg = NeonLF("grom_report", nAll, nObj, FmtNum(edge), FmtNum(stp), FmtNum(dia))
+    If rf > 0 Then
+        msg = msg & vbCrLf & NeonLF("grom_report_reinf", FmtNum(rf))
+    End If
+    If nObj > 1 Then
+        msg = msg & vbCrLf & vbCrLf & per
+    End If
+    If nSkip > 0 Then
+        msg = msg & vbCrLf & NeonLF("grom_skipped", nSkip)
+    End If
+    If MsgBox(msg & vbCrLf & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, NeonL("grom_title")) = vbYes Then
+        CopyText msg
+    End If
+    NeonToolbarCheck
+    Exit Sub
+Fail:
+    errText = Err.Description
+    Resume Fin
+End Sub
+
+' объекты под люверсы: всё выделенное (группы — насквозь), кроме линий плагина и самих точек
+Private Sub CollectGrom(sr As ShapeRange, col As Collection)
+    Dim sh As Shape, ln As String
+    For Each sh In sr
+        ln = ""
+        On Error Resume Next
+        ln = sh.Layer.Name
+        On Error GoTo 0
+        If ln = NeonL("grom_layer") Then
+            ' точки, поставленные раньше
+        ElseIf sh.Type = cdrGroupShape Then
+            CollectGrom sh.Shapes.All, col
+        ElseIf Left$(sh.Name, Len(NeonPrefix())) <> NeonPrefix() Then
+            col.Add sh
+        End If
+    Next sh
+End Sub
+
+' слой «Люверсы» на текущей странице
+Private Function GromLayer() As Layer
+    Dim ly As Layer, nm As String
+    nm = NeonL("grom_layer")
+    For Each ly In ActivePage.Layers
+        If ly.Name = nm Then
+            Set GromLayer = ly
+            Exit Function
+        End If
+    Next ly
+    Set GromLayer = ActivePage.CreateLayer(nm)
+End Function
+
+' люверсы одного объекта (GRX/GRY/GRN): самый большой замкнутый подпуть его контура
+Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As Double, ByVal rf As Double) As Boolean
+    Dim crv As Curve, tmp As Shape, sp As SubPath, sg As Segment, best As Double, a As Double
+    Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, x2 As Double, y2 As Double, x3 As Double, y3 As Double
+    Dim bx() As Double, by() As Double, bn As Long, k As Long
+    On Error Resume Next
+    If sh.Type = cdrCurveShape Then
+        Set crv = sh.Curve
+    Else
+        ' прямоугольник, эллипс, текст...: кривая отображения, иначе — временная копия в кривых
+        Set crv = sh.DisplayCurve
+        If crv Is Nothing Then
+            Set tmp = sh.Duplicate
+            tmp.ConvertToCurves
+            If tmp.Type = cdrCurveShape Then
+                Set crv = tmp.Curve
+            End If
+        End If
+    End If
+    Err.Clear
+    On Error GoTo 0
+    If crv Is Nothing Then
+        GoTo Done
+    End If
+    For Each sp In crv.SubPaths
+        If sp.Closed Then
+            NS = 0
+            ReDim SX(0 To 63): ReDim SY(0 To 63)
+            For Each sg In sp.Segments
+                x0 = sg.StartNode.PositionX: y0 = sg.StartNode.PositionY
+                x3 = sg.EndNode.PositionX: y3 = sg.EndNode.PositionY
+                If sg.Type = cdrCurveSegment Then
+                    sg.GetStartingControlPointPosition x1, y1
+                    sg.GetEndingControlPointPosition x2, y2
+                Else
+                    x1 = x0 + (x3 - x0) / 3: y1 = y0 + (y3 - y0) / 3
+                    x2 = x0 + 2 * (x3 - x0) / 3: y2 = y0 + 2 * (y3 - y0) / 3
+                End If
+                PutS NS, x0, y0, x1, y1, x2, y2, x3, y3
+                NS = NS + 1
+            Next sg
+            If NS > 0 Then
+                GromFlatten GromFlatStep(edge)
+                a = Abs(GromArea())
+                If a > best Then
+                    best = a: bn = NS
+                    ReDim bx(0 To 4 * NS): ReDim by(0 To 4 * NS)
+                    For k = 0 To 4 * NS - 1
+                        bx(k) = SX(k): by(k) = SY(k)
+                    Next k
+                End If
+            End If
+        End If
+    Next sp
+    If best > 0 Then
+        NS = bn
+        ReDim SX(0 To 4 * bn): ReDim SY(0 To 4 * bn)
+        For k = 0 To 4 * bn - 1
+            SX(k) = bx(k): SY(k) = by(k)
+        Next k
+        ShapeGrommets = GromPlace(edge, stp, rf)
+    End If
+Done:
+    If Not tmp Is Nothing Then
+        tmp.Delete
+    End If
+End Function
+
+'@@GROMGEO_BEGIN
+Private Function GromFlatStep(ByVal edge As Double) As Double
+    Dim f As Double
+    f = edge / 4
+    If f > 1 Then
+        f = 1
+    End If
+    If f < 0.2 Then
+        f = 0.2
+    End If
+    GromFlatStep = f
+End Function
+
+' ---------------------------------------------------------------------
+'  Геометрия (без CorelDRAW): вход — подпуть SX/SY/NS, выход — GRX/GRY/GRN
+' ---------------------------------------------------------------------
+Private Function GromPlace(ByVal edge As Double, ByVal stp As Double, ByVal rf As Double) As Boolean
+    Dim ox() As Double, oy() As Double, oc() As Boolean, n As Long, i As Long, k As Long, a0 As Double
+    Dim nx() As Double, ny() As Double, mx As Double, my As Double, c As Double, L As Double
+    Dim drop() As Boolean, tix As Double, tiy As Double, tox As Double, toy As Double
+    Dim kx() As Double, ky() As Double, kc() As Boolean, nk As Long
+    Dim cum() As Double, total As Double, cs() As Long, nc As Long, j As Long, c2 As Long, Lr As Double, m As Long
+    Dim top As Long, x As Double, y As Double, s As Double, ok As Boolean, q As Long
+    GRN = 0
+    ReDim GRX(0 To 15): ReDim GRY(0 To 15)
+    GromFlatten GromFlatStep(edge)
+    If GN < 3 Then
+        Exit Function
+    End If
+    If GromArea() < 0 Then
+        GromReverse
+    End If
+    a0 = GromArea()
+    GromSoftCorners
+    n = GN
+    ' смещение внутрь: у вершины — по биссектрисе нормалей соседних звеньев на d / cos
+    ReDim nx(0 To n - 1): ReDim ny(0 To n - 1)
+    For i = 0 To n - 1
+        k = (i + 1) Mod n
+        NormV GPX(k) - GPX(i), GPY(k) - GPY(i), tox, toy
+        nx(i) = -toy: ny(i) = tox
+    Next i
+    ReDim ox(0 To n - 1): ReDim oy(0 To n - 1)
+    For i = 0 To n - 1
+        k = (i - 1 + n) Mod n
+        NormV nx(k) + nx(i), ny(k) + ny(i), mx, my
+        c = mx * nx(i) + my * ny(i)
+        If c > 0.25 Then
+            L = edge / c
+        Else
+            L = 4 * edge
+        End If
+        ox(i) = GPX(i) + mx * L: oy(i) = GPY(i) + my * L
+    Next i
+    ' у выпуклого угла смещённые точки сторон ближе отступа к углу уходят за смещённый угол
+    ' (петля): после угла — всё, что не впереди него по выходящей стороне, до угла — что не позади
+    ReDim drop(0 To n - 1)
+    For c2 = 0 To n - 1
+        If GPC(c2) Then
+            k = (c2 - 1 + n) Mod n
+            NormV GPX(c2) - GPX(k), GPY(c2) - GPY(k), tix, tiy
+            k = (c2 + 1) Mod n
+            NormV GPX(k) - GPX(c2), GPY(k) - GPY(c2), tox, toy
+            k = (c2 + 1) Mod n
+            Do While k <> c2
+                If GPC(k) Then
+                    Exit Do
+                End If
+                If (ox(k) - ox(c2)) * tox + (oy(k) - oy(c2)) * toy > 0.000000001 Then
+                    Exit Do
+                End If
+                drop(k) = True: k = (k + 1) Mod n
+            Loop
+            k = (c2 - 1 + n) Mod n
+            Do While k <> c2
+                If GPC(k) Then
+                    Exit Do
+                End If
+                If (ox(k) - ox(c2)) * tix + (oy(k) - oy(c2)) * tiy < -0.000000001 Then
+                    Exit Do
+                End If
+                drop(k) = True: k = (k - 1 + n) Mod n
+            Loop
+        End If
+    Next c2
+    ReDim kx(0 To n - 1): ReDim ky(0 To n - 1): ReDim kc(0 To n - 1): nk = 0
+    For i = 0 To n - 1
+        If Not drop(i) Then
+            kx(nk) = ox(i): ky(nk) = oy(i): kc(nk) = GPC(i): nk = nk + 1
+        End If
+    Next i
+    If nk < 3 Then
+        Exit Function
+    End If
+    If PolyArea(kx, ky, nk) <= 0.02 * a0 Then
+        Exit Function
+    End If
+    n = nk
+    ReDim cum(0 To n)
+    For i = 0 To n - 1
+        k = (i + 1) Mod n
+        cum(i + 1) = cum(i) + Sqr((kx(k) - kx(i)) ^ 2 + (ky(k) - ky(i)) ^ 2)
+    Next i
+    total = cum(n)
+    ReDim cs(0 To n): nc = 0
+    For i = 0 To n - 1
+        If kc(i) Then
+            cs(nc) = i: nc = nc + 1
+        End If
+    Next i
+    If nc = 0 Then
+        top = 0
+        For i = 1 To n - 1
+            If ky(i) > ky(top) Then
+                top = i
+            ElseIf ky(i) = ky(top) And kx(i) < kx(top) Then
+                top = i
+            End If
+        Next i
+        m = GromCeil(total / stp)
+        For j = 0 To m - 1
+            GromAt kx, ky, cum, n, top, total * j / m, x, y
+            GromAdd x, y
+        Next j
+        GromPlace = True
+        Exit Function
+    End If
+    For j = 0 To nc - 1
+        k = cs(j): c2 = cs((j + 1) Mod nc)
+        If c2 > k Then
+            Lr = cum(c2) - cum(k)
+        Else
+            Lr = total - cum(k) + cum(c2)
+        End If
+        m = GromCeil(Lr / stp)
+        For q = 0 To m - 1
+            GromAt kx, ky, cum, n, k, Lr * q / m, x, y
+            GromAdd x, y
+        Next q
+    Next j
+    If rf > 0 Then
+        nk = GRN
+        For j = 0 To nc - 1
+            For q = 0 To 1
+                If q = 0 Then
+                    s = rf
+                Else
+                    s = total - rf
+                End If
+                GromAt kx, ky, cum, n, cs(j), s, x, y
+                ok = True
+                For i = 0 To GRN - 1
+                    If Sqr((GRX(i) - x) ^ 2 + (GRY(i) - y) ^ 2) < 0.5 * rf Then
+                        ok = False
+                        Exit For
+                    End If
+                Next i
+                If ok Then
+                    GromAdd x, y
+                End If
+            Next q
+        Next j
+    End If
+    GromPlace = True
+End Function
+
+' число промежутков: вверх до целого, не меньше 1
+Private Function GromCeil(ByVal v As Double) As Long
+    Dim m As Long
+    m = -Int(-(v - 0.000000001))
+    If m < 1 Then
+        m = 1
+    End If
+    GromCeil = m
+End Function
+
+Private Sub GromAdd(ByVal x As Double, ByVal y As Double)
+    If GRN > UBound(GRX) Then
+        ReDim Preserve GRX(0 To 2 * GRN + 16): ReDim Preserve GRY(0 To 2 * GRN + 16)
+    End If
+    GRX(GRN) = x: GRY(GRN) = y: GRN = GRN + 1
+End Sub
+
+' точка на расстоянии s по обходу смещённого контура от вершины i0
+Private Sub GromAt(kx() As Double, ky() As Double, cum() As Double, ByVal n As Long, ByVal i0 As Long, _
+                   ByVal s As Double, x As Double, y As Double)
+    Dim s0 As Double, lo As Long, hi As Long, md As Long, i As Long, L As Double, t As Double, k As Long
+    s0 = cum(i0) + s
+    Do While s0 >= cum(n)
+        s0 = s0 - cum(n)
+    Loop
+    lo = 0: hi = n
+    Do While hi - lo > 1
+        md = (lo + hi) \ 2
+        If cum(md) <= s0 Then
+            lo = md
+        Else
+            hi = md
+        End If
+    Loop
+    i = lo: L = cum(i + 1) - cum(i)
+    t = 0
+    If L >= 0.000000000001 Then
+        t = (s0 - cum(i)) / L
+    End If
+    k = (i + 1) Mod n
+    x = kx(i) + (kx(k) - kx(i)) * t: y = ky(i) + (ky(k) - ky(i)) * t
+End Sub
+
+' подпуть SX/SY/NS -> ломаная GPX/GPY, GPC — угол в узле (излом касательной больше 30 град)
+Private Sub GromFlatten(ByVal stp As Double)
+    Dim s As Long, q As Long, m As Long, i As Long, x As Double, y As Double, Lc As Double
+    Dim tix As Double, tiy As Double, tox As Double, toy As Double, isC As Boolean
+    Dim bz(0 To 7) As Double
+    GN = 0
+    ReDim GPX(0 To 255): ReDim GPY(0 To 255): ReDim GPC(0 To 255)
+    For s = 0 To NS - 1
+        q = s - 1
+        If q < 0 Then
+            q = NS - 1
+        End If
+        GromTanEnd q, tix, tiy
+        GromTanStart s, tox, toy
+        isC = (tix * tox + tiy * toy < Cos(30# * Atn(1#) / 45#))
+        For i = 0 To 7
+            If i Mod 2 = 0 Then
+                bz(i) = SX(4 * s + i \ 2)
+            Else
+                bz(i) = SY(4 * s + i \ 2)
+            End If
+        Next i
+        Lc = Sqr((bz(2) - bz(0)) ^ 2 + (bz(3) - bz(1)) ^ 2) + Sqr((bz(4) - bz(2)) ^ 2 + (bz(5) - bz(3)) ^ 2) + _
+             Sqr((bz(6) - bz(4)) ^ 2 + (bz(7) - bz(5)) ^ 2)
+        m = -Int(-(Lc / stp))
+        If m < 2 Then
+            m = 2
+        End If
+        For i = 0 To m - 1
+            BzPt bz, i / m, x, y
+            If GN > 0 Then
+                If Sqr((GPX(GN - 1) - x) ^ 2 + (GPY(GN - 1) - y) ^ 2) < 0.000001 Then
+                    If isC And i = 0 Then
+                        GPC(GN - 1) = True
+                    End If
+                    GoTo NextI
+                End If
+            End If
+            If GN > UBound(GPX) Then
+                ReDim Preserve GPX(0 To 2 * GN + 16): ReDim Preserve GPY(0 To 2 * GN + 16): ReDim Preserve GPC(0 To 2 * GN + 16)
+            End If
+            GPX(GN) = x: GPY(GN) = y: GPC(GN) = (isC And i = 0): GN = GN + 1
+NextI:
+        Next i
+    Next s
+    If GN > 1 Then
+        If Sqr((GPX(0) - GPX(GN - 1)) ^ 2 + (GPY(0) - GPY(GN - 1)) ^ 2) < 0.000001 Then
+            GPC(0) = GPC(0) Or GPC(GN - 1)
+            GN = GN - 1
+        End If
+    End If
+End Sub
+
+' касательная в начале сегмента s; вырожденная ручка — к следующей точке
+Private Sub GromTanStart(ByVal s As Long, tx As Double, ty As Double)
+    Dim k As Long, dx As Double, dy As Double
+    tx = 0: ty = 0
+    For k = 1 To 3
+        dx = SX(4 * s + k) - SX(4 * s): dy = SY(4 * s + k) - SY(4 * s)
+        If Sqr(dx * dx + dy * dy) > 0.000000001 Then
+            NormV dx, dy, tx, ty
+            Exit Sub
+        End If
+    Next k
+End Sub
+
+Private Sub GromTanEnd(ByVal s As Long, tx As Double, ty As Double)
+    Dim k As Long, dx As Double, dy As Double
+    tx = 0: ty = 0
+    For k = 2 To 0 Step -1
+        dx = SX(4 * s + 3) - SX(4 * s + k): dy = SY(4 * s + 3) - SY(4 * s + k)
+        If Sqr(dx * dx + dy * dy) > 0.000000001 Then
+            NormV dx, dy, tx, ty
+            Exit Sub
+        End If
+    Next k
+End Sub
+
+Private Function GromArea() As Double
+    GromArea = PolyArea(GPX, GPY, GN)
+End Function
+
+Private Function PolyArea(x() As Double, y() As Double, ByVal n As Long) As Double
+    Dim i As Long, k As Long, a As Double
+    For i = 0 To n - 1
+        k = (i + 1) Mod n
+        a = a + x(i) * y(k) - x(k) * y(i)
+    Next i
+    PolyArea = a / 2
+End Function
+
+Private Sub GromReverse()
+    Dim i As Long, j As Long, t As Double, b As Boolean
+    i = 0: j = GN - 1
+    Do While i < j
+        t = GPX(i): GPX(i) = GPX(j): GPX(j) = t
+        t = GPY(i): GPY(i) = GPY(j): GPY(j) = t
+        b = GPC(i): GPC(i) = GPC(j): GPC(j) = b
+        i = i + 1: j = j - 1
+    Loop
+End Sub
+
+' скругления углов: подряд идущие вершины с радиусом кривизны меньше четверти меньшей стороны
+' габарита, поворот участка не меньше 45 град; почти прямых участков (радиус больше 20 таких) —
+' не меньше четверти периметра (у овала их нет). Середина участка по длине становится углом.
+Private Sub GromSoftCorners()
+    Dim n As Long, i As Long, k As Long, a As Long, b As Long, x0 As Double, x1 As Double, y0 As Double, y1 As Double
+    Dim Rc As Double, sg() As Double, tn() As Double, cv() As Boolean, L As Double, total As Double, straight As Double
+    Dim t0x As Double, t0y As Double, t1x As Double, t1y As Double, st As Long, tot As Double
+    Dim r0 As Long, nr As Long, acc As Double, half As Double, md As Long, j As Long
+    n = GN
+    x0 = GPX(0): x1 = GPX(0): y0 = GPY(0): y1 = GPY(0)
+    For i = 1 To n - 1
+        If GPX(i) < x0 Then
+            x0 = GPX(i)
+        End If
+        If GPX(i) > x1 Then
+            x1 = GPX(i)
+        End If
+        If GPY(i) < y0 Then
+            y0 = GPY(i)
+        End If
+        If GPY(i) > y1 Then
+            y1 = GPY(i)
+        End If
+    Next i
+    Rc = x1 - x0
+    If y1 - y0 < Rc Then
+        Rc = y1 - y0
+    End If
+    Rc = 0.25 * Rc
+    ReDim sg(0 To n - 1): ReDim tn(0 To n - 1): ReDim cv(0 To n - 1)
+    For i = 0 To n - 1
+        k = (i + 1) Mod n
+        sg(i) = Sqr((GPX(k) - GPX(i)) ^ 2 + (GPY(k) - GPY(i)) ^ 2)
+        total = total + sg(i)
+    Next i
+    For i = 0 To n - 1
+        a = (i - 1 + n) Mod n: b = (i + 1) Mod n
+        NormV GPX(i) - GPX(a), GPY(i) - GPY(a), t0x, t0y
+        NormV GPX(b) - GPX(i), GPY(b) - GPY(i), t1x, t1y
+        tn(i) = GromAtan2(t0x * t1y - t0y * t1x, t0x * t1x + t0y * t1y)
+        L = 0.5 * (sg(a) + sg(i))
+        If Not GPC(i) And Abs(tn(i)) > 0.000000001 Then
+            cv(i) = (L / Abs(tn(i)) < Rc)
+        End If
+        If Not GPC(i) Then
+            If Abs(tn(i)) < 0.000000001 Then
+                straight = straight + sg(i)
+            ElseIf L / Abs(tn(i)) > 20 * Rc Then
+                straight = straight + sg(i)
+            End If
+        End If
+    Next i
+    If straight < 0.25 * total Then
+        Exit Sub
+    End If
+    st = -1
+    For i = 0 To n - 1
+        If Not cv(i) Then
+            st = i
+            Exit For
+        End If
+    Next i
+    If st < 0 Then
+        Exit Sub
+    End If
+    i = 0
+    Do While i < n
+        If Not cv((st + i) Mod n) Then
+            i = i + 1
+        Else
+            r0 = i: nr = 0: tot = 0
+            Do While i < n
+                If Not cv((st + i) Mod n) Then
+                    Exit Do
+                End If
+                tot = tot + tn((st + i) Mod n)
+                nr = nr + 1: i = i + 1
+            Loop
+            If Abs(tot) >= 45# * Atn(1#) / 45# Then
+                ' середина участка по длине (по звеньям между его вершинами)
+                L = 0
+                For j = 0 To nr - 2
+                    L = L + sg((st + r0 + j) Mod n)
+                Next j
+                half = L / 2: acc = 0: md = (st + r0) Mod n
+                For j = 0 To nr - 2
+                    k = (st + r0 + j) Mod n
+                    If acc + sg(k) >= half Then
+                        If half - acc < acc + sg(k) - half Then
+                            md = k
+                        Else
+                            md = (k + 1) Mod n
+                        End If
+                        Exit For
+                    End If
+                    acc = acc + sg(k)
+                Next j
+                GPC(md) = True
+            End If
+        End If
+    Loop
+End Sub
+
+Private Function GromAtan2(ByVal y As Double, ByVal x As Double) As Double
+    Const PI_ As Double = 3.14159265358979
+    If x > 0 Then
+        GromAtan2 = Atn(y / x)
+    ElseIf x < 0 Then
+        If y >= 0 Then
+            GromAtan2 = Atn(y / x) + PI_
+        Else
+            GromAtan2 = Atn(y / x) - PI_
+        End If
+    ElseIf y > 0 Then
+        GromAtan2 = PI_ / 2
+    ElseIf y < 0 Then
+        GromAtan2 = -PI_ / 2
+    End If
+End Function
+
+' стенд: подпуть из массивов (4 точки на сегмент) -> центры люверсов
+Public Function GromTest(inX() As Double, inY() As Double, ByVal nSeg As Long, ByVal edge As Double, ByVal stp As Double, _
+                         ByVal rf As Double, outX() As Double, outY() As Double) As Long
+    Dim s As Long, k As Long
+    NS = 0
+    ReDim SX(0 To 4 * nSeg + 16): ReDim SY(0 To 4 * nSeg + 16)
+    For s = 0 To nSeg - 1
+        PutS s, inX(4 * s), inY(4 * s), inX(4 * s + 1), inY(4 * s + 1), inX(4 * s + 2), inY(4 * s + 2), inX(4 * s + 3), inY(4 * s + 3)
+    Next s
+    NS = nSeg
+    If Not GromPlace(edge, stp, rf) Then
+        GromTest = -1
+        Exit Function
+    End If
+    ReDim outX(0 To GRN): ReDim outY(0 To GRN)
+    For k = 0 To GRN - 1
+        outX(k) = GRX(k): outY(k) = GRY(k)
+    Next k
+    GromTest = GRN
+End Function
+'@@GROMGEO_END
+'@@GROM_END
+

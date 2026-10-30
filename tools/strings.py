@@ -140,4 +140,38 @@ STRINGS = {
                       'Обновить файлы панели сейчас? Windows попросит права администратора, затем полностью перезапустите CorelDRAW.',
                       'The "Neon" toolbar files in the CorelDRAW Addons folder are from an older plugin version (or missing):\n{0}\nButton set [NeonToolbar {1}] is needed.\n\n'
                       'Update the toolbar files now? Windows will ask for administrator rights; then fully restart CorelDRAW.'),
+    'grom_title':    ('Неон: люверсы', 'Neon: grommets'),
+    'grom_nosel':    ('Выделите баннер (подложку): прямоугольник или замкнутый контур.',
+                      'Select the banner (backing): a rectangle or a closed outline.'),
+    'grom_none':     ('В выделении нет замкнутого контура, в который люверсы помещаются с таким отступом от края.',
+                      'The selection has no closed outline that fits grommets at this edge distance.'),
+    'grom_report':   ('Люверсов: {0} (объектов: {1}).\nОт края до центра люверса {2} мм, расстояние между люверсами не больше {3} мм, точка Ø{4} мм.\n'
+                      'Точки — на слое «Люверсы», по группе на объект.',
+                      'Grommets: {0} (objects: {1}).\nEdge to grommet centre {2} mm, distance between grommets at most {3} mm, point Ø{4} mm.\n'
+                      'Points are on the "Grommets" layer, one group per object.'),
+    'grom_report_reinf': ('Усиление углов: ещё по точке в {0} мм от каждого угла.', 'Corner reinforcement: one more point {0} mm from each corner.'),
+    'grom_skipped':  ('Пропущено объектов: {0} (нет замкнутого контура или отступ больше размера).',
+                      'Objects skipped: {0} (no closed outline, or the edge distance is larger than the object).'),
+    'grom_layer':    ('Люверсы', 'Grommets'),
+    'grom_dot':      ('Люверс', 'Grommet'),
+    'grom_group':    ('Люверсы: {0}', 'Grommets: {0}'),
+    'lbl_grom_edge': ('От края до центра люверса, мм:', 'Edge to grommet centre, mm:'),
+    'lbl_grom_step': ('Расстояние между люверсами, не больше, мм:', 'Distance between grommets, max, mm:'),
+    'lbl_grom_dot':  ('Диаметр точки, мм:', 'Point diameter, mm:'),
+    'lbl_grom_color': ('Цвет точки:', 'Point colour:'),
+    'grom_c_black':  ('Чёрный (K100)', 'Black (K100)'),
+    'grom_c_red':    ('Красный (M100 Y100)', 'Red (M100 Y100)'),
+    'grom_c_magenta': ('Пурпурный (M100)', 'Magenta (M100)'),
+    'grom_c_blue':   ('Синий (C100 M100)', 'Blue (C100 M100)'),
+    'grom_c_green':  ('Зелёный (C100 Y100)', 'Green (C100 Y100)'),
+    'grom_c_white':  ('Белый', 'White'),
+    'grom_c_other':  ('Другой…', 'Other…'),
+    'chk_grom_reinf': ('Усиление углов: ещё точка в, мм', 'Corner reinforcement: extra point at, mm'),
+    'grom_hint':     ('В каждом углу — люверс, на сторонах — равномерно, не реже заданного расстояния. Скруглённый угол — тоже угол; '
+                      'у круга и овала — равномерно по контуру.',
+                      'A grommet in every corner, evenly along the sides, never further apart than the given distance. A rounded corner '
+                      'counts as a corner; circles and ovals get grommets evenly all round.'),
+    'btn_grom':      ('Расставить', 'Place'),
+    'bad_grom':      ('Проверьте значения: от края 0–500 мм, расстояние 20–10000 мм, точка 0–100 мм.',
+                      'Check the values: edge 0–500 mm, distance 20–10000 mm, point 0–100 mm.'),
 }

@@ -3,10 +3,19 @@ Option Explicit
 ' тип неона, кратность реза, подгонка. Элементы окна создаёт NeonBuild, код вставляется при сборке.
 ' NeonRunMode = 1 — то же окно перед упрощением контура: допуск и «показывать окно» (лишние
 ' элементы скрываются, окно становится короче — сборщик менять не нужно).
+' NeonRunMode = 2 — перед расстановкой люверсов: отступ от края, расстояние между люверсами,
+' диаметр и цвет точки, усиление углов (элементы те же, подписи и места — свои).
+
+' люверсы: свой цвет ("S:..."), последний выбранный цвет из списка, защита от повторного Change
+Private gCustom As String, gLastIdx As Long, gBusy As Boolean
 
 Private Sub UserForm_Initialize()
     If NeonRunMode = 1 Then
         InitSimplify
+        Exit Sub
+    End If
+    If NeonRunMode = 2 Then
+        InitGrommets
         Exit Sub
     End If
     Me.Caption = NeonL("app_title")
@@ -91,8 +100,147 @@ Private Sub InitSimplify()
     NeonRunConfirmed = False
 End Sub
 
+Private Sub InitGrommets()
+    Dim c As Object, cs As String, i As Long, v As Variant, rd As Double
+    gBusy = True
+    For Each c In Me.Controls
+        c.Visible = False
+    Next c
+    Me.Caption = NeonL("grom_title")
+    GromRow lblTool, cboTool, 14, NeonL("lbl_grom_edge")
+    cboTool.Clear
+    For Each v In Array("10", "15", "20", "25", "30")
+        cboTool.AddItem v
+    Next v
+    cboTool.Text = FmtNum(NeonGromEdge())
+    GromRow lblEnd, cboEnd, 40, NeonL("lbl_grom_step")
+    cboEnd.Clear
+    For Each v In Array("200", "250", "300", "400", "500")
+        cboEnd.AddItem v
+    Next v
+    cboEnd.Text = FmtNum(NeonGromStep())
+    GromRow lblCut, cboCut, 66, NeonL("lbl_grom_dot")
+    cboCut.Clear
+    For Each v In Array("3", "5", "8", "10")
+        cboCut.AddItem v
+    Next v
+    cboCut.Text = FmtNum(NeonGromDot())
+    lblType.Left = 12: lblType.Top = 96: lblType.Width = 120
+    lblType.Caption = NeonL("lbl_grom_color")
+    lblType.Visible = True
+    cboType.Left = 140: cboType.Top = 92: cboType.Width = 198
+    cboType.Clear
+    For Each v In Array("grom_c_black", "grom_c_red", "grom_c_magenta", "grom_c_blue", "grom_c_green", "grom_c_white", "grom_c_other")
+        cboType.AddItem NeonL(CStr(v))
+    Next v
+    cboType.Visible = True
+    cs = NeonGromColorSetting()
+    gCustom = "": gLastIdx = 0
+    If Left$(cs, 2) = "S:" Then
+        gCustom = cs
+        cboType.List(cboType.ListCount - 1) = NeonL("grom_c_other") & ": " & NeonGromColorName(cs)
+        cboType.ListIndex = cboType.ListCount - 1
+    Else
+        i = CLng(Val(Mid$(cs, 3)))
+        If i < 0 Or i > cboType.ListCount - 2 Then
+            i = 0
+        End If
+        cboType.ListIndex = i
+        gLastIdx = i
+    End If
+    chkFit.Left = 12: chkFit.Top = 122: chkFit.Width = 230
+    chkFit.Caption = NeonL("chk_grom_reinf")
+    chkFit.Value = (GetSetting("NeonCenterline", "Grommet", "Reinf", "0") = "1")
+    chkFit.Visible = True
+    cboTrim.Left = 250: cboTrim.Top = 120: cboTrim.Width = 88
+    cboTrim.Clear
+    For Each v In Array("30", "40", "50", "60", "75", "100")
+        cboTrim.AddItem v
+    Next v
+    rd = NeonGromReinfDist()
+    cboTrim.ListIndex = 2
+    For i = 0 To cboTrim.ListCount - 1
+        If Abs(Val(cboTrim.List(i)) - rd) < 0.001 Then
+            cboTrim.ListIndex = i
+        End If
+    Next i
+    cboTrim.Visible = True
+    lblHint.Left = 12: lblHint.Top = 150: lblHint.Width = 326
+    lblHint.WordWrap = True
+    lblHint.Height = 44
+    lblHint.Caption = NeonL("grom_hint")
+    lblHint.Visible = True
+    btnOK.Top = lblHint.Top + lblHint.Height + 10
+    btnCancel.Top = btnOK.Top
+    btnOK.Caption = NeonL("btn_grom")
+    btnCancel.Caption = NeonL("btn_cancel")
+    btnOK.Visible = True
+    btnCancel.Visible = True
+    Me.Height = btnOK.Top + btnOK.Height + 50
+    NeonRunConfirmed = False
+    gBusy = False
+End Sub
+
+' строка окна люверсов: подпись слева, поле справа
+Private Sub GromRow(lb As Object, cb As Object, ByVal y As Single, ByVal cap As String)
+    lb.Left = 12: lb.Top = y + 4: lb.Width = 232
+    lb.Caption = cap
+    lb.Visible = True
+    cb.Left = 250: cb.Top = y: cb.Width = 88
+    cb.Visible = True
+End Sub
+
+' люверсы: «Другой…» в списке цветов — окно выбора цвета CorelDRAW
+Private Sub cboType_Change()
+    Dim s As String, cur As String
+    If NeonRunMode <> 2 Or gBusy Then
+        Exit Sub
+    End If
+    If cboType.ListIndex <> cboType.ListCount - 1 Then
+        gLastIdx = cboType.ListIndex
+        Exit Sub
+    End If
+    gBusy = True
+    cur = gCustom
+    If Len(cur) = 0 Then
+        cur = "P:" & gLastIdx
+    End If
+    s = NeonGromPickColor(cur)
+    If Len(s) > 0 Then
+        gCustom = s
+        cboType.List(cboType.ListCount - 1) = NeonL("grom_c_other") & ": " & NeonGromColorName(s)
+    ElseIf Len(gCustom) = 0 Then
+        cboType.ListIndex = gLastIdx
+    End If
+    gBusy = False
+End Sub
+
 Private Sub btnOK_Click()
-    Dim t As Double, c As Double
+    Dim t As Double, c As Double, st As Double, d As Double
+    If NeonRunMode = 2 Then
+        t = ParseNum(cboTool.Text): st = ParseNum(cboEnd.Text): d = ParseNum(cboCut.Text)
+        If t <= 0 Or t > 500 Or st < 20 Or st > 10000 Or d <= 0 Or d > 100 Then
+            MsgBox NeonL("bad_grom"), vbExclamation, NeonL("grom_title")
+            Exit Sub
+        End If
+        SaveSetting "NeonCenterline", "Grommet", "Edge", FmtNum(t)
+        SaveSetting "NeonCenterline", "Grommet", "Step", FmtNum(st)
+        SaveSetting "NeonCenterline", "Grommet", "Dot", FmtNum(d)
+        If cboType.ListIndex = cboType.ListCount - 1 Then
+            If Len(gCustom) > 0 Then
+                SaveSetting "NeonCenterline", "Grommet", "Color", gCustom
+            End If
+        ElseIf cboType.ListIndex >= 0 Then
+            SaveSetting "NeonCenterline", "Grommet", "Color", "P:" & cboType.ListIndex
+        End If
+        SaveSetting "NeonCenterline", "Grommet", "Reinf", IIf(chkFit.Value, "1", "0")
+        If cboTrim.ListIndex >= 0 Then
+            SaveSetting "NeonCenterline", "Grommet", "ReinfDist", cboTrim.List(cboTrim.ListIndex)
+        End If
+        NeonRunConfirmed = True
+        Me.Hide
+        Exit Sub
+    End If
     If NeonRunMode = 1 Then
         t = ParseNum(cboTool.Text)
         If t < 0.01 Or t > 5 Then

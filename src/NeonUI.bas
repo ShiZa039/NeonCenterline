@@ -26,11 +26,11 @@ Public Const NEON_DONATE_URL As String = "https://github.com/ShiZa039/NeonCenter
 Private Const REG_APP As String = "NeonCenterline"
 ' результат окна перед расчётом (frmNeonRun): True — «Построить» / «Упростить»
 Public NeonRunConfirmed As Boolean
-' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура
+' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура, 2 — люверсы
 Public NeonRunMode As Long
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
-Public Const NEON_TOOLBAR_VER As String = "4"
+Public Const NEON_TOOLBAR_VER As String = "5"
 ' файлы панели обновлены в этом сеансе (InstallToolbar): в памяти CorelDRAW ещё старый состав
 ' панели, сбрасывать её можно только после перезапуска
 Public NeonTbInstalled As Boolean
@@ -349,6 +349,46 @@ Private Function ResetNeonBar(ByRef rep As String, Optional ByVal detail As Bool
             End If
         End If
     Next cb
+End Function
+
+' окно перед расстановкой люверсов (frmNeonRun в режиме 2): отступ, шаг, диаметр и цвет точки,
+' усиление углов. Без собранной формы — отступ и шаг стандартными окнами. False — отмена
+Public Function AskGrommetParams() As Boolean
+    Dim f As Object, s As String, v As Double
+    NeonRunMode = 2
+    On Error Resume Next
+    Set f = VBA.UserForms.Add("frmNeonRun")
+    On Error GoTo 0
+    If Not f Is Nothing Then
+        NeonRunConfirmed = False
+        f.Show
+        AskGrommetParams = NeonRunConfirmed
+        Unload f
+        NeonRunMode = 0
+        Exit Function
+    End If
+    NeonRunMode = 0
+    s = InputBox(NeonL("lbl_grom_edge"), NeonL("grom_title"), FmtNum(NeonGromEdge()))
+    If Len(Trim$(s)) = 0 Then
+        Exit Function
+    End If
+    v = ParseNum(s)
+    If v <= 0 Or v > 500 Then
+        MsgBox NeonL("bad_grom"), vbExclamation, NeonL("grom_title")
+        Exit Function
+    End If
+    SaveSetting REG_APP, "Grommet", "Edge", FmtNum(v)
+    s = InputBox(NeonL("lbl_grom_step"), NeonL("grom_title"), FmtNum(NeonGromStep()))
+    If Len(Trim$(s)) = 0 Then
+        Exit Function
+    End If
+    v = ParseNum(s)
+    If v < 20 Or v > 10000 Then
+        MsgBox NeonL("bad_grom"), vbExclamation, NeonL("grom_title")
+        Exit Function
+    End If
+    SaveSetting REG_APP, "Grommet", "Step", FmtNum(v)
+    AskGrommetParams = True
 End Function
 
 ' окно перед упрощением контура (то же окно frmNeonRun в режиме 1): допуск, показывать ли окно;
