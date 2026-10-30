@@ -1300,20 +1300,27 @@ Private Sub FilAt(xs() As Double, ys() As Double, cum() As Double, ByVal n As Lo
     x = xs(j - 1) + (xs(j) - xs(j - 1)) * t: y = ys(j - 1) + (ys(j) - ys(j - 1)) * t
 End Sub
 
-' режим образца (как _fillet): острые изломы оси (> 35 град по участкам ~0.6W) скругляются
-' квадратичной кривой, срез c = kr*W*tan(угол/2)
-Private Sub FilletPts(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double, ByVal kr As Double)
-    Dim n As Long, i As Long, cum() As Double, angA() As Double, done() As Boolean
-    Dim ax As Double, ay As Double, bx As Double, by As Double, d1x As Double, d1y As Double, d2x As Double, d2y As Double
-    Dim cs As Double, ang As Double, best As Double, bi As Long, ok As Boolean, u As Long
-    Dim used() As Long, nu As Long, c0() As Double, c1() As Double, ci_() As Long, nc As Long
-    Dim c As Double, lim As Double, ox() As Double, oy() As Double, no As Long, k As Long, q As Long, m As Long, t As Long
-    Dim uu As Double, tmpD As Double, tmpL As Long, cx As Double, cy As Double
+' режим образца (как _ref_corner_legs): ноги острого поворота пера (шпилька «т» в «ст», низ «и»,
+' «л») — прямые до самого острия. Острия — как в FilletPts (поворот > 35 град по участкам 0.6w);
+' нога — точки до 3w от острия, не дальше соседнего острия; если её дальняя часть (1w..3w) прямая
+' (отклонение <= 0.05w), а ближняя отходит от этой прямой не больше 0.25w, вся нога ложится на
+' прямую, острие — в пересечение прямых обеих ног (не дальше 0.3w, ноги не почти параллельны).
+' Потом FilletPts скругляет острие как поворот пера
+Private Sub RefCornerLegs(xs() As Double, ys() As Double, ByVal np_ As Long, ByVal w As Double)
+    Dim n As Long, i As Long, cum() As Double, angA() As Double, done() As Boolean, isTip() As Boolean
+    Dim tips() As Long, nt As Long, best As Double, bi As Long, ok As Boolean, u As Long
+    Dim ax As Double, ay As Double, bx As Double, by As Double, d1x As Double, d1y As Double, d2x As Double, d2y As Double, cs As Double
+    Dim q As Long, t As Long, dirn As Long, k As Long, nl As Long, e As Long
+    Dim kFar0(0 To 1) As Long, kEnd(0 To 1) As Long, lmx(0 To 1) As Double, lmy(0 To 1) As Double
+    Dim ldx(0 To 1) As Double, ldy(0 To 1) As Double
+    Dim fx() As Double, fy() As Double, nf As Long, rms As Double, pd As Double, mxd As Double
+    Dim den As Double, uu As Double, xx As Double, yy As Double, nx() As Double, ny() As Double
+    Dim lo As Long, hi As Long, tt As Double, tmpL As Long
     n = np_
-    If n < 5 Then
+    If n < 7 Then
         Exit Sub
     End If
-    ReDim cum(0 To n - 1): ReDim angA(0 To n - 1): ReDim done(0 To n - 1)
+    ReDim cum(0 To n - 1): ReDim angA(0 To n - 1): ReDim done(0 To n - 1): ReDim isTip(0 To n - 1)
     For i = 1 To n - 1
         cum(i) = cum(i - 1) + Dist(xs(i - 1), ys(i - 1), xs(i), ys(i))
     Next i
@@ -1335,7 +1342,7 @@ Private Sub FilletPts(xs() As Double, ys() As Double, np_ As Long, ByVal w As Do
             angA(i) = ArcCos(cs)
         End If
     Next i
-    ReDim used(0 To n): ReDim c0(0 To n): ReDim c1(0 To n): ReDim ci_(0 To n)
+    ReDim tips(0 To n)
     Do
         best = -1: bi = -1
         For i = 1 To n - 2
@@ -1351,30 +1358,265 @@ Private Sub FilletPts(xs() As Double, ys() As Double, np_ As Long, ByVal w As Do
         End If
         done(bi) = True
         ok = True
-        For u = 0 To nu - 1
-            If Abs(cum(bi) - cum(used(u))) < 1.2 * w Then
+        For u = 0 To nt - 1
+            If Abs(cum(bi) - cum(tips(u))) < 1.2 * w Then
                 ok = False
             End If
         Next u
         If ok Then
-            used(nu) = bi: nu = nu + 1
-            ang = best
-            If ang > 150 * PI_ / 180 Then
-                ang = 150 * PI_ / 180
+            tips(nt) = bi: nt = nt + 1: isTip(bi) = True
+        End If
+    Loop
+    If nt = 0 Then
+        Exit Sub
+    End If
+    ' острия — по порядку вдоль линии
+    For i = 1 To nt - 1
+        tmpL = tips(i): k = i - 1
+        Do While k >= 0
+            If tips(k) <= tmpL Then
+                Exit Do
             End If
-            c = kr * w * Tan(ang / 2)
-            lim = 0.45 * cum(bi)
-            If lim < c Then
-                c = lim
+            tips(k + 1) = tips(k): k = k - 1
+        Loop
+        tips(k + 1) = tmpL
+    Next i
+    ReDim fx(0 To n): ReDim fy(0 To n)
+    ReDim nx(0 To n - 1): ReDim ny(0 To n - 1)
+    For q = 0 To nt - 1
+        t = tips(q)
+        nl = 0
+        For dirn = -1 To 1 Step 2
+            ' точки ноги: от t в сторону dirn до 3w (или до соседнего острия)
+            k = t
+            kEnd(nl) = t
+            Do While k + dirn >= 0 And k + dirn <= n - 1
+                k = k + dirn
+                If Abs(cum(k) - cum(t)) > 3 * w Then
+                    Exit Do
+                End If
+                If isTip(k) And k <> t Then
+                    Exit Do
+                End If
+                kEnd(nl) = k
+            Loop
+            ' дальняя часть: |s - s(t)| >= 1w
+            nf = 0: kFar0(nl) = -1
+            k = t
+            Do While k <> kEnd(nl)
+                k = k + dirn
+                If Abs(cum(k) - cum(t)) >= 1 * w Then
+                    If nf = 0 Then
+                        kFar0(nl) = k
+                    End If
+                    fx(nf) = xs(k): fy(nf) = ys(k): nf = nf + 1
+                End If
+            Loop
+            If nf < 5 Then
+                Exit For
             End If
-            lim = 0.45 * (cum(n - 1) - cum(bi))
-            If lim < c Then
-                c = lim
+            If Abs(cum(kEnd(nl)) - cum(kFar0(nl))) < 1 * w Then
+                Exit For
             End If
-            If 1.2 * w < c Then
-                c = 1.2 * w
+            FitLineLS fx, fy, nf, lmx(nl), lmy(nl), ldx(nl), ldy(nl), rms
+            mxd = 0
+            For i = 0 To nf - 1
+                pd = Abs(-(fx(i) - lmx(nl)) * ldy(nl) + (fy(i) - lmy(nl)) * ldx(nl))
+                If pd > mxd Then
+                    mxd = pd
+                End If
+            Next i
+            If mxd > 0.05 * w Then
+                Exit For
             End If
-            c0(nc) = cum(bi) - c: c1(nc) = cum(bi) + c: ci_(nc) = bi: nc = nc + 1
+            mxd = 0
+            k = t
+            Do While k <> kFar0(nl)
+                k = k + dirn
+                If k = kFar0(nl) Then
+                    Exit Do
+                End If
+                pd = Abs(-(xs(k) - lmx(nl)) * ldy(nl) + (ys(k) - lmy(nl)) * ldx(nl))
+                If pd > mxd Then
+                    mxd = pd
+                End If
+            Loop
+            If mxd > 0.25 * w Then
+                Exit For
+            End If
+            nl = nl + 1
+        Next dirn
+        If nl = 2 Then
+            den = ldx(0) * ldy(1) - ldy(0) * ldx(1)
+            If Abs(den) >= 0.34 Then
+                uu = ((lmx(1) - lmx(0)) * ldy(1) - (lmy(1) - lmy(0)) * ldx(1)) / den
+                xx = lmx(0) + ldx(0) * uu: yy = lmy(0) + ldy(0) * uu
+                If Dist(xx, yy, xs(t), ys(t)) <= 0.3 * w Then
+                    For i = 0 To n - 1
+                        nx(i) = xs(i): ny(i) = ys(i)
+                    Next i
+                    nx(t) = xx: ny(t) = yy
+                    For e = 0 To 1
+                        dirn = 2 * e - 1
+                        k = t
+                        Do While k <> kEnd(e)
+                            k = k + dirn
+                            tt = (xs(k) - lmx(e)) * ldx(e) + (ys(k) - lmy(e)) * ldy(e)
+                            nx(k) = lmx(e) + ldx(e) * tt: ny(k) = lmy(e) + ldy(e) * tt
+                        Loop
+                    Next e
+                    lo = kEnd(0) - 1
+                    If lo < 0 Then
+                        lo = 0
+                    End If
+                    hi = kEnd(1) + 1
+                    If hi > n - 1 Then
+                        hi = n - 1
+                    End If
+                    ok = True
+                    For i = lo To hi - 1
+                        If ok Then
+                            If Not SegInside(nx(i), ny(i), nx(i + 1), ny(i + 1)) Then
+                                ok = False
+                            End If
+                        End If
+                    Next i
+                    If ok Then
+                        For i = lo To hi
+                            xs(i) = nx(i): ys(i) = ny(i)
+                        Next i
+                    End If
+                End If
+            End If
+        End If
+    Next q
+End Sub
+
+' режим образца (как _fillet): острые изломы оси (> 35 град по участкам ~0.6W) скругляются
+' квадратичной кривой, срез c = kr*W*tan(угол/2)
+Private Sub FilletPts(xs() As Double, ys() As Double, np_ As Long, ByVal w As Double, ByVal kr As Double)
+    Dim n As Long, i As Long, cum() As Double, angA() As Double, done() As Boolean
+    Dim ax As Double, ay As Double, bx As Double, by As Double, d1x As Double, d1y As Double, d2x As Double, d2y As Double
+    Dim cs As Double, ang As Double, best As Double, bi As Long, ok As Boolean, u As Long
+    Dim used() As Long, nu As Long, c0() As Double, c1() As Double, ci_() As Long, nc As Long
+    Dim c As Double, lim As Double, ox() As Double, oy() As Double, no As Long, k As Long, q As Long, m As Long, t As Long
+    Dim uu As Double, tmpD As Double, tmpL As Long, cx As Double, cy As Double
+    Dim sgA() As Long, uc() As Double, us() As Long, ucut() As Long, two() As Boolean, nNear As Long, u0 As Long
+    Dim lo As Double, hi As Double, n0 As Double, n1 As Double, r As Long, tmpB As Boolean
+    Dim tax As Double, tay As Double, tbx As Double, tby As Double, px As Double, py As Double
+    Dim th As Double, ch As Double, hl As Double, p1x As Double, p1y As Double, p2x As Double, p2y As Double, vv As Double
+    n = np_
+    If n < 5 Then
+        Exit Sub
+    End If
+    ReDim cum(0 To n - 1): ReDim angA(0 To n - 1): ReDim done(0 To n - 1): ReDim sgA(0 To n - 1)
+    For i = 1 To n - 1
+        cum(i) = cum(i - 1) + Dist(xs(i - 1), ys(i - 1), xs(i), ys(i))
+    Next i
+    For i = 0 To n - 1
+        angA(i) = -1
+    Next i
+    For i = 1 To n - 2
+        If cum(i) >= 0.3 * w And cum(n - 1) - cum(i) >= 0.3 * w Then
+            FilAt xs, ys, cum, n, cum(i) - 0.6 * w, ax, ay
+            FilAt xs, ys, cum, n, cum(i) + 0.6 * w, bx, by
+            d1x = xs(i) - ax: d1y = ys(i) - ay: Norm d1x, d1y
+            d2x = bx - xs(i): d2y = by - ys(i): Norm d2x, d2y
+            cs = d1x * d2x + d1y * d2y
+            If cs > 1 Then
+                cs = 1
+            ElseIf cs < -1 Then
+                cs = -1
+            End If
+            angA(i) = ArcCos(cs)
+            If d1x * d2y - d1y * d2x > 0 Then
+                sgA(i) = 1
+            Else
+                sgA(i) = -1
+            End If
+        End If
+    Next i
+    ReDim used(0 To n): ReDim c0(0 To n): ReDim c1(0 To n): ReDim ci_(0 To n)
+    ReDim uc(0 To n): ReDim us(0 To n): ReDim ucut(0 To n): ReDim two(0 To n)
+    Do
+        best = -1: bi = -1
+        For i = 1 To n - 2
+            If Not done(i) And angA(i) > best Then
+                best = angA(i): bi = i
+            End If
+        Next i
+        If bi < 0 Then
+            Exit Do
+        End If
+        If best < 35 * PI_ / 180 Then
+            Exit Do
+        End If
+        done(bi) = True
+        ang = best
+        If ang > 150 * PI_ / 180 Then
+            ang = 150 * PI_ / 180
+        End If
+        c = kr * w * Tan(ang / 2)
+        lim = 0.45 * cum(bi)
+        If lim < c Then
+            c = lim
+        End If
+        lim = 0.45 * (cum(n - 1) - cum(bi))
+        If lim < c Then
+            c = lim
+        End If
+        If 1.2 * w < c Then
+            c = 1.2 * w
+        End If
+        lo = cum(bi) - c: hi = cum(bi) + c
+        nNear = 0: u0 = -1
+        For u = 0 To nu - 1
+            If Abs(cum(bi) - cum(used(u))) < 1.2 * w Then
+                If u0 < 0 Then
+                    u0 = u
+                End If
+                nNear = nNear + 1
+            End If
+        Next u
+        If nNear > 0 Then
+            ' тот же излом (скругления перекрываются) — пропустить; отдельный поворот в ту же
+            ' сторону рядом (крючок входа «т»: верх крючка и сразу поворот в стойку) — одно
+            ' скругление на оба: дуга от начала первого до конца второго
+            If nNear = 1 And sgA(bi) = us(u0) Then
+                If Abs(cum(bi) - cum(used(u0))) >= c + uc(u0) Then
+                    q = ucut(u0)
+                    n0 = c0(q): n1 = c1(q)
+                    If lo < n0 Then
+                        n0 = lo
+                    End If
+                    If hi > n1 Then
+                        n1 = hi
+                    End If
+                    ok = True
+                    For r = 0 To nc - 1
+                        If r <> q Then
+                            If c0(r) < n1 And n0 < c1(r) Then
+                                ok = False
+                            End If
+                        End If
+                    Next r
+                    If ok Then
+                        c0(q) = n0: c1(q) = n1: two(q) = True
+                    End If
+                End If
+            End If
+        Else
+            ' скругления не должны налезать друг на друга
+            ok = True
+            For r = 0 To nc - 1
+                If c0(r) < hi And lo < c1(r) Then
+                    ok = False
+                End If
+            Next r
+            If ok Then
+                used(nu) = bi: uc(nu) = c: us(nu) = sgA(bi): ucut(nu) = nc: nu = nu + 1
+                c0(nc) = lo: c1(nc) = hi: ci_(nc) = bi: two(nc) = False: nc = nc + 1
+            End If
         End If
     Loop
     If nc = 0 Then
@@ -1382,14 +1624,14 @@ Private Sub FilletPts(xs() As Double, ys() As Double, np_ As Long, ByVal w As Do
     End If
     ' по возрастанию начала среза
     For i = 1 To nc - 1
-        tmpD = c0(i): uu = c1(i): tmpL = ci_(i): k = i - 1
+        tmpD = c0(i): uu = c1(i): tmpL = ci_(i): tmpB = two(i): k = i - 1
         Do While k >= 0
             If c0(k) <= tmpD Then
                 Exit Do
             End If
-            c0(k + 1) = c0(k): c1(k + 1) = c1(k): ci_(k + 1) = ci_(k): k = k - 1
+            c0(k + 1) = c0(k): c1(k + 1) = c1(k): ci_(k + 1) = ci_(k): two(k + 1) = two(k): k = k - 1
         Loop
-        c0(k + 1) = tmpD: c1(k + 1) = uu: ci_(k + 1) = tmpL
+        c0(k + 1) = tmpD: c1(k + 1) = uu: ci_(k + 1) = tmpL: two(k + 1) = tmpB
     Next i
     ReDim ox(0 To n + 8): ReDim oy(0 To n + 8): no = 0
     k = 0
@@ -1407,11 +1649,53 @@ Private Sub FilletPts(xs() As Double, ys() As Double, np_ As Long, ByVal w As Do
         If m < 4 Then
             m = 4
         End If
-        For t = 0 To m
-            uu = t / m
-            PushPt ox, oy, no, (1 - uu) ^ 2 * ax + 2 * uu * (1 - uu) * cx + uu * uu * bx, _
-                               (1 - uu) ^ 2 * ay + 2 * uu * (1 - uu) * cy + uu * uu * by
-        Next t
+        If two(q) Then
+            ' дуга по касательным концов: кубическая кривая с ручками окружности
+            If c0(q) > 0.05 * w Then
+                FilAt xs, ys, cum, n, c0(q) - 0.3 * w, px, py
+                tax = ax - px: tay = ay - py
+            Else
+                FilAt xs, ys, cum, n, c0(q) + 0.1 * w, px, py
+                tax = px - ax: tay = py - ay
+            End If
+            Norm tax, tay
+            If cum(n - 1) - c1(q) > 0.05 * w Then
+                FilAt xs, ys, cum, n, c1(q) + 0.3 * w, px, py
+                tbx = px - bx: tby = py - by
+            Else
+                FilAt xs, ys, cum, n, c1(q) - 0.1 * w, px, py
+                tbx = bx - px: tby = by - py
+            End If
+            Norm tbx, tby
+            cs = tax * tbx + tay * tby
+            If cs > 1 Then
+                cs = 1
+            ElseIf cs < -1 Then
+                cs = -1
+            End If
+            th = ArcCos(cs)
+            ch = Dist(ax, ay, bx, by)
+            If th < 0.001 Then
+                hl = ch / 3
+            Else
+                If th > 170 * PI_ / 180 Then
+                    th = 170 * PI_ / 180
+                End If
+                hl = ch * (4 / 3) * Tan(th / 4) / (2 * Sin(th / 2))
+            End If
+            p1x = ax + tax * hl: p1y = ay + tay * hl: p2x = bx - tbx * hl: p2y = by - tby * hl
+            For t = 0 To m
+                uu = t / m: vv = 1 - uu
+                PushPt ox, oy, no, vv ^ 3 * ax + 3 * vv * vv * uu * p1x + 3 * vv * uu * uu * p2x + uu ^ 3 * bx, _
+                                   vv ^ 3 * ay + 3 * vv * vv * uu * p1y + 3 * vv * uu * uu * p2y + uu ^ 3 * by
+            Next t
+        Else
+            For t = 0 To m
+                uu = t / m
+                PushPt ox, oy, no, (1 - uu) ^ 2 * ax + 2 * uu * (1 - uu) * cx + uu * uu * bx, _
+                                   (1 - uu) ^ 2 * ay + 2 * uu * (1 - uu) * cy + uu * uu * by
+            Next t
+        End If
         Do While k < n
             If cum(k) > c1(q) Then
                 Exit Do
@@ -2794,7 +3078,12 @@ Private Sub ProcessChains()
                             End If
                         Else
                             nf = 0
-                            HermiteFill xs, ys, np_, ax_, ay_, na, gH * 1.4, jc, fx, fy, nf
+                            If gRefEnd <> 0 And jc < 0 Then
+                                ' шрифт — образец: касательные концов дыры — по фиту ~1 ширины
+                                RefHermiteFill xs, ys, np_, ax_, ay_, na, gH * 1.4, cref, fx, fy, nf
+                            Else
+                                HermiteFill xs, ys, np_, ax_, ay_, na, gH * 1.4, jc, fx, fy, nf
+                            End If
                         End If
                         hasFill = True
                     ElseIf closed Then
@@ -3136,6 +3425,10 @@ NextSide:
                     End If
                     cX(ci) = CopyD(xs, np_): cY(ci) = CopyD(ys, np_): dN(ci) = np_
                     defC(di) = -1: progress = True
+                ElseIf side = 0 Then
+                    ' вернуть порядок точек: в LibreOffice Basic (стенд) xs = cX(ci) — та же
+                    ' память, и разворот выше развернул бы сохранённую цепочку
+                    ReversePts xs, ys, np_
                 End If
             End If
         Next di
@@ -3185,6 +3478,7 @@ NextSide:
             If gRefEnd = 0 Then
                 Recenter xs, ys, np_, dCl(ci), gW
             ElseIf Not dCl(ci) Then
+                RefCornerLegs xs, ys, np_, gW
                 FilletPts xs, ys, np_, gW, 0.5
             End If
             dN(ci) = np_
@@ -3897,6 +4191,74 @@ Private Sub HermiteFill(xs() As Double, ys() As Double, ByVal np_ As Long, ax_()
         HermSeg fx, fy, nf, a0, a1, tax, tay, b0, b1, tbx, tby, stp
     End If
 End Sub
+
+' шрифт — образец: Эрмит через дыру зоны развилки, касательные концов — по RefEndTan (у длинной
+' зоны — утолщение «е» — окно в 6 шагов захватывает изгиб, и обычный Эрмит уходит наружу)
+Private Sub RefHermiteFill(xs() As Double, ys() As Double, ByVal np_ As Long, ax_() As Double, ay_() As Double, _
+                           ByVal na As Long, ByVal stp As Double, ByVal w As Double, fx() As Double, fy() As Double, nf As Long)
+    Dim a0 As Double, a1 As Double, b0 As Double, b1 As Double, cx As Double, cy As Double
+    Dim tax As Double, tay As Double, tbx As Double, tby As Double
+    a0 = xs(np_ - 1): a1 = ys(np_ - 1): b0 = ax_(0): b1 = ay_(0)
+    cx = b0 - a0: cy = b1 - a1: Norm cx, cy
+    If Not RefEndTan(xs, ys, np_, True, w, tax, tay) Then
+        tax = cx: tay = cy
+    End If
+    If RefEndTan(ax_, ay_, na, False, w, tbx, tby) Then
+        tbx = -tbx: tby = -tby
+    Else
+        tbx = cx: tby = cy
+    End If
+    HermSeg fx, fy, nf, a0, a1, tax, tay, b0, b1, tbx, tby, stp
+End Sub
+
+' касательная в конце ломаной (fromEnd: в последней точке, иначе в первой), направленная наружу,
+' по точкам на ~w от конца: окружность, если её rms < 0.5 rms прямой и радиус 0.5w..50w, иначе прямая
+Private Function RefEndTan(x() As Double, y() As Double, ByVal n As Long, ByVal fromEnd As Boolean, ByVal w As Double, _
+                           tx As Double, ty As Double) As Boolean
+    Dim px() As Double, py() As Double, np2 As Long, i As Long, k As Long, s As Double
+    Dim mx As Double, my As Double, dx As Double, dy As Double, rms As Double
+    Dim cx As Double, cy As Double, rr As Double, crms As Double, rx As Double, ry As Double
+    If n < 1 Then
+        Exit Function
+    End If
+    ReDim px(0 To n - 1): ReDim py(0 To n - 1)
+    If fromEnd Then
+        k = n - 1
+    Else
+        k = 0
+    End If
+    px(0) = x(k): py(0) = y(k): np2 = 1: s = 0
+    For i = 1 To n - 1
+        If fromEnd Then
+            k = n - 1 - i
+        Else
+            k = i
+        End If
+        s = s + Dist(px(np2 - 1), py(np2 - 1), x(k), y(k))
+        If s > w Then
+            Exit For
+        End If
+        px(np2) = x(k): py(np2) = y(k): np2 = np2 + 1
+    Next i
+    If np2 < 3 Then
+        Exit Function
+    End If
+    FitLineLS px, py, np2, mx, my, dx, dy, rms
+    tx = dx: ty = dy
+    If np2 >= 4 Then
+        If FitCircle(px, py, np2, cx, cy, rr, crms) Then
+            If crms < 0.5 * rms And rr > 0.5 * w And rr < 50 * w Then
+                tx = -(py(0) - cy): ty = px(0) - cx
+                Norm tx, ty
+            End If
+        End If
+    End If
+    rx = px(0) - px(np2 - 1): ry = py(0) - py(np2 - 1)
+    If tx * rx + ty * ry < 0 Then
+        tx = -tx: ty = -ty
+    End If
+    RefEndTan = True
+End Function
 
 Private Sub HermSeg(fx() As Double, fy() As Double, nf As Long, ByVal a0 As Double, ByVal a1 As Double, _
                     ByVal tax As Double, ByVal tay As Double, ByVal b0 As Double, ByVal b1 As Double, _
@@ -5167,7 +5529,9 @@ Private Function RefStub(xs() As Double, ys() As Double, np_ As Long, ByVal w As
         If L >= 0.3 * w And L <= maxhit Then
             dvx = (px_(t) - sx) / L: dvy = (py_(t) - sy) / L
             dev = dvx * dx + dvy * dy
-            If dev >= Cos(35 * PI_ / 180) Then
+            ' почти по касательной штриха (диагональ «т» — 0..5 град); круче — излом в начале и срез
+            ' угла развилки у края (низ чаши «я» в ножку): пусть достраивает StubExtend
+            If dev >= Cos(12 * PI_ / 180) Then
                 If (Not hasBest) Or dev > bestDev + 0.000000001 Or (Abs(dev - bestDev) <= 0.000000001 And L < bestL) Then
                     If SegInside(sx, sy, px_(t), py_(t)) Then
                         If RefAccept(px_, py_, npl, px_(t), py_(t), dvx, dvy, jwJ, stp, jx, jy) Then
