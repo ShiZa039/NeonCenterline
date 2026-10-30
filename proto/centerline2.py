@@ -853,6 +853,17 @@ def _far_pts(adj, xy, i, j, w, lo=0.8, hi=3.0):
     return [p for p, l in P if lo*w <= l <= top]
 
 
+def _short_leaf(adj, xy, i, j, Lmax):
+    """Ветка развилки i через соседа j кончается свободным концом не дальше Lmax."""
+    prev, cur = i, j; L = math.dist(xy[i], xy[j])
+    while len(adj[cur]) == 2 and L <= Lmax:
+        nb = [k for k in adj[cur] if k != prev]
+        if not nb:
+            break
+        prev, cur = cur, nb[0]; L += math.dist(xy[prev], xy[cur])
+    return len(adj[cur]) == 1 and L <= Lmax
+
+
 def _pair_by_fit(adj, xy, i, nb, w, pr):
     """Режим образца: кандидаты сквозных пар (score, a, b), лучшие первыми; score сравнивается
     с cos(merge_ang) в _pairing. Пара сквозная, если
@@ -867,6 +878,7 @@ def _pair_by_fit(adj, xy, i, nb, w, pr):
     import centerline as C
     fp = {j: _far_pts(adj, xy, i, j, w) for j in nb}
     prn = {j: C._branch_dir(adj, xy, i, j, w) for j in nb}
+    spike = {j: _short_leaf(adj, xy, i, j, 3.0*w) for j in nb}
     cand = []
     for a in range(len(nb)):
         for b in range(a+1, len(nb)):
@@ -882,7 +894,14 @@ def _pair_by_fit(adj, xy, i, nb, w, pr):
                 dx, dy = fl[2], fl[3]
                 pa_ = [p[0]*dx + p[1]*dy for p in A]; pb_ = [p[0]*dx + p[1]*dy for p in B]
                 apart = max(pa_) <= min(pb_) + 0.2*w or max(pb_) <= min(pa_) + 0.2*w
-                if apart and rl <= 0.08*w:
+                # с коротким шпилем (ветка до свободного конца в пределах 3w) прямая должна быть
+                # общей: каждая точка на ней (не дальше 0.15w), а не длинная ветка «перевешивает»
+                # короткий шпиль (вход «т» в «ст» и шпиль над стойкой)
+                dev_ = 0.0
+                if spike[nb[a]] or spike[nb[b]]:
+                    mx_, my_ = fl[0], fl[1]
+                    dev_ = max(abs(-(p[0]-mx_)*dy + (p[1]-my_)*dx) for p in A + B)
+                if apart and rl <= 0.08*w and dev_ <= 0.15*w:
                     score = 1.0 - rl/w
                 elif apart and len(pts) >= 5 and max(dot, dotn) >= 0.64:
                     # дуга — только при изломе направлений < 50 град: маленькая дуга легко
@@ -995,6 +1014,13 @@ def _cusps(G, pt, jw, tool):
                 sx, sy = ds[0][0]+ds[1][0], ds[0][1]+ds[1][1]
                 sl = math.hypot(sx, sy)
                 if sl < 0.6 or (sx*d[0] + sy*d[1])/sl > -0.7:
+                    ok = False
+            if ok:
+                # остриё — только у симметричного возврата (низ «и», «м»): если усик продолжает
+                # одну из веток заметно прямее другой (перетяжка «з», «З», флажок «б»), это
+                # кончик той ветки, а вторая примыкает к ней сбоку — не шпилька
+                a1, a2 = (math.degrees(math.acos(max(-1.0, min(1.0, -(dd[0]*d[0] + dd[1]*d[1]))))) for dd in ds)
+                if abs(a1 - a2) > 15.0:
                     ok = False
             if ok:
                 best = (s, path, d, others)
@@ -1946,7 +1972,9 @@ def _ref_end(q, w, polys, tool, h):
             _DBG.append((kind, round(Lx, 2), round(cut, 2), round(wl, 2)))
         if best is None or reach > best[0]:
             best = (reach, qq, Lx, at)
-    if best is None:
+    if best is None or best[0] < 0.1*wl:
+        # ни прямая, ни дуга от среза не уходят дальше исходного конца оси (завиток «с»:
+        # ось уже доходит до кончика по изгибу) — срез только испортил бы конец
         _free_end(q, w, polys, tool, h)
         return
     _, qq, Lx, at = best

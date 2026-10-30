@@ -1037,6 +1037,21 @@ Private Sub DissolveJunctions()
 End Sub
 
 ' сосед cur, отличный от prv (для узлов степени 1-2), иначе -1
+' ветка развилки i через соседа j кончается свободным концом не дальше Lmax
+Private Function ShortLeaf(ByVal i As Long, ByVal j As Long, ByVal Lmax As Double) As Boolean
+    Dim prv As Long, cur As Long, nxt As Long, L As Double
+    prv = i: cur = j: L = Dist(GX(i), GY(i), GX(j), GY(j))
+    Do While GDeg(cur) = 2 And L <= Lmax
+        nxt = OtherNb(cur, prv)
+        If nxt < 0 Then
+            Exit Do
+        End If
+        prv = cur: cur = nxt
+        L = L + Dist(GX(prv), GY(prv), GX(cur), GY(cur))
+    Loop
+    ShortLeaf = (GDeg(cur) = 1 And L <= Lmax)
+End Function
+
 Private Function OtherNb(ByVal cur As Long, ByVal prv As Long) As Long
     Dim k As Long
     OtherNb = -1
@@ -2161,6 +2176,7 @@ Private Sub PairByFit(ByVal i As Long, nb() As Long, ByVal d As Long, ByVal w As
                       ddx() As Double, ddy() As Double, nxA() As Double, nyA() As Double, _
                       mxA() As Double, myA() As Double, rdA() As Double, _
                       cd() As Double, ca() As Long, cb() As Long, nc As Long)
+    Dim dvM As Double, spk(0 To MAXD - 1) As Boolean
     Dim a As Long, b As Long, k As Long, q As Long, p As Long, tmpD As Double, tmpL As Long
     Dim fpx() As Variant, fpy() As Variant, fpn() As Long, ax() As Double, ay() As Double, na As Long
     Dim ndx(0 To MAXD - 1) As Double, ndy(0 To MAXD - 1) As Double, nfx(0 To MAXD - 1) As Double, nfy(0 To MAXD - 1) As Double
@@ -2175,6 +2191,7 @@ Private Sub PairByFit(ByVal i As Long, nb() As Long, ByVal d As Long, ByVal w As
         FarPts i, nb(a), w, ax, ay, na
         fpx(a) = CopyD(ax, na): fpy(a) = CopyD(ay, na): fpn(a) = na
         BranchDir i, nb(a), w, ndx(a), ndy(a), nfx(a), nfy(a), nnx(a), nny(a), nmx(a), nmy(a), nrd(a)
+        spk(a) = ShortLeaf(i, nb(a), 3 * w)
     Next a
     nc = 0
     For a = 0 To d - 2
@@ -2215,7 +2232,19 @@ Private Sub PairByFit(ByVal i As Long, nb() As Long, ByVal d As Long, ByVal w As
                     End If
                 Next k
                 apart = (maxA <= minB + 0.2 * w) Or (maxB <= minA + 0.2 * w)
-                If apart And rl <= 0.08 * w Then
+                ' с коротким шпилем (ветка до свободного конца в пределах 3w) прямая должна быть общей:
+                ' каждая точка на ней (не дальше 0.15w), а не длинная ветка «перевешивает» короткий
+                ' шпиль (вход «т» в «ст» и шпиль над стойкой)
+                dvM = 0
+                If spk(a) Or spk(b) Then
+                    For k = 0 To n - 1
+                        pr = Abs(-(px_(k) - mx) * ldy + (py_(k) - my) * ldx)
+                        If pr > dvM Then
+                            dvM = pr
+                        End If
+                    Next k
+                End If
+                If apart And rl <= 0.08 * w And dvM <= 0.15 * w Then
                     score = 1 - rl / w: has = True
                 ElseIf apart And n >= 5 And (dot >= 0.64 Or dot2 >= 0.64) Then
                     If FitCircle(px_, py_, n, cx, cy, rr, rms) Then
@@ -2478,6 +2507,14 @@ Private Sub FindCusps()
                                 If sl < 0.6 Then
                                     ok = False
                                 ElseIf (sx * dx + sy * dy) / sl > -0.7 Then
+                                    ok = False
+                                End If
+                            End If
+                            If ok Then
+                                ' остриё — только у симметричного возврата (низ «и», «м»): если усик
+                                ' продолжает одну из веток заметно прямее другой (перетяжка «з», «З»,
+                                ' флажок «б»), это кончик той ветки, а вторая примыкает к ней сбоку
+                                If Abs(ACosC(-(ox(0) * dx + oy(0) * dy)) - ACosC(-(ox(1) * dx + oy(1) * dy))) > 15 * PI_ / 180 Then
                                     ok = False
                                 End If
                             End If
@@ -4733,6 +4770,15 @@ Private Function Dist(ByVal x1 As Double, ByVal y1 As Double, ByVal x2 As Double
     Dist = Sqr((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
 End Function
 
+Private Function ACosC(ByVal c As Double) As Double
+    If c > 1 Then
+        c = 1
+    ElseIf c < -1 Then
+        c = -1
+    End If
+    ACosC = ArcCos(c)
+End Function
+
 Private Function ArcCos(ByVal c As Double) As Double
     If c >= 1 Then
         ArcCos = 0
@@ -6857,6 +6903,17 @@ Private Sub RefEnd(xs() As Double, ys() As Double, np_ As Long, ByVal cref As Do
             reachL = exL - lCut
             useC = (reachC > reachL)
         End If
+    End If
+    ' ни прямая, ни дуга от среза не уходят дальше исходного конца оси (завиток «с»: ось уже
+    ' доходит до кончика по изгибу) — срез только испортил бы конец
+    If useC Then
+        If reachC < 0.1 * wLoc Then
+            FreeEnd xs, ys, np_, cref, nmax
+            Exit Sub
+        End If
+    ElseIf exL - lCut < 0.1 * wLoc Then
+        FreeEnd xs, ys, np_, cref, nmax
+        Exit Sub
     End If
     If useC Then
         np_ = cn_: kind = 1: lx_ = exC
