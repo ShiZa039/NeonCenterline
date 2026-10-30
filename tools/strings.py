@@ -59,10 +59,16 @@ STRINGS = {
                       'Selling or repackaging the plugin is prohibited (see LICENSE).'),
     'about_donate':  ('\n\nПлагин бесплатный. Если он вам помогает — можно поблагодарить автора. Открыть страницу?',
                       '\n\nThe plugin is free. If it helps you, you can support the author. Open the page?'),
-    'addon_done':    ('Панель инструментов копируется в\n{0}\n\nПодтвердите запрос прав администратора, затем полностью перезапустите CorelDRAW. '
-                      'Панель: Окно > Панели инструментов > NeonCenterline.',
-                      'The toolbar is being copied to\n{0}\n\nConfirm the administrator prompt, then fully restart CorelDRAW. '
-                      'Toolbar: Window > Toolbars > NeonCenterline.'),
+    'addon_done':    ('Панель инструментов скопирована в\n{0}\n\nПолностью перезапустите CorelDRAW: панель «Неон» перестроится сама при запуске или при первой команде плагина. '
+                      'Если панели не видно: Окно > Панели инструментов > «Неон (NeonCenterline)».',
+                      'The toolbar is copied to\n{0}\n\nFully restart CorelDRAW: the "Neon" toolbar rebuilds itself at start or at the first plugin command. '
+                      'If the toolbar is not visible: Window > Toolbars > "Неон (NeonCenterline)".'),
+    'addon_fail':    ('Файлы панели не скопировались в\n{0}\n\n{1}\n\nЗапустите макрос NeonCenterline.NeonAddon.InstallToolbar ещё раз и подтвердите запрос прав администратора '
+                      'или закройте CorelDRAW и скопируйте туда вручную папку addon\\NeonCenterline из архива плагина.',
+                      'The toolbar files were not copied to\n{0}\n\n{1}\n\nRun the macro NeonCenterline.NeonAddon.InstallToolbar again and confirm the administrator prompt, '
+                      'or close CorelDRAW and copy the addon\\NeonCenterline folder from the plugin archive there by hand.'),
+    'addon_nolog':   ('Копирование не запустилось: возможно, запрос прав администратора был отклонён.',
+                      'The copy did not start: the administrator prompt may have been declined.'),
     'err_nosel_any': ('Ничего не выделено.', 'Nothing is selected.'),
     'len_title':     ('Неон: длина', 'Neon: length'),
     'len_contours':  ('Контуры (резка): объектов {0}, контуров {1}\nОбщая длина: {2}',

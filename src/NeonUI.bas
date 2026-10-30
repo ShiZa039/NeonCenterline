@@ -205,7 +205,7 @@ Public Sub NeonToolbarCheck(Optional ByVal atStart As Boolean = False)
         Exit Sub
     End If
     On Error GoTo Quit
-    st = ToolbarFilesState()
+    st = NeonToolbarFilesState()
     If st = 0 Then
         ' панель не ставилась (кнопки добавлены вручную или не нужны) — нечего обновлять
         SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
@@ -239,7 +239,7 @@ Public Sub ResetToolbar()
 End Sub
 
 ' файлы панели в Addons текущего CorelDRAW: 0 — нет, 1 — старые, 2 — этой версии (метка в AppUI.xslt)
-Private Function ToolbarFilesState() As Long
+Public Function NeonToolbarFilesState() As Long
     Dim p As String, f As Integer, txt As String
     On Error GoTo Fail
     p = Application.AddonPath
@@ -256,13 +256,13 @@ Private Function ToolbarFilesState() As Long
     Get #f, , txt
     Close #f
     If InStr(1, txt, "[NeonToolbar " & NEON_TOOLBAR_VER & "]", vbBinaryCompare) > 0 Then
-        ToolbarFilesState = 2
+        NeonToolbarFilesState = 2
     Else
-        ToolbarFilesState = 1
+        NeonToolbarFilesState = 1
     End If
     Exit Function
 Fail:
-    ToolbarFilesState = 0
+    NeonToolbarFilesState = 0
 End Function
 
 ' файлы панели в Addons текущего CorelDRAW: путь, метка набора кнопок, дата (для отчёта ResetToolbar)
