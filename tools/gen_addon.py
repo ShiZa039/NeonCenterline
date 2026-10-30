@@ -11,7 +11,25 @@ _ver = re.search(r'NEON_TOOLBAR_VER As String = "(\w+)"',
                  open(os.path.join(ROOT, 'src', 'NeonUI.bas'), encoding='utf-8').read()).group(1)
 if f'[NeonToolbar {_ver}]' not in open(os.path.join(A, 'AppUI.xslt'), encoding='utf-8').read():
     raise SystemExit(f'AppUI.xslt: нет метки [NeonToolbar {_ver}] (NEON_TOOLBAR_VER в src/NeonUI.bas)')
-B64 = base64.b64encode(open(os.path.join(A, 'Resources.dll'), 'rb').read()).decode()
+# значки и подписи: Resources<N>.dll (tools/build_resources.py) — у каждого набора своё имя файла
+DLL = f'Resources{_ver}.dll'
+if not os.path.exists(os.path.join(A, DLL)):
+    raise SystemExit(f'нет addon/NeonCenterline/{DLL}: python tools/build_resources.py')
+_dll = open(os.path.join(A, DLL), 'rb').read()
+B64 = base64.b64encode(_dll).decode()
+_cfg = open(os.path.join(A, 'config.xml'), encoding='utf-8').read()
+if f'path="{DLL}"' not in _cfg:
+    raise SystemExit(f'config.xml ссылается не на {DLL}: python tools/build_resources.py')
+# кнопки панели этого набора (без разделителей): по ним плагин проверяет, что сброс панели удался
+_app = open(os.path.join(A, 'AppUI.xslt'), encoding='utf-8').read()
+_bar = re.search(r'<commandBarData guid="3d22040b-[^"]*"[^>]*type="toolbar">(.*?)</commandBarData>', _app, re.S).group(1)
+PROBE = []
+for g in re.findall(r'<item guidRef="([^"]+)"', _bar):
+    if g == '266435b4-6e53-460f-9fa7-f45be187d400':
+        continue
+    d = re.search(r'<itemData guid="%s"(.*?)/>' % g, _app, re.S).group(1)
+    fl = re.search(r'flyoutBarRef="([^"]+)"', d)
+    PROBE.append((g, fl.group(1) if fl else '', re.search(r'userCaption="([^"]+)"', d).group(1)))
 L = ['Attribute VB_Name = "NeonAddon"',
      "' =====================================================================",
      "'  NeonCenterline — установка панели инструментов в текущий CorelDRAW.",
@@ -20,17 +38,33 @@ L = ['Attribute VB_Name = "NeonAddon"',
      "'  копирует (с правами администратора) в Application.AddonPath\\NeonCenterline.",
      "' =====================================================================",
      'Option Explicit', '',
+     "' имя и размер файла значков этого набора кнопок (NeonToolbarFilesState сверяет файл в Addons)",
+     'Public Function NeonAddonDll() As String',
+     f'    NeonAddonDll = "{DLL}"',
+     'End Function', '',
+     'Public Function NeonAddonDllSize() As Long',
+     f'    NeonAddonDllSize = {len(_dll)}',
+     'End Function', '',
+     "' кнопки панели «Неон» этого набора: GUID кнопки, GUID списка кнопки-группы, подпись — через Tab",
+     "' (NeonBarProbe в NeonUI: удался ли сброс панели)",
+     'Public Function NeonTbProbeItems() As Variant',
+     '    NeonTbProbeItems = Array( _'] + [
+     '        "%s" & vbTab & "%s" & vbTab & AU("%s")%s' % (g, fl, ' '.join('%X' % ord(c) for c in cap), ', _' if i < len(PROBE) - 1 else ')')
+     for i, (g, fl, cap) in enumerate(PROBE)] + [
+     'End Function', '',
      'Public Sub InstallToolbar()',
      '    Dim tmp As String, dst As String, bat As String, q As String, sh As Object, stage As String, lg As String',
      '    Dim t0 As Single, tn As Single, tc As Single, tl As Single, ok As Boolean, txt As String, pre As Long',
      '    On Error GoTo Fail',
      '    tmp = CreateObject("WScript.Shell").ExpandEnvironmentStrings("%TEMP%") & "\\NeonCenterline_addon"',
-     '    MakeDir tmp']
+     '    MakeDir tmp',
+     "    ' прежнее содержимое временной папки (файлы прошлых установок) не копировать",
+     '    KillFile tmp & "\\*.*"']
 for f in files:
     L.append(f'    stage = "{f}"')
     L.append(f'    WriteUtf8 tmp & "\\{f}", AddonText_{f.replace(".", "_")}()')
-L.append('    stage = "Resources.dll"')
-L.append('    WriteBase64 tmp & "\\Resources.dll", AddonBin_Resources_dll()')
+L.append(f'    stage = "{DLL}"')
+L.append('    WriteBase64 tmp & "\\" & NeonAddonDll(), AddonBin_Resources_dll()')
 L.append('    stage = "AddonPath"')
 L += ['    dst = Application.AddonPath',
       '    If Right$(dst, 1) <> "\\" Then',
@@ -39,16 +73,18 @@ L += ['    dst = Application.AddonPath',
       '    dst = dst & "NeonCenterline"',
       "    ' Команды — в .cmd-файл рядом с временной папкой (не внутри: её содержимое копируется), и с",
       "    ' правами администратора запускается он сам: длинная команда через cmd /c при запуске с",
-      "    ' повышением прав не выполнялась. Resources.dll занят работающим CorelDRAW: занятый файл можно",
-      "    ' переименовать, но не перезаписать. Вывод — в журнал; при сбое .cmd можно запустить вручную",
+      "    ' повышением прав не выполнялась. Файл значков у каждого набора кнопок свой (Resources<N>.dll):",
+      "    ' прежний занят работающим CorelDRAW и не перезаписывается, а новый ложится рядом; прежние",
+      "    ' удаляются, когда не заняты (иначе — при следующей установке). Вывод — в журнал; при сбое .cmd",
+      "    ' можно запустить вручную",
       '    lg = tmp & ".log"',
       '    bat = tmp & ".cmd"',
       '    KillFile lg',
       '    q = Chr$(34)',
       '    WriteUtf8NoBom bat, "@echo off" & vbCrLf & "chcp 65001 >nul" & vbCrLf & "(" & vbCrLf & _',
       '        "mkdir " & q & dst & q & " 2>nul" & vbCrLf & _',
-      '        "del /f /q " & q & dst & "\\Resources.old.dll" & q & " 2>nul" & vbCrLf & _',
-      '        "if exist " & q & dst & "\\Resources.dll" & q & " ren " & q & dst & "\\Resources.dll" & q & " Resources.old.dll" & vbCrLf & _',
+      '        "for %%f in (" & q & dst & "\\Resources*.dll" & q & ") do if /i not " & q & "%%~nxf" & q & "==" & q & NeonAddonDll() & q & _',
+      '        " del /f /q " & q & "%%f" & q & vbCrLf & _',
       '        "xcopy /Y /I /C " & q & tmp & "\\*" & q & " " & q & dst & q & vbCrLf & _',
       '        ") > " & q & lg & q & " 2>&1" & vbCrLf',
       '    stage = "copy"',
@@ -59,8 +95,8 @@ L += ['    dst = Application.AddonPath',
       "    ' до перезапуска в памяти CorelDRAW старый состав панели — не сбрасывать её в этом сеансе",
       '    NeonTbInstalled = True',
       "    ' копирование идёт отдельно (сначала — запрос прав администратора): ждём, пока в Addons",
-      "    ' появится AppUI.xslt этого набора кнопок; журнал есть, а файла нет 5 с — копирование не",
-      "    ' удалось; ничего за 60 с — запрос прав, скорее всего, отклонён",
+      "    ' появятся AppUI.xslt этого набора кнопок и его файл значков целиком; журнал есть, а файлов нет",
+      "    ' 5 с — копирование не удалось; ничего за 60 с — запрос прав, скорее всего, отклонён",
       '    t0 = Timer',
       '    tc = -1',
       '    tl = -1',

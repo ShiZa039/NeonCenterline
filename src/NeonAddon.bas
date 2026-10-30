@@ -7,12 +7,35 @@ Attribute VB_Name = "NeonAddon"
 ' =====================================================================
 Option Explicit
 
+' имя и размер файла значков этого набора кнопок (NeonToolbarFilesState сверяет файл в Addons)
+Public Function NeonAddonDll() As String
+    NeonAddonDll = "Resources7.dll"
+End Function
+
+Public Function NeonAddonDllSize() As Long
+    NeonAddonDllSize = 91648
+End Function
+
+' кнопки панели «Неон» этого набора: GUID кнопки, GUID списка кнопки-группы, подпись — через Tab
+' (NeonBarProbe в NeonUI: удался ли сброс панели)
+Public Function NeonTbProbeItems() As Variant
+    NeonTbProbeItems = Array( _
+        "4e6d43bf-0b2d-500c-b154-b553b6087991" & vbTab & "" & vbTab & AU("41D 435 43E 43D 3A 20 41C 43E 43D 43E"), _
+        "c68c5d4f-d668-5fb4-937e-adb7430cae58" & vbTab & "" & vbTab & AU("41D 435 43E 43D 3A 20 41A 443 440 441 438 432 20 28 431 435 442 430 29"), _
+        "18048cca-273b-50eb-9d03-54111cc920ce" & vbTab & "" & vbTab & AU("41D 435 43E 43D 3A 20 443 43F 440 43E 441 442 438 442 44C 20 43A 43E 43D 442 443 440"), _
+        "305a1621-a721-5784-9de2-b2338e83336c" & vbTab & "b14254e7-44de-5f90-bb10-6319042600d8" & vbTab & AU("41D 435 43E 43D 3A 20 43B 438 43D 438 438"), _
+        "d32b7178-2e37-5391-aca2-12628ac3838b" & vbTab & "5731901c-4115-58a7-9466-9da0ca279658" & vbTab & AU("41D 435 43E 43D 3A 20 440 430 441 43A 43B 430 434 43A 430"), _
+        "0392cc33-564d-537f-b0df-9d90ebfd4177" & vbTab & "54b0af94-56f6-588f-b329-fe0cd1ba2e6b" & vbTab & AU("41D 435 43E 43D 3A 20 43D 430 441 442 440 43E 439 43A 438 20 438 20 43F 43E 43C 43E 449 44C"))
+End Function
+
 Public Sub InstallToolbar()
     Dim tmp As String, dst As String, bat As String, q As String, sh As Object, stage As String, lg As String
     Dim t0 As Single, tn As Single, tc As Single, tl As Single, ok As Boolean, txt As String, pre As Long
     On Error GoTo Fail
     tmp = CreateObject("WScript.Shell").ExpandEnvironmentStrings("%TEMP%") & "\NeonCenterline_addon"
     MakeDir tmp
+    ' прежнее содержимое временной папки (файлы прошлых установок) не копировать
+    KillFile tmp & "\*.*"
     stage = "AppUI.xslt"
     WriteUtf8 tmp & "\AppUI.xslt", AddonText_AppUI_xslt()
     stage = "UserUI.xslt"
@@ -21,8 +44,8 @@ Public Sub InstallToolbar()
     WriteUtf8 tmp & "\Coreldrw.addon", AddonText_Coreldrw_addon()
     stage = "config.xml"
     WriteUtf8 tmp & "\config.xml", AddonText_config_xml()
-    stage = "Resources.dll"
-    WriteBase64 tmp & "\Resources.dll", AddonBin_Resources_dll()
+    stage = "Resources7.dll"
+    WriteBase64 tmp & "\" & NeonAddonDll(), AddonBin_Resources_dll()
     stage = "AddonPath"
     dst = Application.AddonPath
     If Right$(dst, 1) <> "\" Then
@@ -31,16 +54,18 @@ Public Sub InstallToolbar()
     dst = dst & "NeonCenterline"
     ' Команды — в .cmd-файл рядом с временной папкой (не внутри: её содержимое копируется), и с
     ' правами администратора запускается он сам: длинная команда через cmd /c при запуске с
-    ' повышением прав не выполнялась. Resources.dll занят работающим CorelDRAW: занятый файл можно
-    ' переименовать, но не перезаписать. Вывод — в журнал; при сбое .cmd можно запустить вручную
+    ' повышением прав не выполнялась. Файл значков у каждого набора кнопок свой (Resources<N>.dll):
+    ' прежний занят работающим CorelDRAW и не перезаписывается, а новый ложится рядом; прежние
+    ' удаляются, когда не заняты (иначе — при следующей установке). Вывод — в журнал; при сбое .cmd
+    ' можно запустить вручную
     lg = tmp & ".log"
     bat = tmp & ".cmd"
     KillFile lg
     q = Chr$(34)
     WriteUtf8NoBom bat, "@echo off" & vbCrLf & "chcp 65001 >nul" & vbCrLf & "(" & vbCrLf & _
         "mkdir " & q & dst & q & " 2>nul" & vbCrLf & _
-        "del /f /q " & q & dst & "\Resources.old.dll" & q & " 2>nul" & vbCrLf & _
-        "if exist " & q & dst & "\Resources.dll" & q & " ren " & q & dst & "\Resources.dll" & q & " Resources.old.dll" & vbCrLf & _
+        "for %%f in (" & q & dst & "\Resources*.dll" & q & ") do if /i not " & q & "%%~nxf" & q & "==" & q & NeonAddonDll() & q & _
+        " del /f /q " & q & "%%f" & q & vbCrLf & _
         "xcopy /Y /I /C " & q & tmp & "\*" & q & " " & q & dst & q & vbCrLf & _
         ") > " & q & lg & q & " 2>&1" & vbCrLf
     stage = "copy"
@@ -51,8 +76,8 @@ Public Sub InstallToolbar()
     ' до перезапуска в памяти CorelDRAW старый состав панели — не сбрасывать её в этом сеансе
     NeonTbInstalled = True
     ' копирование идёт отдельно (сначала — запрос прав администратора): ждём, пока в Addons
-    ' появится AppUI.xslt этого набора кнопок; журнал есть, а файла нет 5 с — копирование не
-    ' удалось; ничего за 60 с — запрос прав, скорее всего, отклонён
+    ' появятся AppUI.xslt этого набора кнопок и его файл значков целиком; журнал есть, а файлов нет
+    ' 5 с — копирование не удалось; ничего за 60 с — запрос прав, скорее всего, отклонён
     t0 = Timer
     tc = -1
     tl = -1
@@ -207,7 +232,7 @@ Private Function AddonText_AppUI_xslt() As String
     s = s & AU("66 6C 79 6F 75 74 3D 22 74 72 75 65 22 20 28 43A 430 43A 20 43A 43D 43E 43F 43A 438 A 20 20 441 43E 20 441 43F 438 441 43A 43E 43C 20 432 20 441 430 43C 43E 43C 20 43 6F 72 65 6C 44 52 41 57 2C 20 44 72 61 77 55 49 2E 69 74 65 6D 73")
     s = s & AU("2E 78 6D 6C 3B 20 431 435 437 20 74 79 70 65 3D 22 66 6C 79 6F 75 74 22 20 43 6F 72 65 6C 44 52 41 57 20 32 30 32 36 20 43A 43D 43E 43F 43A 443 20 43D 435 20 440 438 441 443 435 442 29 2E A 20 20 47 55 49 44 20 43D 435 20 43C 435")
     s = s & AU("43D 44F 442 44C 3A 20 43F 43E 20 43D 438 43C 20 43 6F 72 65 6C 44 52 41 57 20 443 437 43D 430 451 442 20 43A 43D 43E 43F 43A 438 20 432 20 43D 430 441 442 440 43E 435 43D 43D 44B 445 20 440 430 431 43E 447 438 445 20 43F 440 43E 441 442 440 430 43D 441 442 432")
-    s = s & AU("430 445 2E A 20 20 41D 430 431 43E 440 20 43A 43D 43E 43F 43E 43A 20 43F 430 43D 435 43B 438 3A 20 5B 4E 65 6F 6E 54 6F 6F 6C 62 61 72 20 36 5D 2E 20 41F 440 438 20 438 437 43C 435 43D 435 43D 438 438 20 441 43E 441 442 430 432 430 20 43F 430 43D 435")
+    s = s & AU("430 445 2E A 20 20 41D 430 431 43E 440 20 43A 43D 43E 43F 43E 43A 20 43F 430 43D 435 43B 438 3A 20 5B 4E 65 6F 6E 54 6F 6F 6C 62 61 72 20 37 5D 2E 20 41F 440 438 20 438 437 43C 435 43D 435 43D 438 438 20 441 43E 441 442 430 432 430 20 43F 430 43D 435")
     s = s & AU("43B 438 20 43F 43E 434 43D 44F 442 44C 20 43D 43E 43C 435 440 20 437 434 435 441 44C 20 438 A 20 20 4E 45 4F 4E 5F 54 4F 4F 4C 42 41 52 5F 56 45 52 20 432 20 73 72 63 2F 4E 65 6F 6E 55 49 2E 62 61 73 20 2014 20 43F 43E 441 43B 435 20 43E")
     s = s & AU("431 43D 43E 432 43B 435 43D 438 44F 20 43F 43B 430 433 438 43D 20 441 430 43C 20 441 431 440 43E 441 438 442 20 43F 430 43D 435 43B 44C 20 43A 20 44D 442 43E 43C 443 20 441 43E 441 442 430 432 443 2E A 2D 2D 3E A 3C 78 73 6C 3A 73 74 79 6C 65 73 68 65")
     s = s & "et version=""1.0"" xmlns:xsl=""http://www.w3.org/1999/XSL/Transform"" xmln"
@@ -390,26 +415,26 @@ End Function
 Private Function AddonText_config_xml() As String
     Dim s As String
     s = s & "<?xml version=""1.0""?>" & vbLf & "<config>" & vbLf & "  <resources>" & vbLf & "    <resource name=""e6794"
-    s = s & "41a-cbd6-5d39-a310-03516f03525e"" path=""Resources.dll"">" & vbLf & "      <resource"
-    s = s & "Map>" & vbLf & "        <resEntry id=""3d22040b-4ee7-596d-91ae-1653ffb39f77"" strin"
-    s = s & "g=""20000""/>" & vbLf & "        <resEntry id=""4e6d43bf-0b2d-500c-b154-b553b6087991"
-    s = s & """ string=""20001"" icon=""101""/>" & vbLf & "        <resEntry id=""c68c5d4f-d668-5fb4"
-    s = s & "-937e-adb7430cae58"" string=""20002"" icon=""102""/>" & vbLf & "        <resEntry id="""
-    s = s & "ce37ed0a-544f-575c-ac35-ef4d4aab66c9"" string=""20003"" icon=""103""/>" & vbLf & "    "
-    s = s & "    <resEntry id=""0b33ce77-31ad-5c46-bb8b-2cd2e362084f"" string=""20004"""
-    s = s & " icon=""104""/>" & vbLf & "        <resEntry id=""c913505c-324e-543b-b2b1-a55c9bcbc9"
-    s = s & "eb"" string=""20005"" icon=""105""/>" & vbLf & "        <resEntry id=""ce9120be-eca9-5e"
-    s = s & "d0-b1c8-c43624951305"" string=""20006"" icon=""106""/>" & vbLf & "        <resEntry id"
-    s = s & "=""1025a06f-bc40-5284-9292-2c3cf477d6a2"" string=""20007"" icon=""109""/>" & vbLf & "  "
-    s = s & "      <resEntry id=""c5cc733d-ee55-5173-b5ef-17a954845da7"" string=""2000"
-    s = s & "8"" icon=""110""/>" & vbLf & "        <resEntry id=""18048cca-273b-50eb-9d03-54111cc9"
-    s = s & "20ce"" string=""20009"" icon=""107""/>" & vbLf & "        <resEntry id=""305a1621-a721-"
-    s = s & "5784-9de2-b2338e83336c"" string=""20010"" icon=""108""/>" & vbLf & "        <resEntry "
-    s = s & "id=""0392cc33-564d-537f-b0df-9d90ebfd4177"" string=""20011"" icon=""103""/>" & vbLf & ""
-    s = s & "        <resEntry id=""67333f2d-18b9-5925-b8bc-24d97a6dff93"" string=""20"
-    s = s & "012"" icon=""111""/>" & vbLf & "        <resEntry id=""d32b7178-2e37-5391-aca2-12628a"
-    s = s & "c3838b"" string=""20013"" icon=""111""/>" & vbLf & "      </resourceMap>" & vbLf & "    </resourc"
-    s = s & "e>" & vbLf & "  </resources>" & vbLf & "</config>" & vbLf & ""
+    s = s & "41a-cbd6-5d39-a310-03516f03525e"" path=""Resources7.dll"">" & vbLf & "      <resourc"
+    s = s & "eMap>" & vbLf & "        <resEntry id=""3d22040b-4ee7-596d-91ae-1653ffb39f77"" stri"
+    s = s & "ng=""20000""/>" & vbLf & "        <resEntry id=""4e6d43bf-0b2d-500c-b154-b553b608799"
+    s = s & "1"" string=""20001"" icon=""101""/>" & vbLf & "        <resEntry id=""c68c5d4f-d668-5fb"
+    s = s & "4-937e-adb7430cae58"" string=""20002"" icon=""102""/>" & vbLf & "        <resEntry id="
+    s = s & """ce37ed0a-544f-575c-ac35-ef4d4aab66c9"" string=""20003"" icon=""103""/>" & vbLf & "   "
+    s = s & "     <resEntry id=""0b33ce77-31ad-5c46-bb8b-2cd2e362084f"" string=""20004"
+    s = s & """ icon=""104""/>" & vbLf & "        <resEntry id=""c913505c-324e-543b-b2b1-a55c9bcbc"
+    s = s & "9eb"" string=""20005"" icon=""105""/>" & vbLf & "        <resEntry id=""ce9120be-eca9-5"
+    s = s & "ed0-b1c8-c43624951305"" string=""20006"" icon=""106""/>" & vbLf & "        <resEntry i"
+    s = s & "d=""1025a06f-bc40-5284-9292-2c3cf477d6a2"" string=""20007"" icon=""109""/>" & vbLf & " "
+    s = s & "       <resEntry id=""c5cc733d-ee55-5173-b5ef-17a954845da7"" string=""200"
+    s = s & "08"" icon=""110""/>" & vbLf & "        <resEntry id=""18048cca-273b-50eb-9d03-54111cc"
+    s = s & "920ce"" string=""20009"" icon=""107""/>" & vbLf & "        <resEntry id=""305a1621-a721"
+    s = s & "-5784-9de2-b2338e83336c"" string=""20010"" icon=""108""/>" & vbLf & "        <resEntry"
+    s = s & " id=""0392cc33-564d-537f-b0df-9d90ebfd4177"" string=""20011"" icon=""103""/>"
+    s = s & "" & vbLf & "        <resEntry id=""67333f2d-18b9-5925-b8bc-24d97a6dff93"" string=""2"
+    s = s & "0012"" icon=""111""/>" & vbLf & "        <resEntry id=""d32b7178-2e37-5391-aca2-12628"
+    s = s & "ac3838b"" string=""20013"" icon=""111""/>" & vbLf & "      </resourceMap>" & vbLf & "    </resour"
+    s = s & "ce>" & vbLf & "  </resources>" & vbLf & "</config>" & vbLf & ""
     AddonText_config_xml = s
 End Function
 
@@ -420,8 +445,8 @@ End Function
 Private Function AddonBinPart0() As String
     Dim s As String
     s = s & "TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA4fug4AtAnNIbgB"
-    s = s & "TM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAAZIYDAKyn5GoAAAAAAAAAAPAA"
-    s = s & "LiILAgIpAAAAAABgAQAAAAAAAAAAAAAQAAAAAACAAQAAAAAQAAAAAgAABAAAAAAAAAAFAAIAAAAAAACQAQAABAAAb0ECAAIAYAEA"
+    s = s & "TM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAAZIYDAK6q5GoAAAAAAAAAAPAA"
+    s = s & "LiILAgIpAAAAAABgAQAAAAAAAAAAAAAQAAAAAACAAQAAAAAQAAAAAgAABAAAAAAAAAAFAAIAAAAAAACQAQAABAAAcUQCAAIAYAEA"
     s = s & "ACAAAAAAAAAQAAAAAAAAAAAQAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAIAAAGAAAAAAwAADAXQEAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAudGV4dAAAACAAAAAAEAAAAAIAAAAEAAAAAAAAAAAAAAAAAAAgAABgLmlkYXRhAAAYAAAAACAAAAAC"

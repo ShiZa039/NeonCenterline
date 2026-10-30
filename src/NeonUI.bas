@@ -30,10 +30,12 @@ Public NeonRunConfirmed As Boolean
 Public NeonRunMode As Long
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
-Public Const NEON_TOOLBAR_VER As String = "6"
+Public Const NEON_TOOLBAR_VER As String = "7"
 ' файлы панели обновлены в этом сеансе (InstallToolbar): в памяти CorelDRAW ещё старый состав
 ' панели, сбрасывать её можно только после перезапуска
 Public NeonTbInstalled As Boolean
+' событиям окон (ThisMacroStorage) в этом сеансе панель больше проверять не нужно
+Private NeonTbQuiet As Boolean
 
 ' ---------------------------------------------------------------------
 '  Кнопки
@@ -189,19 +191,26 @@ End Function
 ' ---------------------------------------------------------------------
 '  Обновление панели «Неон» после обновления плагина.
 '  CorelDRAW вписывает кнопки дополнения в рабочее пространство один раз и сам новые кнопки
-'  в стоящую панель не добавляет. Поэтому:
-'    - при запуске CorelDRAW (ThisMacroStorage, atStart = True) и при первой команде плагина
-'      в сеансе (если VBA загружается отложенно и событие запуска не приходит): если в Addons
-'      лежат файлы панели этой версии, а панель ещё не обновлялась — сброс только панели «Неон»
-'      к составу из AppUI.xslt (как «Сброс» в настройке панелей; остальное рабочее пространство
-'      не трогается). Не в том сеансе, где файлы только что обновлены (NeonTbInstalled);
-'    - при работе (кнопки плагина): если файлы панели в Addons старые — один раз предложить
-'      обновить их (InstallToolbar, права администратора) и перезапустить CorelDRAW;
-'    - вручную: макрос ResetToolbar (сброс и отчёт, что найдено).
+'  в стоящую панель не добавляет. Поэтому, если в Addons лежат файлы панели этой версии, а панель
+'  ещё не обновлялась, — сброс только панели «Неон» к составу из AppUI.xslt (как «Сброс» в
+'  настройке панелей; остальное рабочее пространство не трогается):
+'    - при запуске CorelDRAW (ThisMacroStorage, src = 1) — сразу, но не засчитывая: рабочее
+'      пространство может догрузиться позже и вернуть панели прежний состав;
+'    - при открытии окна документа (src = 2) и при командах плагина (src = 0): если на панели нет
+'      кнопок нового набора (NeonBarProbe) — сброс; засчитывается, когда кнопки на месте (или
+'      CorelDRAW не даёт их проверить); три неудачные попытки — больше не пытаться.
+'  Не в том сеансе, где файлы только что обновлены (NeonTbInstalled).
+'  Если файлы панели в Addons старые (или нет значков этого набора) — при команде плагина один раз
+'  предложить обновить их (InstallToolbar, права администратора) и перезапустить CorelDRAW.
+'  Вручную: макрос ResetToolbar (сброс и отчёт, что найдено).
 ' ---------------------------------------------------------------------
-Public Sub NeonToolbarCheck(Optional ByVal atStart As Boolean = False)
-    Dim st As Long, rep As String
+Public Sub NeonToolbarCheck(Optional ByVal src As Long = 0)
+    Dim st As Long, rep As String, pr As Long, n As Long, t As String
+    If src = 2 And NeonTbQuiet Then
+        Exit Sub
+    End If
     If GetSetting(REG_APP, "UI", "ToolbarVer", "") = NEON_TOOLBAR_VER Then
+        NeonTbQuiet = True
         Exit Sub
     End If
     On Error GoTo Quit
@@ -209,20 +218,108 @@ Public Sub NeonToolbarCheck(Optional ByVal atStart As Boolean = False)
     If st = 0 Then
         ' панель не ставилась (кнопки добавлены вручную или не нужны) — нечего обновлять
         SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
+        NeonTbQuiet = True
     ElseIf st = 1 Then
-        If Not atStart And GetSetting(REG_APP, "UI", "ToolbarAsked", "") <> NEON_TOOLBAR_VER Then
+        ' предлагать обновить файлы — только при командах плагина
+        If src = 0 And GetSetting(REG_APP, "UI", "ToolbarAsked", "") <> NEON_TOOLBAR_VER Then
             SaveSetting REG_APP, "UI", "ToolbarAsked", NEON_TOOLBAR_VER
             If MsgBox(NeonL("tb_outdated"), vbYesNo + vbQuestion, NeonL("app_title")) = vbYes Then
                 InstallToolbar
             End If
         End If
-    ElseIf Not NeonTbInstalled Then
-        If ResetNeonBar(rep) Then
-            SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
+        If src <> 0 Then
+            NeonTbQuiet = True
         End If
+    ElseIf NeonTbInstalled Then
+        NeonTbQuiet = True
+    ElseIf src = 1 Then
+        ResetNeonBar rep
+    Else
+        pr = NeonBarProbe()
+        If pr <> 1 Then
+            If Not ResetNeonBar(rep) Then
+                ' панели «Неон» нет (закрыта или удалена) — событиям окон до перезапуска не искать
+                NeonTbQuiet = True
+                Exit Sub
+            End If
+            pr = NeonBarProbe()
+        End If
+        If pr = 0 Then
+            ' после сброса кнопок нового набора на панели нет — попробовать позже (не чаще раза
+            ' за сеанс от событий окон), после трёх попыток оставить как есть
+            NeonTbQuiet = True
+            t = GetSetting(REG_APP, "UI", "ToolbarTries", "")
+            If Left$(t, Len(NEON_TOOLBAR_VER) + 1) = NEON_TOOLBAR_VER & ":" Then
+                n = Val(Mid$(t, Len(NEON_TOOLBAR_VER) + 2))
+            End If
+            n = n + 1
+            SaveSetting REG_APP, "UI", "ToolbarTries", NEON_TOOLBAR_VER & ":" & n
+            If n < 3 Then
+                Exit Sub
+            End If
+        End If
+        SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
+        NeonTbQuiet = True
     End If
 Quit:
 End Sub
+
+' есть ли на панели «Неон» все кнопки этого набора (NeonTbProbeItems: GUID кнопки, GUID списка
+' кнопки-группы, подпись): 1 — все, 0 — каких-то нет, -1 — не понять (панели нет или CorelDRAW
+' не отдаёт ни кодов, ни подписей кнопок)
+Private Function NeonBarProbe() As Long
+    Dim cb As Object, ctl As Object, nm As String, nl As String, have As String, i As Long, n As Long
+    Dim items As Variant, it As Variant, f As Variant, j As Long, s As String, c As String, known As Boolean, hit As Boolean
+    On Error Resume Next
+    NeonBarProbe = -1
+    For Each cb In Application.CommandBars
+        nm = "": nl = ""
+        nm = cb.Name
+        nl = cb.NameLocal
+        If InStr(1, nm, "NeonCenterline", vbTextCompare) > 0 Or InStr(1, nl, "NeonCenterline", vbTextCompare) > 0 Then
+            n = 0
+            n = cb.Controls.Count
+            For i = 1 To n
+                Set ctl = Nothing
+                Set ctl = cb.Controls(i)
+                If Not ctl Is Nothing Then
+                    s = "": c = ""
+                    s = ctl.ID
+                    c = ctl.Caption
+                    If Len(s) > 0 Or Len(c) > 0 Then
+                        known = True
+                    End If
+                    have = have & "|" & LCase$(s) & "|" & LCase$(c) & "|"
+                End If
+            Next i
+        End If
+    Next cb
+    If Not known Then
+        Exit Function
+    End If
+    ' коды — частью строки (могут прийти в скобках), подпись — целиком
+    items = NeonTbProbeItems()
+    For Each it In items
+        hit = False
+        f = Split(it, vbTab)
+        For j = 0 To UBound(f)
+            c = LCase$(f(j))
+            If Len(c) > 0 Then
+                If j = 2 Then
+                    c = "|" & c & "|"
+                End If
+                If InStr(1, have, c, vbBinaryCompare) > 0 Then
+                    hit = True
+                End If
+            End If
+        Next j
+        If Not hit Then
+            NeonBarProbe = 0
+            Exit Function
+        End If
+    Next it
+    NeonBarProbe = 1
+End Function
 
 ' сбросить панель «Неон» вручную: Инструменты > Макросы > NeonCenterline.NeonUI.ResetToolbar.
 ' Показывает, какие панели найдены и что на них после сброса (для проверки)
@@ -236,36 +333,43 @@ Public Sub ResetToolbar()
         Exit Sub
     End If
     ok = ResetNeonBar(rep, True)
-    rep = rep & vbLf & ToolbarFilesInfo() & vbLf & "NeonCenterline.gms: [NeonToolbar " & NEON_TOOLBAR_VER & "]"
+    rep = rep & "probe: " & NeonBarProbe() & vbLf & vbLf & ToolbarFilesInfo() & vbLf & _
+          "NeonCenterline.gms: [NeonToolbar " & NEON_TOOLBAR_VER & "], " & NeonAddonDll()
     If ok Then
         SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
+        NeonTbQuiet = True
         MsgBox NeonLF("tb_reset_done", rep), vbInformation, NeonL("app_title")
     Else
         MsgBox NeonLF("tb_reset_none", rep), vbExclamation, NeonL("app_title")
     End If
 End Sub
 
-' файлы панели в Addons текущего CorelDRAW: 0 — нет, 1 — старые, 2 — этой версии (метка в AppUI.xslt)
+' файлы панели в Addons текущего CorelDRAW: 0 — нет, 1 — старые, 2 — этой версии (метка в AppUI.xslt
+' и файл значков этого набора, NeonAddonDll, целиком)
 Public Function NeonToolbarFilesState() As Long
-    Dim p As String, f As Integer, txt As String
+    Dim p As String, f As Integer, txt As String, n As Long
     On Error GoTo Fail
     p = Application.AddonPath
     If Right$(p, 1) <> "\" Then
         p = p & "\"
     End If
-    p = p & "NeonCenterline\AppUI.xslt"
-    If Len(Dir$(p)) = 0 Then
+    p = p & "NeonCenterline\"
+    If Len(Dir$(p & "AppUI.xslt")) = 0 Then
         Exit Function
     End If
     f = FreeFile
-    Open p For Binary Access Read As #f
+    Open p & "AppUI.xslt" For Binary Access Read As #f
     txt = Space$(LOF(f))
     Get #f, , txt
     Close #f
+    NeonToolbarFilesState = 1
     If InStr(1, txt, "[NeonToolbar " & NEON_TOOLBAR_VER & "]", vbBinaryCompare) > 0 Then
-        NeonToolbarFilesState = 2
-    Else
-        NeonToolbarFilesState = 1
+        On Error Resume Next
+        n = -1
+        n = FileLen(p & NeonAddonDll())
+        If n = NeonAddonDllSize() Then
+            NeonToolbarFilesState = 2
+        End If
     End If
     Exit Function
 Fail:
@@ -278,7 +382,7 @@ Public Sub NeonTbAskAgain()
     SaveSetting REG_APP, "UI", "ToolbarAsked", ""
 End Sub
 
-' файлы панели в Addons текущего CorelDRAW: путь, метка набора кнопок, дата (для отчёта ResetToolbar)
+' файлы панели в Addons текущего CorelDRAW: путь, метка набора кнопок, дата, файлы значков (для отчёта ResetToolbar)
 Private Function ToolbarFilesInfo() As String
     Dim p As String, f As Integer, txt As String, k As Long, e As Long, r As String
     On Error GoTo Fail
@@ -306,16 +410,23 @@ Private Function ToolbarFilesInfo() As String
     Else
         r = r & "[NeonToolbar 1]"
     End If
-    ToolbarFilesInfo = r & ", " & Format$(FileDateTime(p), "yyyy-mm-dd hh:nn")
+    r = r & ", " & Format$(FileDateTime(p), "yyyy-mm-dd hh:nn")
+    p = Left$(p, Len(p) - Len("AppUI.xslt"))
+    txt = Dir$(p & "Resources*.dll")
+    Do While Len(txt) > 0
+        r = r & vbLf & txt & ": " & FileLen(p & txt) & ", " & Format$(FileDateTime(p & txt), "yyyy-mm-dd hh:nn")
+        txt = Dir$()
+    Loop
+    ToolbarFilesInfo = r
     Exit Function
 Fail:
     ToolbarFilesInfo = r & Err.Description
 End Function
 
 ' сбросить панель «Неон» к составу из AppUI.xslt; True — панель найдена и сброшена.
-' rep — отчёт: имя панели, число кнопок до и после сброса (detail — и подписи кнопок)
+' rep — отчёт: имя панели, число кнопок до и после сброса (detail — и подписи и коды кнопок)
 Private Function ResetNeonBar(ByRef rep As String, Optional ByVal detail As Boolean = False) As Boolean
-    Dim cb As Object, nm As String, nl As String, n0 As Long, n1 As Long, i As Long, cap As String
+    Dim cb As Object, nm As String, nl As String, n0 As Long, n1 As Long, i As Long, cap As String, idt As String
     On Error Resume Next
     rep = ""
     For Each cb In Application.CommandBars
@@ -338,9 +449,10 @@ Private Function ResetNeonBar(ByRef rep As String, Optional ByVal detail As Bool
                 rep = rep & nm & " / " & nl & ": " & n0 & " -> " & n1 & vbLf
                 If detail Then
                     For i = 1 To n1
-                        cap = "?"
+                        cap = "?": idt = ""
                         cap = Application.CommandBars.Item(nm).Controls(i).Caption
-                        rep = rep & "    " & i & ". " & cap & vbLf
+                        idt = Application.CommandBars.Item(nm).Controls(i).ID
+                        rep = rep & "    " & i & ". " & cap & "  [" & idt & "]" & vbLf
                     Next i
                 End If
             Else

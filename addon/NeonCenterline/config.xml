@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <config>
   <resources>
-    <resource name="e679441a-cbd6-5d39-a310-03516f03525e" path="Resources.dll">
+    <resource name="e679441a-cbd6-5d39-a310-03516f03525e" path="Resources7.dll">
       <resourceMap>
         <resEntry id="3d22040b-4ee7-596d-91ae-1653ffb39f77" string="20000"/>
         <resEntry id="4e6d43bf-0b2d-500c-b154-b553b6087991" string="20001" icon="101"/>

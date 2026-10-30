@@ -17,6 +17,10 @@ function Find-Corel {
 if ($AddonOnly) {
   New-Item -ItemType Directory -Force -Path $AddonOnly | Out-Null
   Copy-Item "$here\addon\NeonCenterline\*" $AddonOnly -Force
+  # icons file of an older button set (Resources*.dll has the set number in its name)
+  $keep = @(Get-ChildItem "$here\addon\NeonCenterline" -Filter "Resources*.dll" | ForEach-Object { $_.Name })
+  Get-ChildItem $AddonOnly -Filter "Resources*.dll" | Where-Object { $keep -notcontains $_.Name } |
+    Remove-Item -Force -ErrorAction SilentlyContinue
   exit 0
 }
 

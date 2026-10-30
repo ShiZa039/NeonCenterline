@@ -6,7 +6,7 @@
   itemData type="flyout" с flyoutBarRef на commandBarData type="menu" flyout="true" (как кнопки
   со списком в самом CorelDRAW, DrawUI.items.xml; без type="flyout" CorelDRAW 2026 кнопку не рисует).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 6]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 7]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">

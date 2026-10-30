@@ -59,9 +59,9 @@ STRINGS = {
                       'Selling or repackaging the plugin is prohibited (see LICENSE).'),
     'about_donate':  ('\n\nПлагин бесплатный. Если он вам помогает — можно поблагодарить автора. Открыть страницу?',
                       '\n\nThe plugin is free. If it helps you, you can support the author. Open the page?'),
-    'addon_done':    ('Панель инструментов скопирована в\n{0}\n\nПолностью перезапустите CorelDRAW: панель «Неон» перестроится сама при запуске или при первой команде плагина. '
+    'addon_done':    ('Панель инструментов скопирована в\n{0}\n\nПолностью перезапустите CorelDRAW: панель «Неон» перестроится сама при запуске, при открытии документа или при первой команде плагина. '
                       'Если панели не видно: Окно > Панели инструментов > «Неон (NeonCenterline)».',
-                      'The toolbar is copied to\n{0}\n\nFully restart CorelDRAW: the "Neon" toolbar rebuilds itself at start or at the first plugin command. '
+                      'The toolbar is copied to\n{0}\n\nFully restart CorelDRAW: the "Neon" toolbar rebuilds itself at start, when a document opens or at the first plugin command. '
                       'If the toolbar is not visible: Window > Toolbars > "Неон (NeonCenterline)".'),
     'addon_fail':    ('Файлы панели не скопировались в\n{0}\n\n{1}\n\nЗапустите макрос NeonCenterline.NeonAddon.InstallToolbar ещё раз и подтвердите запрос прав администратора '
                       'или закройте CorelDRAW и скопируйте туда вручную папку addon\\NeonCenterline из архива плагина.',

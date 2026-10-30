@@ -1,10 +1,19 @@
-"""addon/NeonCenterline/Resources.dll (значки + подписи кнопок) и config.xml (связь GUID кнопки ->
-значок/подпись). Нужны binutils-mingw-w64 (x86_64-w64-mingw32-windres/ld). Значки — из icons/*.ico,
+"""addon/NeonCenterline/Resources<N>.dll (значки + подписи кнопок) и config.xml (связь GUID кнопки ->
+значок/подпись). N — набор кнопок панели (NEON_TOOLBAR_VER в src/NeonUI.bas): у каждого набора своё
+имя файла, поэтому установка нового набора не перезаписывает Resources*.dll, который держит
+работающий CorelDRAW (занятый файл не заменить — значки остались бы старыми). Нужны binutils-mingw-w64 (x86_64-w64-mingw32-windres/ld). Значки — из icons/*.ico,
 пересобираются в ICO с 32-битными BMP-кадрами 16/24/32."""
 import os, struct, subprocess, tempfile, uuid
 from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A = os.path.join(ROOT, 'addon', 'NeonCenterline')
+import re, glob
+VER = re.search(r'NEON_TOOLBAR_VER As String = "(\w+)"',
+                open(os.path.join(ROOT, 'src', 'NeonUI.bas'), encoding='utf-8').read()).group(1)
+DLL = f'Resources{VER}.dll'
+for old in glob.glob(os.path.join(A, 'Resources*.dll')):
+    if os.path.basename(old) != DLL:
+        os.remove(old)
 G = lambda k: str(uuid.uuid5(uuid.NAMESPACE_URL, 'sabcore/neoncenterline/' + k))
 ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
          ('script', 'neon_script', 102, 'Неон: Курсив (бета)'),
@@ -60,9 +69,9 @@ with tempfile.TemporaryDirectory() as td:
     open(os.path.join(td, 'res.rc'), 'w').write('\n'.join(rc))
     subprocess.run(['x86_64-w64-mingw32-windres', '--preprocessor=cat', 'res.rc', '-O', 'coff', '-o', 'res.o'], cwd=td, check=True)
     subprocess.run(['x86_64-w64-mingw32-ld', '--dll', '-e', '0', '--subsystem', 'windows', '-s', '-o',
-                    os.path.join(A, 'Resources.dll'), 'res.o'], cwd=td, check=True)
+                    os.path.join(A, DLL), 'res.o'], cwd=td, check=True)
 cfg = ['<?xml version="1.0"?>', '<config>', '  <resources>',
-       f'    <resource name="{G("resources")}" path="Resources.dll">', '      <resourceMap>',
+       f'    <resource name="{G("resources")}" path="{DLL}">', '      <resourceMap>',
        f'        <resEntry id="{G("bar-v2")}" string="20000"/>']
 cfg += [f'        <resEntry id="{G(k)}" string="{20001 + i}" icon="{rid}"/>' for i, (k, ico, rid, cap) in enumerate(ITEMS)]
 cfg += ['      </resourceMap>', '    </resource>', '  </resources>', '</config>', '']
@@ -71,7 +80,7 @@ open(os.path.join(A, 'config.xml'), 'w', encoding='utf-8').write('\n'.join(cfg))
 # собрал windres (адреса данных — через обычные релокации); проверяем, что подписи и значки читаются
 try:
     import pefile
-    pe = pefile.PE(os.path.join(A, 'Resources.dll'))
+    pe = pefile.PE(os.path.join(A, DLL))
     d = {e.id: e for e in pe.DIRECTORY_ENTRY_RESOURCE.entries}
     blk = d[6].directory.entries[0].directory.entries[0].data.struct
     raw = pe.get_data(blk.OffsetToData, blk.Size); o = 0; got = []
@@ -85,7 +94,7 @@ try:
             w, iid = gd[6 + 14 * i], struct.unpack_from('<H', gd, 6 + 14 * i + 12)[0]
             ie = icons[iid].directory.entries[0].data.struct
             assert struct.unpack_from('<Ii', pe.get_data(ie.OffsetToData, 8)) == (40, w), (g.id, iid)
-    print('Resources.dll: подписи и значки читаются')
+    print(DLL + ': подписи и значки читаются')
 except ImportError:
-    print('pefile не установлен — Resources.dll не проверен')
-print('Resources.dll', os.path.getsize(os.path.join(A, 'Resources.dll')), 'bytes; config.xml')
+    print('pefile не установлен — ' + DLL + ' не проверен')
+print(DLL, os.path.getsize(os.path.join(A, DLL)), 'bytes; config.xml')

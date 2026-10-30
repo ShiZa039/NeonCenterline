@@ -46,7 +46,7 @@ names = []
 for name, path, call in MODS:
     s = open(path, encoding='utf-8').read()
     s = "\n".join(l for l in s.splitlines() if not l.startswith("Attribute VB_"))
-    for t in ['ShapeRange', 'Layer', 'Shape', 'Collection', 'Curve', 'SubPath', 'Segment', 'Color']:
+    for t in ['ShapeRange', 'Layer', 'Shape', 'Collection', 'Curve', 'SubPath', 'Segment', 'Color', 'Document', 'Window']:
         s = re.sub(r'\bAs %s\b' % t, 'As Object', s)
     s = re.sub(r'\bAs cdrUnit\b', 'As Long', s)
     extra = STUB_COREL
