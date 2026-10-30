@@ -89,6 +89,7 @@ Public Sub InstallToolbar()
         If Len(txt) = 0 Then
             txt = NeonL("addon_nolog")
         End If
+        NeonTbAskAgain
         MsgBox NeonLF("addon_fail", dst, txt), vbExclamation, NeonL("app_title")
     End If
     Exit Sub

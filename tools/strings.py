@@ -136,4 +136,8 @@ STRINGS = {
                       'макрос NeonCenterline.NeonAddon.InstallToolbar, затем полностью перезапустите CorelDRAW.',
                       'Could not reset the "Neon" toolbar.\n\n{0}\nIf the toolbar is not listed (Window > Toolbars), install it: '
                       'macro NeonCenterline.NeonAddon.InstallToolbar, then fully restart CorelDRAW.'),
+    'tb_files_old':  ('Файлы панели «Неон» в папке Addons CorelDRAW — от старой версии плагина (или их нет):\n{0}\nНужен набор кнопок [NeonToolbar {1}].\n\n'
+                      'Обновить файлы панели сейчас? Windows попросит права администратора, затем полностью перезапустите CorelDRAW.',
+                      'The "Neon" toolbar files in the CorelDRAW Addons folder are from an older plugin version (or missing):\n{0}\nButton set [NeonToolbar {1}] is needed.\n\n'
+                      'Update the toolbar files now? Windows will ask for administrator rights; then fully restart CorelDRAW.'),
 }

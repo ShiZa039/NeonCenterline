@@ -228,6 +228,13 @@ End Sub
 ' Показывает, какие панели найдены и что на них после сброса (для проверки)
 Public Sub ResetToolbar()
     Dim rep As String, ok As Boolean
+    If NeonToolbarFilesState() <> 2 Then
+        ' в Addons файлы панели старой версии (или их нет): сброс вернёт старый набор кнопок
+        If MsgBox(NeonLF("tb_files_old", ToolbarFilesInfo(), NEON_TOOLBAR_VER), vbYesNo + vbQuestion, NeonL("app_title")) = vbYes Then
+            InstallToolbar
+        End If
+        Exit Sub
+    End If
     ok = ResetNeonBar(rep, True)
     rep = rep & vbLf & ToolbarFilesInfo() & vbLf & "NeonCenterline.gms: [NeonToolbar " & NEON_TOOLBAR_VER & "]"
     If ok Then
@@ -264,6 +271,12 @@ Public Function NeonToolbarFilesState() As Long
 Fail:
     NeonToolbarFilesState = 0
 End Function
+
+' установка файлов панели не удалась — при следующей команде плагина спросить снова
+Public Sub NeonTbAskAgain()
+    On Error Resume Next
+    SaveSetting REG_APP, "UI", "ToolbarAsked", ""
+End Sub
 
 ' файлы панели в Addons текущего CorelDRAW: путь, метка набора кнопок, дата (для отчёта ResetToolbar)
 Private Function ToolbarFilesInfo() As String
