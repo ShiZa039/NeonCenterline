@@ -201,132 +201,133 @@ Private Function AddonText_AppUI_xslt() As String
     Dim s As String
     s = s & AU("3C 3F 78 6D 6C 20 76 65 72 73 69 6F 6E 3D 22 31 2E 30 22 3F 3E A 3C 21 2D 2D A 20 20 4E 65 6F 6E 43 65 6E 74 65 72 6C 69 6E 65 20 2014 20 43A 43E 43C 430 43D 434 44B 20 438 20 43F 430 43D 435 43B 44C 20 438 43D 441 442 440 443 43C")
     s = s & AU("435 43D 442 43E 432 20 28 43 6F 72 65 6C 44 52 41 57 20 41 64 64 6F 6E 73 29 2E A 20 20 41A 43E 43C 430 43D 434 44B 20 432 44B 437 44B 432 430 44E 442 20 43C 430 43A 440 43E 441 44B 20 43F 440 43E 435 43A 442 430 20 4E 65 6F 6E 43 65 6E 74 65")
-    s = s & AU("72 6C 69 6E 65 2E 67 6D 73 20 28 43F 43E 43B 44C 437 43E 432 430 442 435 43B 44C 441 43A 430 44F 20 43F 430 43F 43A 430 20 47 4D 53 29 2E A 20 20 41F 430 43D 435 43B 44C 3A 20 41C 43E 43D 43E 2C 20 41A 443 440 441 438 432 20 7C 20 41A 43E 43D 442 443")
-    s = s & AU("440 20 25BE 2C 20 41B 438 43D 438 438 20 25BE 20 7C 20 41D 430 441 442 440 43E 439 43A 438 20 25BE 2E 20 AB 25BE BB 20 2014 20 43A 43D 43E 43F 43A 430 2D 433 440 443 43F 43F 430 3A A 20 20 69 74 65 6D 44 61 74 61 20 74 79 70 65 3D 22 66 6C 79 6F")
-    s = s & AU("75 74 22 20 441 20 66 6C 79 6F 75 74 42 61 72 52 65 66 20 43D 430 20 63 6F 6D 6D 61 6E 64 42 61 72 44 61 74 61 20 74 79 70 65 3D 22 6D 65 6E 75 22 20 66 6C 79 6F 75 74 3D 22 74 72 75 65 22 20 28 43A 430 43A 20 43A 43D")
-    s = s & AU("43E 43F 43A 438 A 20 20 441 43E 20 441 43F 438 441 43A 43E 43C 20 432 20 441 430 43C 43E 43C 20 43 6F 72 65 6C 44 52 41 57 2C 20 44 72 61 77 55 49 2E 69 74 65 6D 73 2E 78 6D 6C 3B 20 431 435 437 20 74 79 70 65 3D 22 66 6C 79 6F 75")
-    s = s & AU("74 22 20 43 6F 72 65 6C 44 52 41 57 20 32 30 32 36 20 43A 43D 43E 43F 43A 443 20 43D 435 20 440 438 441 443 435 442 29 2E A 20 20 47 55 49 44 20 43D 435 20 43C 435 43D 44F 442 44C 3A 20 43F 43E 20 43D 438 43C 20 43 6F 72 65 6C 44 52 41")
-    s = s & AU("57 20 443 437 43D 430 451 442 20 43A 43D 43E 43F 43A 438 20 432 20 43D 430 441 442 440 43E 435 43D 43D 44B 445 20 440 430 431 43E 447 438 445 20 43F 440 43E 441 442 440 430 43D 441 442 432 430 445 2E A 20 20 41D 430 431 43E 440 20 43A 43D 43E 43F 43E 43A 20 43F 430")
-    s = s & AU("43D 435 43B 438 3A 20 5B 4E 65 6F 6E 54 6F 6F 6C 62 61 72 20 35 5D 2E 20 41F 440 438 20 438 437 43C 435 43D 435 43D 438 438 20 441 43E 441 442 430 432 430 20 43F 430 43D 435 43B 438 20 43F 43E 434 43D 44F 442 44C 20 43D 43E 43C 435 440 20 437 434 435 441")
-    s = s & AU("44C 20 438 A 20 20 4E 45 4F 4E 5F 54 4F 4F 4C 42 41 52 5F 56 45 52 20 432 20 73 72 63 2F 4E 65 6F 6E 55 49 2E 62 61 73 20 2014 20 43F 43E 441 43B 435 20 43E 431 43D 43E 432 43B 435 43D 438 44F 20 43F 43B 430 433 438 43D 20 441 430 43C 20")
-    s = s & AU("441 431 440 43E 441 438 442 20 43F 430 43D 435 43B 44C 20 43A 20 44D 442 43E 43C 443 20 441 43E 441 442 430 432 443 2E A 2D 2D 3E A 3C 78 73 6C 3A 73 74 79 6C 65 73 68 65 65 74 20 76 65 72 73 69 6F 6E 3D 22 31 2E 30 22 20 78 6D 6C 6E")
-    s = s & "s:xsl=""http://www.w3.org/1999/XSL/Transform"" xmlns:frmwrk=""Corel Frame"
-    s = s & "work Data"">" & vbLf & "  <xsl:output method=""xml"" encoding=""UTF-8"" indent=""yes""/>"
-    s = s & "" & vbLf & "" & vbLf & "  <frmwrk:uiconfig>" & vbLf & "    <frmwrk:applicationInfo userConfiguration=""t"
-    s = s & "rue"" />" & vbLf & "  </frmwrk:uiconfig>" & vbLf & "" & vbLf & "  <xsl:template match=""node()|@*"">" & vbLf & "    <"
-    s = s & "xsl:copy>" & vbLf & "      <xsl:apply-templates select=""node()|@*""/>" & vbLf & "    </xsl:co"
-    s = s & "py>" & vbLf & "  </xsl:template>" & vbLf & "" & vbLf & "  <xsl:template match=""uiConfig/items"">" & vbLf & "    <xs"
-    s = s & "l:copy>" & vbLf & "      <xsl:apply-templates select=""node()|@*""/>" & vbLf & "      <itemDat"
-    s = s & "a guid=""4e6d43bf-0b2d-500c-b154-b553b6087991""" & vbLf & "                icon=""gu"
-    s = s & "id://4e6d43bf-0b2d-500c-b154-b553b6087991""" & vbLf & "                dynamicComm"
-    s = s & "and=""NeonCenterline.NeonUI.RunMono""" & vbLf & "                dynamicCategory=""2"
-    s = s & AU("63 63 32 34 61 33 65 2D 66 65 32 34 2D 34 37 30 38 2D 39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D")
-    s = s & AU("3A 20 41C 43E 43D 43E 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 69 74 65 6D 44 61 74 61 20 67 75 69 64 3D 22 63 36 38 63 35 64 34 66")
-    s = s & "-d668-5fb4-937e-adb7430cae58""" & vbLf & "                icon=""guid://c68c5d4f-d6"
-    s = s & "68-5fb4-937e-adb7430cae58""" & vbLf & "                dynamicCommand=""NeonCenterl"
-    s = s & "ine.NeonUI.RunScript""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4"
-    s = s & AU("37 30 38 2D 39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 41A 443 440 441 438 432 20 28 431 435 442 430")
-    s = s & AU("29 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 41D 435 43E 43D 3A 20 41A 443 440 441 438 432 20 2014 20 432 20 440 430 437 440 430 431 43E 442 43A 435 2C 20 440 430 431 43E 442 430 435 442 20")
-    s = s & AU("43D 435 441 442 430 431 438 43B 44C 43D 43E 2E 20 41F 440 43E 432 435 440 44F 439 442 435 20 43B 438 43D 438 438 20 43F 435 440 435 434 20 440 435 437 43A 43E 439 2E 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74")
-    s = s & "rue""/>" & vbLf & "      <itemData guid=""ce37ed0a-544f-575c-ac35-ef4d4aab66c9""" & vbLf & "   "
-    s = s & "             icon=""guid://ce37ed0a-544f-575c-ac35-ef4d4aab66c9""" & vbLf & "      "
-    s = s & "          dynamicCommand=""NeonCenterline.NeonUI.ShowSettings""" & vbLf & "        "
-    s = s & "        dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "       "
-    s = s & AU("20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43D 430 441 442 440 43E 439 43A 438 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E")
-    s = s & "" & vbLf & "      <itemData guid=""1025a06f-bc40-5284-9292-2c3cf477d6a2""" & vbLf & "         "
-    s = s & "       icon=""guid://1025a06f-bc40-5284-9292-2c3cf477d6a2""" & vbLf & "            "
-    s = s & "    dynamicCommand=""NeonCenterline.NeonUI.CheckUpdates""" & vbLf & "              "
-    s = s & "  dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "             "
-    s = s & AU("20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43F 440 43E 432 435 440 438 442 44C 20 43E 431 43D 43E 432 43B 435 43D 438 44F 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72")
-    s = s & "ue""/>" & vbLf & "      <itemData guid=""c5cc733d-ee55-5173-b5ef-17a954845da7""" & vbLf & "    "
-    s = s & "            icon=""guid://c5cc733d-ee55-5173-b5ef-17a954845da7""" & vbLf & "       "
-    s = s & "         dynamicCommand=""NeonCenterline.NeonUI.ShowAbout""" & vbLf & "            "
-    s = s & "    dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "           "
-    s = s & AU("20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43E 20 43F 440 43E 433 440 430 43C 43C 435 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20")
-    s = s & "     <itemData guid=""0b33ce77-31ad-5c46-bb8b-2cd2e362084f""" & vbLf & "           "
-    s = s & "     icon=""guid://0b33ce77-31ad-5c46-bb8b-2cd2e362084f""" & vbLf & "              "
-    s = s & "  dynamicCommand=""NeonCenterline.NeonTools.MeasureLength""" & vbLf & "            "
-    s = s & "    dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "           "
-    s = s & AU("20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 434 43B 438 43D 430 20 43A 43E 43D 442 443 440 43E 432 20 438 20 43B 438 43D 438 439 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65")
-    s = s & "=""true""/>" & vbLf & "      <itemData guid=""c913505c-324e-543b-b2b1-a55c9bcbc9eb""" & vbLf & ""
-    s = s & "                icon=""guid://c913505c-324e-543b-b2b1-a55c9bcbc9eb""" & vbLf & "   "
-    s = s & "             dynamicCommand=""NeonCenterline.NeonTools.SelectNeonLines"""
-    s = s & "" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd"
-    s = s & AU("22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 432 44B 434 435 43B 438 442 44C 20 446 435 43D 442 440 430 43B 44C 43D 44B 435 20 43B 438 43D 438 438 22 A 20 20 20 20 20")
-    s = s & "           enable=""true""/>" & vbLf & "      <itemData guid=""ce9120be-eca9-5ed0-b1"
-    s = s & "c8-c43624951305""" & vbLf & "                icon=""guid://ce9120be-eca9-5ed0-b1c8-"
-    s = s & "c43624951305""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonCut.F"
-    s = s & "itToCut""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75"
-    s = s & AU("34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43F 43E 434 43E 433 43D 430 442 44C 20 43F 43E 434 20 43A 440 430 442 43D 43E 441 442 44C 20 440")
-    s = s & AU("435 437 430 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 423 43A 43E 440 43E 442 438 442 44C 20 441 432 43E 431 43E 434 43D 44B 435 20 43A 43E 43D 446 44B 20 432 44B 434 435 43B 435 43D 43D 44B 445")
-    s = s & AU("20 43B 438 43D 438 439 20 434 43E 20 43A 440 430 442 43D 43E 441 442 438 20 440 435 437 430 20 28 438 437 20 43D 430 441 442 440 43E 435 43A 29 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F")
-    s = s & ">" & vbLf & "      <itemData guid=""18048cca-273b-50eb-9d03-54111cc920ce""" & vbLf & "        "
-    s = s & "        icon=""guid://18048cca-273b-50eb-9d03-54111cc920ce""" & vbLf & "           "
-    s = s & "     dynamicCommand=""NeonCenterline.NeonTools.SimplifyContours""" & vbLf & "      "
-    s = s & "          dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "     "
-    s = s & AU("20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 443 43F 440 43E 441 442 438 442 44C 20 43A 43E 43D 442 443 440 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F")
-    s = s & AU("6F 6C 54 69 70 3D 22 41C 435 43D 44C 448 435 20 443 437 43B 43E 432 20 443 20 432 44B 434 435 43B 435 43D 43D 44B 445 20 43A 440 438 432 44B 445 3A 20 43E 442 445 43E 434 20 43E 442 20 438 441 445 43E 434 43D 43E 439 20 43D 435 20 431 43E 43B 44C 448 435 20 434")
-    s = s & AU("43E 43F 443 441 43A 430 20 28 43F 43E 20 443 43C 43E 43B 447 430 43D 438 44E 20 30 2E 31 20 43C 43C 29 2C 20 443 433 43B 44B 20 43E 441 442 430 44E 442 441 44F 20 443 433 43B 430 43C 438 2E 20 41E 442 43C 435 43D 430 20 2014 20 43 74 72 6C 2B 5A 22 A 20")
-    s = s & "               enable=""true""/>" & vbLf & "      <itemData guid=""67333f2d-18b9-592"
-    s = s & "5-b8bc-24d97a6dff93""" & vbLf & "                icon=""guid://67333f2d-18b9-5925-b"
-    s = s & "8bc-24d97a6dff93""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonT"
-    s = s & "ools.PlaceGrommets""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-470"
-    s = s & AU("38 2D 39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43B 44E 432 435 440 441 44B 22 A 20 20 20 20 20")
-    s = s & AU("20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 422 43E 447 43A 438 20 43F 43E 434 20 43B 44E 432 435 440 441 44B 20 43F 43E 20 43A 440 430 44E 20 432 44B 434 435 43B 435 43D 43D 43E 433 43E 20 431 430 43D 43D 435 440 430 3A")
-    s = s & AU("20 432 20 43A 430 436 434 43E 43C 20 443 433 43B 443 20 438 20 440 430 432 43D 43E 43C 435 440 43D 43E 20 43F 43E 20 441 442 43E 440 43E 43D 430 43C 2C 20 43D 435 20 440 435 436 435 20 437 430 434 430 43D 43D 43E 433 43E 20 440 430 441 441 442 43E 44F 43D 438 44F 22")
-    s = s & AU("A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 21 2D 2D 20 43A 43D 43E 43F 43A 438 2D 433 440 443 43F 43F 44B 3A 20 43E 442 43A 440 44B 432 430 44E 442 20 432")
-    s = s & AU("44B 43F 430 434 430 44E 449 438 439 20 441 43F 438 441 43E 43A 20 43A 43E 43C 430 43D 434 20 2D 2D 3E A 20 20 20 20 20 20 3C 69 74 65 6D 44 61 74 61 20 67 75 69 64 3D 22 64 66 61 64 31 30 66 62 2D 34 66 38 38 2D 35 37 63 63 2D 38")
-    s = s & "9aa-60840ed7bfd6""" & vbLf & "                type=""flyout""" & vbLf & "                arrowS"
-    s = s & "tyle=""corner""" & vbLf & "                flyoutBarRef=""2061e8a0-b6a1-56bb-bd4f-3c"
-    s = s & "8546a0e4a2""" & vbLf & "                icon=""guid://dfad10fb-4f88-57cc-89aa-60840"
-    s = s & AU("65 64 37 62 66 64 36 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43A 43E 43D 442 443 440 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73")
-    s = s & AU("65 72 54 6F 6F 6C 54 69 70 3D 22 423 43F 440 43E 441 442 438 442 44C 20 43A 43E 43D 442 443 440 2C 20 43B 44E 432 435 440 441 44B 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A")
-    s = s & "      <itemData guid=""305a1621-a721-5784-9de2-b2338e83336c""" & vbLf & "          "
-    s = s & "      type=""flyout""" & vbLf & "                arrowStyle=""corner""" & vbLf & "              "
-    s = s & "  flyoutBarRef=""b14254e7-44de-5f90-bb10-6319042600d8""" & vbLf & "                "
-    s = s & "icon=""guid://305a1621-a721-5784-9de2-b2338e83336c""" & vbLf & "                use"
-    s = s & AU("72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43B 438 43D 438 438 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 414 43B 438 43D 430 20 43A 43E 43D 442 443 440 43E 432 20 438 20 43B")
-    s = s & AU("438 43D 438 439 2C 20 432 44B 434 435 43B 438 442 44C 20 446 435 43D 442 440 430 43B 44C 43D 44B 435 20 43B 438 43D 438 438 2C 20 43F 43E 434 43E 433 43D 430 442 44C 20 43F 43E 434 20 43A 440 430 442 43D 43E 441 442 44C 20 440 435 437 430 22 A 20 20 20 20 20 20")
-    s = s & "          enable=""true""/>" & vbLf & "      <itemData guid=""0392cc33-564d-537f-b0d"
-    s = s & "f-9d90ebfd4177""" & vbLf & "                type=""flyout""" & vbLf & "                arrowSty"
-    s = s & "le=""corner""" & vbLf & "                flyoutBarRef=""54b0af94-56f6-588f-b329-fe0c"
-    s = s & "d1ba2e6b""" & vbLf & "                icon=""guid://0392cc33-564d-537f-b0df-9d90ebf"
-    s = s & AU("64 34 31 37 37 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43D 430 441 442 440 43E 439 43A 438 20 438 20 43F 43E 43C 43E 449 44C 22 A 20 20 20 20 20 20 20 20")
-    s = s & AU("20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 41D 430 441 442 440 43E 439 43A 438 2C 20 43F 440 43E 432 435 440 438 442 44C 20 43E 431 43D 43E 432 43B 435 43D 438 44F 2C 20 43E 20 43F 440 43E 433 440 430 43C 43C 435 22 A 20 20 20")
-    s = s & "             enable=""true""/>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "" & vbLf & "  <xsl"
-    s = s & ":template match=""uiConfig/commandBars"">" & vbLf & "    <xsl:copy>" & vbLf & "      <xsl:appl"
-    s = s & "y-templates select=""node()|@*""/>" & vbLf & "      <commandBarData guid=""3d22040b-"
-    s = s & "4ee7-596d-91ae-1653ffb39f77""" & vbLf & "                      nonLocalizableName="
-    s = s & AU("22 4E 65 6F 6E 43 65 6E 74 65 72 6C 69 6E 65 32 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 20 28 4E 65 6F 6E 43 65 6E 74 65 72 6C")
-    s = s & "ine)""" & vbLf & "                      type=""toolbar"">" & vbLf & "        <toolbar>" & vbLf & "        "
-    s = s & "  <item guidRef=""4e6d43bf-0b2d-500c-b154-b553b6087991""/>" & vbLf & "          <it"
-    s = s & "em guidRef=""c68c5d4f-d668-5fb4-937e-adb7430cae58""/>" & vbLf & "          <item gu"
-    s = s & "idRef=""266435b4-6e53-460f-9fa7-f45be187d400""/>" & vbLf & "          <item guidRef"
-    s = s & "=""dfad10fb-4f88-57cc-89aa-60840ed7bfd6""/>" & vbLf & "          <item guidRef=""305"
-    s = s & "a1621-a721-5784-9de2-b2338e83336c""/>" & vbLf & "          <item guidRef=""266435b4"
-    s = s & "-6e53-460f-9fa7-f45be187d400""/>" & vbLf & "          <item guidRef=""0392cc33-564d"
-    s = s & "-537f-b0df-9d90ebfd4177""/>" & vbLf & "        </toolbar>" & vbLf & "      </commandBarData>" & vbLf & ""
-    s = s & AU("20 20 20 20 20 20 3C 21 2D 2D 20 432 44B 43F 430 434 430 44E 449 438 435 20 441 43F 438 441 43A 438 20 43A 43D 43E 43F 43E 43A 2D 433 440 443 43F 43F 20 2D 2D 3E A 20 20 20 20 20 20 3C 63 6F 6D 6D 61 6E 64 42 61 72 44 61 74 61 20 67 75")
-    s = s & "id=""2061e8a0-b6a1-56bb-bd4f-3c8546a0e4a2""" & vbLf & "                      type="""
-    s = s & "menu""" & vbLf & "                      nonLocalizableName=""NeonCenterline Contour"
-    s = s & """" & vbLf & "                      flyout=""true"">" & vbLf & "        <menu>" & vbLf & "          <item "
-    s = s & "guidRef=""18048cca-273b-50eb-9d03-54111cc920ce""/>" & vbLf & "          <item guidR"
-    s = s & "ef=""67333f2d-18b9-5925-b8bc-24d97a6dff93""/>" & vbLf & "        </menu>" & vbLf & "      </co"
-    s = s & "mmandBarData>" & vbLf & "      <commandBarData guid=""b14254e7-44de-5f90-bb10-6319"
-    s = s & "042600d8""" & vbLf & "                      type=""menu""" & vbLf & "                      nonL"
-    s = s & "ocalizableName=""NeonCenterline Lines""" & vbLf & "                      flyout=""tr"
-    s = s & "ue"">" & vbLf & "        <menu>" & vbLf & "          <item guidRef=""0b33ce77-31ad-5c46-bb8b-2"
-    s = s & "cd2e362084f""/>" & vbLf & "          <item guidRef=""c913505c-324e-543b-b2b1-a55c9b"
-    s = s & "cbc9eb""/>" & vbLf & "          <item guidRef=""ce9120be-eca9-5ed0-b1c8-c4362495130"
-    s = s & "5""/>" & vbLf & "        </menu>" & vbLf & "      </commandBarData>" & vbLf & "      <commandBarData gui"
-    s = s & "d=""54b0af94-56f6-588f-b329-fe0cd1ba2e6b""" & vbLf & "                      type=""m"
-    s = s & "enu""" & vbLf & "                      nonLocalizableName=""NeonCenterline Settings"
-    s = s & """" & vbLf & "                      flyout=""true"">" & vbLf & "        <menu>" & vbLf & "          <item "
-    s = s & "guidRef=""ce37ed0a-544f-575c-ac35-ef4d4aab66c9""/>" & vbLf & "          <item guidR"
-    s = s & "ef=""266435b4-6e53-460f-9fa7-f45be187d400""/>" & vbLf & "          <item guidRef=""1"
-    s = s & "025a06f-bc40-5284-9292-2c3cf477d6a2""/>" & vbLf & "          <item guidRef=""c5cc73"
-    s = s & "3d-ee55-5173-b5ef-17a954845da7""/>" & vbLf & "        </menu>" & vbLf & "      </commandBarDa"
-    s = s & "ta>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "</xsl:stylesheet>" & vbLf & ""
+    s = s & AU("72 6C 69 6E 65 2E 67 6D 73 20 28 43F 43E 43B 44C 437 43E 432 430 442 435 43B 44C 441 43A 430 44F 20 43F 430 43F 43A 430 20 47 4D 53 29 2E A 20 20 41F 430 43D 435 43B 44C 3A 20 41C 43E 43D 43E 2C 20 41A 443 440 441 438 432 20 7C 20 423 43F 440 43E 441")
+    s = s & AU("442 438 442 44C 20 43A 43E 43D 442 443 440 2C 20 41B 438 43D 438 438 20 25BE 2C 20 420 430 441 43A 43B 430 434 43A 430 20 25BE 20 7C 20 41D 430 441 442 440 43E 439 43A 438 20 25BE 2E 20 AB 25BE BB 20 2014 20 43A 43D 43E 43F 43A 430 2D 433 440 443 43F 43F 430 3A A")
+    s = s & AU("20 20 69 74 65 6D 44 61 74 61 20 74 79 70 65 3D 22 66 6C 79 6F 75 74 22 20 441 20 66 6C 79 6F 75 74 42 61 72 52 65 66 20 43D 430 20 63 6F 6D 6D 61 6E 64 42 61 72 44 61 74 61 20 74 79 70 65 3D 22 6D 65 6E 75 22 20")
+    s = s & AU("66 6C 79 6F 75 74 3D 22 74 72 75 65 22 20 28 43A 430 43A 20 43A 43D 43E 43F 43A 438 A 20 20 441 43E 20 441 43F 438 441 43A 43E 43C 20 432 20 441 430 43C 43E 43C 20 43 6F 72 65 6C 44 52 41 57 2C 20 44 72 61 77 55 49 2E 69 74 65 6D 73")
+    s = s & AU("2E 78 6D 6C 3B 20 431 435 437 20 74 79 70 65 3D 22 66 6C 79 6F 75 74 22 20 43 6F 72 65 6C 44 52 41 57 20 32 30 32 36 20 43A 43D 43E 43F 43A 443 20 43D 435 20 440 438 441 443 435 442 29 2E A 20 20 47 55 49 44 20 43D 435 20 43C 435")
+    s = s & AU("43D 44F 442 44C 3A 20 43F 43E 20 43D 438 43C 20 43 6F 72 65 6C 44 52 41 57 20 443 437 43D 430 451 442 20 43A 43D 43E 43F 43A 438 20 432 20 43D 430 441 442 440 43E 435 43D 43D 44B 445 20 440 430 431 43E 447 438 445 20 43F 440 43E 441 442 440 430 43D 441 442 432")
+    s = s & AU("430 445 2E A 20 20 41D 430 431 43E 440 20 43A 43D 43E 43F 43E 43A 20 43F 430 43D 435 43B 438 3A 20 5B 4E 65 6F 6E 54 6F 6F 6C 62 61 72 20 36 5D 2E 20 41F 440 438 20 438 437 43C 435 43D 435 43D 438 438 20 441 43E 441 442 430 432 430 20 43F 430 43D 435")
+    s = s & AU("43B 438 20 43F 43E 434 43D 44F 442 44C 20 43D 43E 43C 435 440 20 437 434 435 441 44C 20 438 A 20 20 4E 45 4F 4E 5F 54 4F 4F 4C 42 41 52 5F 56 45 52 20 432 20 73 72 63 2F 4E 65 6F 6E 55 49 2E 62 61 73 20 2014 20 43F 43E 441 43B 435 20 43E")
+    s = s & AU("431 43D 43E 432 43B 435 43D 438 44F 20 43F 43B 430 433 438 43D 20 441 430 43C 20 441 431 440 43E 441 438 442 20 43F 430 43D 435 43B 44C 20 43A 20 44D 442 43E 43C 443 20 441 43E 441 442 430 432 443 2E A 2D 2D 3E A 3C 78 73 6C 3A 73 74 79 6C 65 73 68 65")
+    s = s & "et version=""1.0"" xmlns:xsl=""http://www.w3.org/1999/XSL/Transform"" xmln"
+    s = s & "s:frmwrk=""Corel Framework Data"">" & vbLf & "  <xsl:output method=""xml"" encoding="""
+    s = s & "UTF-8"" indent=""yes""/>" & vbLf & "" & vbLf & "  <frmwrk:uiconfig>" & vbLf & "    <frmwrk:applicationInfo"
+    s = s & " userConfiguration=""true"" />" & vbLf & "  </frmwrk:uiconfig>" & vbLf & "" & vbLf & "  <xsl:template mat"
+    s = s & "ch=""node()|@*"">" & vbLf & "    <xsl:copy>" & vbLf & "      <xsl:apply-templates select=""node"
+    s = s & "()|@*""/>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "" & vbLf & "  <xsl:template match=""uiC"
+    s = s & "onfig/items"">" & vbLf & "    <xsl:copy>" & vbLf & "      <xsl:apply-templates select=""node()"
+    s = s & "|@*""/>" & vbLf & "      <itemData guid=""4e6d43bf-0b2d-500c-b154-b553b6087991""" & vbLf & "   "
+    s = s & "             icon=""guid://4e6d43bf-0b2d-500c-b154-b553b6087991""" & vbLf & "      "
+    s = s & "          dynamicCommand=""NeonCenterline.NeonUI.RunMono""" & vbLf & "             "
+    s = s & "   dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "            "
+    s = s & AU("20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 41C 43E 43D 43E 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 69 74")
+    s = s & "emData guid=""c68c5d4f-d668-5fb4-937e-adb7430cae58""" & vbLf & "                ico"
+    s = s & "n=""guid://c68c5d4f-d668-5fb4-937e-adb7430cae58""" & vbLf & "                dynami"
+    s = s & "cCommand=""NeonCenterline.NeonUI.RunScript""" & vbLf & "                dynamicCate"
+    s = s & "gory=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "                userCaptio"
+    s = s & AU("6E 3D 22 41D 435 43E 43D 3A 20 41A 443 440 441 438 432 20 28 431 435 442 430 29 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 41D 435 43E 43D 3A 20 41A 443 440 441 438 432 20 2014 20 432 20")
+    s = s & AU("440 430 437 440 430 431 43E 442 43A 435 2C 20 440 430 431 43E 442 430 435 442 20 43D 435 441 442 430 431 438 43B 44C 43D 43E 2E 20 41F 440 43E 432 435 440 44F 439 442 435 20 43B 438 43D 438 438 20 43F 435 440 435 434 20 440 435 437 43A 43E 439 2E 22 A 20 20 20 20")
+    s = s & "            enable=""true""/>" & vbLf & "      <itemData guid=""ce37ed0a-544f-575c-a"
+    s = s & "c35-ef4d4aab66c9""" & vbLf & "                icon=""guid://ce37ed0a-544f-575c-ac35"
+    s = s & "-ef4d4aab66c9""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonUI.S"
+    s = s & "howSettings""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a74-"
+    s = s & AU("39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43D 430 441 442 440 43E 439 43A 438 22 A 20 20 20 20 20 20 20 20 20 20")
+    s = s & "      enable=""true""/>" & vbLf & "      <itemData guid=""1025a06f-bc40-5284-9292-2c"
+    s = s & "3cf477d6a2""" & vbLf & "                icon=""guid://1025a06f-bc40-5284-9292-2c3cf"
+    s = s & "477d6a2""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonUI.CheckUp"
+    s = s & "dates""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c7540"
+    s = s & AU("36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43F 440 43E 432 435 440 438 442 44C 20 43E 431 43D 43E 432 43B 435 43D 438 44F 22 A 20 20 20 20 20")
+    s = s & "           enable=""true""/>" & vbLf & "      <itemData guid=""c5cc733d-ee55-5173-b5"
+    s = s & "ef-17a954845da7""" & vbLf & "                icon=""guid://c5cc733d-ee55-5173-b5ef-"
+    s = s & "17a954845da7""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonUI.Sh"
+    s = s & "owAbout""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75"
+    s = s & AU("34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43E 20 43F 440 43E 433 440 430 43C 43C 435 22 A 20 20 20 20 20 20 20 20 20 20 20 20")
+    s = s & "    enable=""true""/>" & vbLf & "      <itemData guid=""0b33ce77-31ad-5c46-bb8b-2cd2"
+    s = s & "e362084f""" & vbLf & "                icon=""guid://0b33ce77-31ad-5c46-bb8b-2cd2e36"
+    s = s & "2084f""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonTools.Measur"
+    s = s & "eLength""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a74-9c75"
+    s = s & AU("34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 434 43B 438 43D 430 20 43A 43E 43D 442 443 440 43E 432 20 438 20 43B 438 43D 438 439 22 A 20")
+    s = s & "               enable=""true""/>" & vbLf & "      <itemData guid=""c913505c-324e-543"
+    s = s & "b-b2b1-a55c9bcbc9eb""" & vbLf & "                icon=""guid://c913505c-324e-543b-b"
+    s = s & "2b1-a55c9bcbc9eb""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonT"
+    s = s & "ools.SelectNeonLines""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4"
+    s = s & AU("37 30 38 2D 39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 432 44B 434 435 43B 438 442 44C 20 446 435 43D")
+    s = s & AU("442 440 430 43B 44C 43D 44B 435 20 43B 438 43D 438 438 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 69 74 65 6D 44 61 74 61 20 67 75 69 64 3D 22")
+    s = s & "ce9120be-eca9-5ed0-b1c8-c43624951305""" & vbLf & "                icon=""guid://ce9"
+    s = s & "120be-eca9-5ed0-b1c8-c43624951305""" & vbLf & "                dynamicCommand=""Neo"
+    s = s & "nCenterline.NeonCut.FitToCut""" & vbLf & "                dynamicCategory=""2cc24a3"
+    s = s & AU("65 2D 66 65 32 34 2D 34 37 30 38 2D 39 61 37 34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43F 43E 434 43E")
+    s = s & AU("433 43D 430 442 44C 20 43F 43E 434 20 43A 440 430 442 43D 43E 441 442 44C 20 440 435 437 430 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 423 43A 43E 440 43E 442 438 442 44C 20 441 432 43E 431 43E")
+    s = s & AU("434 43D 44B 435 20 43A 43E 43D 446 44B 20 432 44B 434 435 43B 435 43D 43D 44B 445 20 43B 438 43D 438 439 20 434 43E 20 43A 440 430 442 43D 43E 441 442 438 20 440 435 437 430 20 28 438 437 20 43D 430 441 442 440 43E 435 43A 29 22 A 20 20 20 20 20 20 20 20 20")
+    s = s & "       enable=""true""/>" & vbLf & "      <itemData guid=""18048cca-273b-50eb-9d03-5"
+    s = s & "4111cc920ce""" & vbLf & "                icon=""guid://18048cca-273b-50eb-9d03-5411"
+    s = s & "1cc920ce""" & vbLf & "                dynamicCommand=""NeonCenterline.NeonTools.Sim"
+    s = s & "plifyContours""" & vbLf & "                dynamicCategory=""2cc24a3e-fe24-4708-9a7"
+    s = s & AU("34 2D 39 63 37 35 34 30 36 65 65 62 63 64 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 443 43F 440 43E 441 442 438 442 44C 20 43A 43E 43D 442 443 440 22 A 20")
+    s = s & AU("20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 41C 435 43D 44C 448 435 20 443 437 43B 43E 432 20 443 20 432 44B 434 435 43B 435 43D 43D 44B 445 20 43A 440 438 432 44B 445 3A 20 43E 442 445 43E 434 20 43E 442")
+    s = s & AU("20 438 441 445 43E 434 43D 43E 439 20 43D 435 20 431 43E 43B 44C 448 435 20 434 43E 43F 443 441 43A 430 20 28 43F 43E 20 443 43C 43E 43B 447 430 43D 438 44E 20 30 2E 31 20 43C 43C 29 2C 20 443 433 43B 44B 20 43E 441 442 430 44E 442 441 44F 20 443 433 43B 430 43C")
+    s = s & AU("438 2E 20 41E 442 43C 435 43D 430 20 2014 20 43 74 72 6C 2B 5A 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 69 74 65 6D 44 61 74 61 20 67 75")
+    s = s & "id=""67333f2d-18b9-5925-b8bc-24d97a6dff93""" & vbLf & "                icon=""guid:/"
+    s = s & "/67333f2d-18b9-5925-b8bc-24d97a6dff93""" & vbLf & "                dynamicCommand="
+    s = s & """NeonCenterline.NeonTools.PlaceGrommets""" & vbLf & "                dynamicCatego"
+    s = s & "ry=""2cc24a3e-fe24-4708-9a74-9c75406eebcd""" & vbLf & "                userCaption="
+    s = s & AU("22 41D 435 43E 43D 3A 20 43B 44E 432 435 440 441 44B 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 422 43E 447 43A 438 20 43F 43E 434 20 43B 44E 432 435 440 441 44B 20 43F 43E 20 43A 440 430 44E")
+    s = s & AU("20 432 44B 434 435 43B 435 43D 43D 43E 433 43E 20 431 430 43D 43D 435 440 430 3A 20 432 20 43A 430 436 434 43E 43C 20 443 433 43B 443 20 438 20 440 430 432 43D 43E 43C 435 440 43D 43E 20 43F 43E 20 441 442 43E 440 43E 43D 430 43C 2C 20 43D 435 20 440 435 436 435 20")
+    s = s & AU("437 430 434 430 43D 43D 43E 433 43E 20 440 430 441 441 442 43E 44F 43D 438 44F 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 21 2D 2D 20 43A 43D 43E 43F 43A")
+    s = s & AU("438 2D 433 440 443 43F 43F 44B 3A 20 43E 442 43A 440 44B 432 430 44E 442 20 432 44B 43F 430 434 430 44E 449 438 439 20 441 43F 438 441 43E 43A 20 43A 43E 43C 430 43D 434 20 2D 2D 3E A 20 20 20 20 20 20 3C 69 74 65 6D 44 61 74 61 20 67 75 69 64 3D")
+    s = s & """d32b7178-2e37-5391-aca2-12628ac3838b""" & vbLf & "                type=""flyout""" & vbLf & " "
+    s = s & "               arrowStyle=""corner""" & vbLf & "                flyoutBarRef=""57319"
+    s = s & "01c-4115-58a7-9466-9da0ca279658""" & vbLf & "                icon=""guid://d32b7178"
+    s = s & AU("2D 32 65 33 37 2D 35 33 39 31 2D 61 63 61 32 2D 31 32 36 32 38 61 63 33 38 33 38 62 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 440 430 441 43A 43B")
+    s = s & AU("430 434 43A 430 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 41B 44E 432 435 440 441 44B 20 28 434 430 43B 44C 448 435 20 2014 20 440 430 441 43A 43B 430 434 43A 430 20 43C 43E 434 443 43B 435 439")
+    s = s & AU("20 438 20 434 440 443 433 43E 435 20 434 43B 44F 20 43F 440 43E 438 437 432 43E 434 441 442 432 430 29 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 65 6E 61 62 6C 65 3D 22 74 72 75 65 22 2F 3E A 20 20 20 20 20 20 3C 69 74")
+    s = s & "emData guid=""305a1621-a721-5784-9de2-b2338e83336c""" & vbLf & "                typ"
+    s = s & "e=""flyout""" & vbLf & "                arrowStyle=""corner""" & vbLf & "                flyoutB"
+    s = s & "arRef=""b14254e7-44de-5f90-bb10-6319042600d8""" & vbLf & "                icon=""gui"
+    s = s & "d://305a1621-a721-5784-9de2-b2338e83336c""" & vbLf & "                userCaption="
+    s = s & AU("22 41D 435 43E 43D 3A 20 43B 438 43D 438 438 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 54 6F 6F 6C 54 69 70 3D 22 414 43B 438 43D 430 20 43A 43E 43D 442 443 440 43E 432 20 438 20 43B 438 43D 438 439 2C 20 432 44B 434")
+    s = s & AU("435 43B 438 442 44C 20 446 435 43D 442 440 430 43B 44C 43D 44B 435 20 43B 438 43D 438 438 2C 20 43F 43E 434 43E 433 43D 430 442 44C 20 43F 43E 434 20 43A 440 430 442 43D 43E 441 442 44C 20 440 435 437 430 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20")
+    s = s & " enable=""true""/>" & vbLf & "      <itemData guid=""0392cc33-564d-537f-b0df-9d90ebf"
+    s = s & "d4177""" & vbLf & "                type=""flyout""" & vbLf & "                arrowStyle=""corne"
+    s = s & "r""" & vbLf & "                flyoutBarRef=""54b0af94-56f6-588f-b329-fe0cd1ba2e6b"""
+    s = s & "" & vbLf & "                icon=""guid://0392cc33-564d-537f-b0df-9d90ebfd4177""" & vbLf & "  "
+    s = s & AU("20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 3A 20 43D 430 441 442 440 43E 439 43A 438 20 438 20 43F 43E 43C 43E 449 44C 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75")
+    s = s & AU("73 65 72 54 6F 6F 6C 54 69 70 3D 22 41D 430 441 442 440 43E 439 43A 438 2C 20 43F 440 43E 432 435 440 438 442 44C 20 43E 431 43D 43E 432 43B 435 43D 438 44F 2C 20 43E 20 43F 440 43E 433 440 430 43C 43C 435 22 A 20 20 20 20 20 20 20 20 20 20 20 20")
+    s = s & "    enable=""true""/>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "" & vbLf & "  <xsl:template"
+    s = s & " match=""uiConfig/commandBars"">" & vbLf & "    <xsl:copy>" & vbLf & "      <xsl:apply-templat"
+    s = s & "es select=""node()|@*""/>" & vbLf & "      <commandBarData guid=""3d22040b-4ee7-596d"
+    s = s & "-91ae-1653ffb39f77""" & vbLf & "                      nonLocalizableName=""NeonCent"
+    s = s & AU("65 72 6C 69 6E 65 32 22 A 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 75 73 65 72 43 61 70 74 69 6F 6E 3D 22 41D 435 43E 43D 20 28 4E 65 6F 6E 43 65 6E 74 65 72 6C 69 6E 65 29 22 A 20 20 20")
+    s = s & "                   type=""toolbar"">" & vbLf & "        <toolbar>" & vbLf & "          <item g"
+    s = s & "uidRef=""4e6d43bf-0b2d-500c-b154-b553b6087991""/>" & vbLf & "          <item guidRe"
+    s = s & "f=""c68c5d4f-d668-5fb4-937e-adb7430cae58""/>" & vbLf & "          <item guidRef=""26"
+    s = s & "6435b4-6e53-460f-9fa7-f45be187d400""/>" & vbLf & "          <item guidRef=""18048cc"
+    s = s & "a-273b-50eb-9d03-54111cc920ce""/>" & vbLf & "          <item guidRef=""305a1621-a72"
+    s = s & "1-5784-9de2-b2338e83336c""/>" & vbLf & "          <item guidRef=""d32b7178-2e37-539"
+    s = s & "1-aca2-12628ac3838b""/>" & vbLf & "          <item guidRef=""266435b4-6e53-460f-9fa"
+    s = s & "7-f45be187d400""/>" & vbLf & "          <item guidRef=""0392cc33-564d-537f-b0df-9d9"
+    s = s & AU("30 65 62 66 64 34 31 37 37 22 2F 3E A 20 20 20 20 20 20 20 20 3C 2F 74 6F 6F 6C 62 61 72 3E A 20 20 20 20 20 20 3C 2F 63 6F 6D 6D 61 6E 64 42 61 72 44 61 74 61 3E A 20 20 20 20 20 20 3C 21 2D 2D 20 432 44B 43F")
+    s = s & AU("430 434 430 44E 449 438 435 20 441 43F 438 441 43A 438 20 43A 43D 43E 43F 43E 43A 2D 433 440 443 43F 43F 20 2D 2D 3E A 20 20 20 20 20 20 3C 63 6F 6D 6D 61 6E 64 42 61 72 44 61 74 61 20 67 75 69 64 3D 22 35 37 33 31 39 30 31 63 2D 34")
+    s = s & "115-58a7-9466-9da0ca279658""" & vbLf & "                      type=""menu""" & vbLf & "        "
+    s = s & "              nonLocalizableName=""NeonCenterline Layout""" & vbLf & "             "
+    s = s & "         flyout=""true"">" & vbLf & "        <menu>" & vbLf & "          <item guidRef=""67333f"
+    s = s & "2d-18b9-5925-b8bc-24d97a6dff93""/>" & vbLf & "        </menu>" & vbLf & "      </commandBarDa"
+    s = s & "ta>" & vbLf & "      <commandBarData guid=""b14254e7-44de-5f90-bb10-6319042600d8""" & vbLf & ""
+    s = s & "                      type=""menu""" & vbLf & "                      nonLocalizable"
+    s = s & "Name=""NeonCenterline Lines""" & vbLf & "                      flyout=""true"">" & vbLf & "     "
+    s = s & "   <menu>" & vbLf & "          <item guidRef=""0b33ce77-31ad-5c46-bb8b-2cd2e362084"
+    s = s & "f""/>" & vbLf & "          <item guidRef=""c913505c-324e-543b-b2b1-a55c9bcbc9eb""/>" & vbLf & ""
+    s = s & "          <item guidRef=""ce9120be-eca9-5ed0-b1c8-c43624951305""/>" & vbLf & "     "
+    s = s & "   </menu>" & vbLf & "      </commandBarData>" & vbLf & "      <commandBarData guid=""54b0af9"
+    s = s & "4-56f6-588f-b329-fe0cd1ba2e6b""" & vbLf & "                      type=""menu""" & vbLf & "     "
+    s = s & "                 nonLocalizableName=""NeonCenterline Settings""" & vbLf & "        "
+    s = s & "              flyout=""true"">" & vbLf & "        <menu>" & vbLf & "          <item guidRef=""c"
+    s = s & "e37ed0a-544f-575c-ac35-ef4d4aab66c9""/>" & vbLf & "          <item guidRef=""266435"
+    s = s & "b4-6e53-460f-9fa7-f45be187d400""/>" & vbLf & "          <item guidRef=""1025a06f-bc"
+    s = s & "40-5284-9292-2c3cf477d6a2""/>" & vbLf & "          <item guidRef=""c5cc733d-ee55-51"
+    s = s & "73-b5ef-17a954845da7""/>" & vbLf & "        </menu>" & vbLf & "      </commandBarData>" & vbLf & "    </"
+    s = s & "xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "</xsl:stylesheet>" & vbLf & ""
     AddonText_AppUI_xslt = s
 End Function
 
@@ -353,28 +354,31 @@ Private Function AddonText_UserUI_xslt() As String
     s = s & "</xsl:if>" & vbLf & "      <xsl:if test=""not(./item[@guidRef='c68c5d4f-d668-5fb4-"
     s = s & "937e-adb7430cae58'])"">" & vbLf & "        <item guidRef=""c68c5d4f-d668-5fb4-937e-"
     s = s & "adb7430cae58""/>" & vbLf & "      </xsl:if>" & vbLf & "      <xsl:if test=""not(./item[@guidRe"
-    s = s & "f='dfad10fb-4f88-57cc-89aa-60840ed7bfd6'])"">" & vbLf & "        <item guidRef=""df"
-    s = s & "ad10fb-4f88-57cc-89aa-60840ed7bfd6""/>" & vbLf & "      </xsl:if>" & vbLf & "      <xsl:if te"
+    s = s & "f='18048cca-273b-50eb-9d03-54111cc920ce'])"">" & vbLf & "        <item guidRef=""18"
+    s = s & "048cca-273b-50eb-9d03-54111cc920ce""/>" & vbLf & "      </xsl:if>" & vbLf & "      <xsl:if te"
     s = s & "st=""not(./item[@guidRef='305a1621-a721-5784-9de2-b2338e83336c'])"">" & vbLf & "   "
     s = s & "     <item guidRef=""305a1621-a721-5784-9de2-b2338e83336c""/>" & vbLf & "      </xs"
-    s = s & "l:if>" & vbLf & "      <xsl:if test=""not(./item[@guidRef='0392cc33-564d-537f-b0df"
-    s = s & "-9d90ebfd4177'])"">" & vbLf & "        <item guidRef=""0392cc33-564d-537f-b0df-9d90"
-    s = s & "ebfd4177""/>" & vbLf & "      </xsl:if>" & vbLf & "    </xsl:copy>" & vbLf & "  </xsl:template>" & vbLf & "" & vbLf & "  <!-- "
-    s = s & AU("43A 43D 43E 43F 43A 438 2C 20 43F 435 440 435 435 445 430 432 448 438 435 20 432 20 433 440 443 43F 43F 44B 20 AB 41A 43E 43D 442 443 440 BB 2C 20 AB 41B 438 43D 438 438 BB 20 438 20 AB 41D 430 441 442 440 43E 439 43A 438 20 438 20 43F 43E 43C 43E 449 44C BB 20")
-    s = s & AU("28 43F 430 43D 435 43B 44C 20 35 29 2C 20 2014 20 443 431 440 430 442 44C 20 441 20 43F 430 43D 435 43B 438 20 2D 2D 3E A 20 20 3C 78 73 6C 3A 74 65 6D 70 6C 61 74 65 20 6D 61 74 63 68 3D 22 63 6F 6D 6D 61 6E 64 42 61 72 44 61 74")
-    s = s & "a[@guid='3d22040b-4ee7-596d-91ae-1653ffb39f77']/toolbar/item[@guidRef="
-    s = s & "'0b33ce77-31ad-5c46-bb8b-2cd2e362084f' or @guidRef='c913505c-324e-543b"
-    s = s & "-b2b1-a55c9bcbc9eb' or @guidRef='ce9120be-eca9-5ed0-b1c8-c43624951305'"
-    s = s & " or @guidRef='ce37ed0a-544f-575c-ac35-ef4d4aab66c9' or @guidRef='18048"
-    s = s & AU("63 63 61 2D 32 37 33 62 2D 35 30 65 62 2D 39 64 30 33 2D 35 34 31 31 31 63 63 39 32 30 63 65 27 5D 22 2F 3E A A 20 20 3C 21 2D 2D 20 43F 430 43D 435 43B 44C 20 2014 20 440 44F 434 43E 43C 20 441 43E 20 441 442 430 43D 434 430 440")
-    s = s & AU("442 43D 43E 439 20 43F 430 43D 435 43B 44C 44E 20 438 43D 441 442 440 443 43C 435 43D 442 43E 432 20 28 441 43E 441 435 434 43D 438 439 20 44D 43B 435 43C 435 43D 442 29 20 2D 2D 3E A 20 20 3C 78 73 6C 3A 74 65 6D 70 6C 61 74 65 20 6D 61 74 63 68")
-    s = s & "=""uiConfig/containers/container[@guid='bee85f91-3ad9-dc8d-48b5-d2a87c8"
-    s = s & "b2109']/container[@guid='Framework_MainFrame-layout']/dockHost[@guid='"
-    s = s & "894bf987-2ec1-8f83-41d8-68f6797d0db4']/toolbar[@guidRef='c2b44f69-6dec"
-    s = s & "-444e-a37e-5dbf7ff43dae']"">" & vbLf & "    <xsl:copy-of select="".""/>" & vbLf & "    <xsl:if "
-    s = s & "test=""not(../toolbar[@guidRef='3d22040b-4ee7-596d-91ae-1653ffb39f77'])"
-    s = s & """>" & vbLf & "      <toolbar guidRef=""3d22040b-4ee7-596d-91ae-1653ffb39f77""/>" & vbLf & "   "
-    s = s & " </xsl:if>" & vbLf & "  </xsl:template>" & vbLf & "</xsl:stylesheet>" & vbLf & ""
+    s = s & "l:if>" & vbLf & "      <xsl:if test=""not(./item[@guidRef='d32b7178-2e37-5391-aca2"
+    s = s & "-12628ac3838b'])"">" & vbLf & "        <item guidRef=""d32b7178-2e37-5391-aca2-1262"
+    s = s & "8ac3838b""/>" & vbLf & "      </xsl:if>" & vbLf & "      <xsl:if test=""not(./item[@guidRef='0"
+    s = s & "392cc33-564d-537f-b0df-9d90ebfd4177'])"">" & vbLf & "        <item guidRef=""0392cc"
+    s = s & "33-564d-537f-b0df-9d90ebfd4177""/>" & vbLf & "      </xsl:if>" & vbLf & "    </xsl:copy>" & vbLf & "  </"
+    s = s & AU("78 73 6C 3A 74 65 6D 70 6C 61 74 65 3E A A 20 20 3C 21 2D 2D 20 43A 43D 43E 43F 43A 438 2C 20 43F 435 440 435 435 445 430 432 448 438 435 20 432 20 433 440 443 43F 43F 44B 20 AB 41B 438 43D 438 438 BB 20 438 20 AB 41D 430 441 442 440 43E 439 43A")
+    s = s & AU("438 20 438 20 43F 43E 43C 43E 449 44C BB 2C 20 438 20 433 440 443 43F 43F 430 20 AB 41A 43E 43D 442 443 440 BB 20 43D 430 431 43E 440 430 20 35 20 2014 20 443 431 440 430 442 44C 20 441 20 43F 430 43D 435 43B 438 20 2D 2D 3E A 20 20 3C 78 73 6C 3A 74")
+    s = s & "emplate match=""commandBarData[@guid='3d22040b-4ee7-596d-91ae-1653ffb39"
+    s = s & "f77']/toolbar/item[@guidRef='0b33ce77-31ad-5c46-bb8b-2cd2e362084f' or "
+    s = s & "@guidRef='c913505c-324e-543b-b2b1-a55c9bcbc9eb' or @guidRef='ce9120be-"
+    s = s & "eca9-5ed0-b1c8-c43624951305' or @guidRef='ce37ed0a-544f-575c-ac35-ef4d"
+    s = s & "4aab66c9' or @guidRef='dfad10fb-4f88-57cc-89aa-60840ed7bfd6']""/>" & vbLf & "" & vbLf & "  <!"
+    s = s & AU("2D 2D 20 43F 430 43D 435 43B 44C 20 2014 20 440 44F 434 43E 43C 20 441 43E 20 441 442 430 43D 434 430 440 442 43D 43E 439 20 43F 430 43D 435 43B 44C 44E 20 438 43D 441 442 440 443 43C 435 43D 442 43E 432 20 28 441 43E 441 435 434 43D 438 439 20 44D 43B 435 43C 435 43D")
+    s = s & AU("442 29 20 2D 2D 3E A 20 20 3C 78 73 6C 3A 74 65 6D 70 6C 61 74 65 20 6D 61 74 63 68 3D 22 75 69 43 6F 6E 66 69 67 2F 63 6F 6E 74 61 69 6E 65 72 73 2F 63 6F 6E 74 61 69 6E 65 72 5B 40 67 75 69 64 3D 27 62 65 65")
+    s = s & "85f91-3ad9-dc8d-48b5-d2a87c8b2109']/container[@guid='Framework_MainFra"
+    s = s & "me-layout']/dockHost[@guid='894bf987-2ec1-8f83-41d8-68f6797d0db4']/too"
+    s = s & "lbar[@guidRef='c2b44f69-6dec-444e-a37e-5dbf7ff43dae']"">" & vbLf & "    <xsl:copy-"
+    s = s & "of select="".""/>" & vbLf & "    <xsl:if test=""not(../toolbar[@guidRef='3d22040b-4e"
+    s = s & "e7-596d-91ae-1653ffb39f77'])"">" & vbLf & "      <toolbar guidRef=""3d22040b-4ee7-5"
+    s = s & "96d-91ae-1653ffb39f77""/>" & vbLf & "    </xsl:if>" & vbLf & "  </xsl:template>" & vbLf & "</xsl:stylesh"
+    s = s & "eet>" & vbLf & ""
     AddonText_UserUI_xslt = s
 End Function
 
@@ -403,8 +407,8 @@ Private Function AddonText_config_xml() As String
     s = s & "5784-9de2-b2338e83336c"" string=""20010"" icon=""108""/>" & vbLf & "        <resEntry "
     s = s & "id=""0392cc33-564d-537f-b0df-9d90ebfd4177"" string=""20011"" icon=""103""/>" & vbLf & ""
     s = s & "        <resEntry id=""67333f2d-18b9-5925-b8bc-24d97a6dff93"" string=""20"
-    s = s & "012"" icon=""111""/>" & vbLf & "        <resEntry id=""dfad10fb-4f88-57cc-89aa-60840e"
-    s = s & "d7bfd6"" string=""20013"" icon=""107""/>" & vbLf & "      </resourceMap>" & vbLf & "    </resourc"
+    s = s & "012"" icon=""111""/>" & vbLf & "        <resEntry id=""d32b7178-2e37-5391-aca2-12628a"
+    s = s & "c3838b"" string=""20013"" icon=""111""/>" & vbLf & "      </resourceMap>" & vbLf & "    </resourc"
     s = s & "e>" & vbLf & "  </resources>" & vbLf & "</config>" & vbLf & ""
     AddonText_config_xml = s
 End Function
@@ -416,12 +420,12 @@ End Function
 Private Function AddonBinPart0() As String
     Dim s As String
     s = s & "TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA4fug4AtAnNIbgB"
-    s = s & "TM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAAZIYDAF6Q5GoAAAAAAAAAAPAA"
-    s = s & "LiILAgIpAAAAAABgAQAAAAAAAAAAAAAQAAAAAACAAQAAAAAQAAAAAgAABAAAAAAAAAAFAAIAAAAAAACQAQAABAAANh0CAAIAYAEA"
-    s = s & "ACAAAAAAAAAQAAAAAAAAAAAQAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAIAAAGAAAAAAwAAC4XQEAAAAAAAAAAAAAAAAA"
+    s = s & "TM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAAZIYDAKyn5GoAAAAAAAAAAPAA"
+    s = s & "LiILAgIpAAAAAABgAQAAAAAAAAAAAAAQAAAAAACAAQAAAAAQAAAAAgAABAAAAAAAAAAFAAIAAAAAAACQAQAABAAAb0ECAAIAYAEA"
+    s = s & "ACAAAAAAAAAQAAAAAAAAAAAQAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAIAAAGAAAAAAwAADAXQEAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAudGV4dAAAACAAAAAAEAAAAAIAAAAEAAAAAAAAAAAAAAAAAAAgAABgLmlkYXRhAAAYAAAAACAAAAAC"
-    s = s & "AAAABgAAAAAAAAAAAAAAAAAAQAAAwC5yc3JjAAAAuF0BAAAwAAAAXgEAAAgAAAAAAAAAAAAAAAAAAEAAAEAAAAAAAAAAAAAAAAAA"
+    s = s & "AAAABgAAAAAAAAAAAAAAAAAAQAAAwC5yc3JjAAAAwF0BAAAwAAAAXgEAAAgAAAAAAAAAAAAAAAAAAEAAAEAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -469,10 +473,10 @@ Private Function AddonBinPart0() As String
     s = s & "AAAAAAAAACjWAACICQAAAAAAAAAAAACw3wAAqBAAAAAAAAAAAAAAWPAAAGgEAAAAAAAAAAAAAMD0AACICQAAAAAAAAAAAABI/gAA"
     s = s & "qBAAAAAAAAAAAAAA8A4BAGgEAAAAAAAAAAAAAFgTAQCICQAAAAAAAAAAAADgHAEAqBAAAAAAAAAAAAAAiC0BAGgEAAAAAAAAAAAA"
     s = s & "APAxAQCICQAAAAAAAAAAAAB4OwEAqBAAAAAAAAAAAAAAIEwBAGgEAAAAAAAAAAAAAIhQAQCICQAAAAAAAAAAAAAQWgEAqBAAAAAA"
-    s = s & "AAAAAAAAuGoBAGgEAAAAAAAAAAAAACBvAQCICQAAAAAAAAAAAACoeAEAqBAAAAAAAAAAAAAAUIkBAFgCAAAAAAAAAAAAAKiLAQAw"
-    s = s & "AAAAAAAAAAAAAADYiwEAMAAAAAAAAAAAAAAACIwBADAAAAAAAAAAAAAAADiMAQAwAAAAAAAAAAAAAABojAEAMAAAAAAAAAAAAAAA"
-    s = s & "mIwBADAAAAAAAAAAAAAAAMiMAQAwAAAAAAAAAAAAAAD4jAEAMAAAAAAAAAAAAAAAKI0BADAAAAAAAAAAAAAAAFiNAQAwAAAAAAAA"
-    s = s & "AAAAAACIjQEAMAAAAAAAAAAAAAAAKAAAABAAAAAgAAAAAQAgAAAAAABABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFVVVUGKysriEdF"
+    s = s & "AAAAAAAAuGoBAGgEAAAAAAAAAAAAACBvAQCICQAAAAAAAAAAAACoeAEAqBAAAAAAAAAAAAAAUIkBAF4CAAAAAAAAAAAAALCLAQAw"
+    s = s & "AAAAAAAAAAAAAADgiwEAMAAAAAAAAAAAAAAAEIwBADAAAAAAAAAAAAAAAECMAQAwAAAAAAAAAAAAAABwjAEAMAAAAAAAAAAAAAAA"
+    s = s & "oIwBADAAAAAAAAAAAAAAANCMAQAwAAAAAAAAAAAAAAAAjQEAMAAAAAAAAAAAAAAAMI0BADAAAAAAAAAAAAAAAGCNAQAwAAAAAAAA"
+    s = s & "AAAAAACQjQEAMAAAAAAAAAAAAAAAKAAAABAAAAAgAAAAAQAgAAAAAABABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFVVVUGKysriEdF"
     s = s & "SOA8Oz3OJiYmTwAAAAB/f38Cf39/AgAAAAAfHx8gLCsunzk3O8YoKChyqqqqAwAAAAEAAAAALy8vh4+Qj//u8+r/2t7W/1paW/kl"
     s = s & "JSU3AAAAAQEBAQAYGBgfSEhJ3rq9t//f5tn/h4eH/y0tLYAAAAAAAAAADk9PT+b////9uHT1/ejC//nM0sf/JyUpmwAAAAEiIiIP"
     s = s & "NzY5y9ja1P/54//6y5T9/P////1PT07mAAAADgAAABRcXFvq+/v8/38P4/7Nk//7y9TE/icjKo8AAAAALCotsry+vP///f/7hiHi"
@@ -1668,14 +1672,14 @@ Private Function AddonBinPart8() As String
     s = s & "IAA6BEAEMARCBD0EPgRBBEIETAQgAEAENQQ3BDAEGgAdBDUEPgQ9BDoAIAA/BEAEPgQyBDUEQAQ4BEIETAQgAD4EMQQ9BD4EMgQ7"
     s = s & "BDUEPQQ4BE8EEQAdBDUEPgQ9BDoAIAA+BCAAPwRABD4EMwRABDAEPAQ8BDUEFgAdBDUEPgQ9BDoAIABDBD8EQAQ+BEEEQgQ4BEIE"
     s = s & "TAQgADoEPgQ9BEIEQwRABAsAHQQ1BD4EPQQ6ACAAOwQ4BD0EOAQ4BBgAHQQ1BD4EPQQ6ACAAPQQwBEEEQgRABD4EOQQ6BDgEIAA4"
-    s = s & "BCAAPwQ+BDwEPgRJBEwEDQAdBDUEPgQ9BDoAIAA7BE4EMgQ1BEAEQQRLBAwAHQQ1BD4EPQQ6ACAAOgQ+BD0EQgRDBEAEAAAAAAAA"
-    s = s & "AQADABAQAAABACAAaAQAAAEAGBgAAAEAIACICQAAAgAgIAAAAQAgAKgQAAADAAAAAQADABAQAAABACAAaAQAAAQAGBgAAAEAIACI"
-    s = s & "CQAABQAgIAAAAQAgAKgQAAAGAAAAAQADABAQAAABACAAaAQAAAcAGBgAAAEAIACICQAACAAgIAAAAQAgAKgQAAAJAAAAAQADABAQ"
-    s = s & "AAABACAAaAQAAAoAGBgAAAEAIACICQAACwAgIAAAAQAgAKgQAAAMAAAAAQADABAQAAABACAAaAQAAA0AGBgAAAEAIACICQAADgAg"
-    s = s & "IAAAAQAgAKgQAAAPAAAAAQADABAQAAABACAAaAQAABAAGBgAAAEAIACICQAAEQAgIAAAAQAgAKgQAAASAAAAAQADABAQAAABACAA"
-    s = s & "aAQAABkAGBgAAAEAIACICQAAGgAgIAAAAQAgAKgQAAAbAAAAAQADABAQAAABACAAaAQAABwAGBgAAAEAIACICQAAHQAgIAAAAQAg"
-    s = s & "AKgQAAAeAAAAAQADABAQAAABACAAaAQAABMAGBgAAAEAIACICQAAFAAgIAAAAQAgAKgQAAAVAAAAAQADABAQAAABACAAaAQAABYA"
-    s = s & "GBgAAAEAIACICQAAFwAgIAAAAQAgAKgQAAAYAAAAAQADABAQAAABACAAaAQAAB8AGBgAAAEAIACICQAAIAAgIAAAAQAgAKgQAAAh"
-    s = s & "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    s = s & "BCAAPwQ+BDwEPgRJBEwEDQAdBDUEPgQ9BDoAIAA7BE4EMgQ1BEAEQQRLBA8AHQQ1BD4EPQQ6ACAAQAQwBEEEOgQ7BDAENAQ6BDAE"
+    s = s & "AAAAAAAAAAABAAMAEBAAAAEAIABoBAAAAQAYGAAAAQAgAIgJAAACACAgAAABACAAqBAAAAMAAAABAAMAEBAAAAEAIABoBAAABAAY"
+    s = s & "GAAAAQAgAIgJAAAFACAgAAABACAAqBAAAAYAAAABAAMAEBAAAAEAIABoBAAABwAYGAAAAQAgAIgJAAAIACAgAAABACAAqBAAAAkA"
+    s = s & "AAABAAMAEBAAAAEAIABoBAAACgAYGAAAAQAgAIgJAAALACAgAAABACAAqBAAAAwAAAABAAMAEBAAAAEAIABoBAAADQAYGAAAAQAg"
+    s = s & "AIgJAAAOACAgAAABACAAqBAAAA8AAAABAAMAEBAAAAEAIABoBAAAEAAYGAAAAQAgAIgJAAARACAgAAABACAAqBAAABIAAAABAAMA"
+    s = s & "EBAAAAEAIABoBAAAGQAYGAAAAQAgAIgJAAAaACAgAAABACAAqBAAABsAAAABAAMAEBAAAAEAIABoBAAAHAAYGAAAAQAgAIgJAAAd"
+    s = s & "ACAgAAABACAAqBAAAB4AAAABAAMAEBAAAAEAIABoBAAAEwAYGAAAAQAgAIgJAAAUACAgAAABACAAqBAAABUAAAABAAMAEBAAAAEA"
+    s = s & "IABoBAAAFgAYGAAAAQAgAIgJAAAXACAgAAABACAAqBAAABgAAAABAAMAEBAAAAEAIABoBAAAHwAYGAAAAQAgAIgJAAAgACAgAAAB"
+    s = s & "ACAAqBAAACEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
     AddonBinPart8 = s
 End Function

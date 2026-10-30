@@ -30,7 +30,7 @@ Public NeonRunConfirmed As Boolean
 Public NeonRunMode As Long
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
-Public Const NEON_TOOLBAR_VER As String = "5"
+Public Const NEON_TOOLBAR_VER As String = "6"
 ' файлы панели обновлены в этом сеансе (InstallToolbar): в памяти CorelDRAW ещё старый состав
 ' панели, сбрасывать её можно только после перезапуска
 Public NeonTbInstalled As Boolean
