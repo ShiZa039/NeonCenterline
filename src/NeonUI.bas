@@ -227,8 +227,10 @@ End Sub
 ' сбросить панель «Неон» вручную: Инструменты > Макросы > NeonCenterline.NeonUI.ResetToolbar.
 ' Показывает, какие панели найдены и что на них после сброса (для проверки)
 Public Sub ResetToolbar()
-    Dim rep As String
-    If ResetNeonBar(rep, True) Then
+    Dim rep As String, ok As Boolean
+    ok = ResetNeonBar(rep, True)
+    rep = rep & vbLf & ToolbarFilesInfo() & vbLf & "NeonCenterline.gms: [NeonToolbar " & NEON_TOOLBAR_VER & "]"
+    If ok Then
         SaveSetting REG_APP, "UI", "ToolbarVer", NEON_TOOLBAR_VER
         MsgBox NeonLF("tb_reset_done", rep), vbInformation, NeonL("app_title")
     Else
@@ -263,6 +265,40 @@ Fail:
     ToolbarFilesState = 0
 End Function
 
+' файлы панели в Addons текущего CorelDRAW: путь, метка набора кнопок, дата (для отчёта ResetToolbar)
+Private Function ToolbarFilesInfo() As String
+    Dim p As String, f As Integer, txt As String, k As Long, e As Long, r As String
+    On Error GoTo Fail
+    p = Application.AddonPath
+    If Right$(p, 1) <> "\" Then
+        p = p & "\"
+    End If
+    p = p & "NeonCenterline\AppUI.xslt"
+    r = p & ": "
+    If Len(Dir$(p)) = 0 Then
+        ToolbarFilesInfo = r & "-"
+        Exit Function
+    End If
+    f = FreeFile
+    Open p For Binary Access Read As #f
+    txt = Space$(LOF(f))
+    Get #f, , txt
+    Close #f
+    k = InStr(1, txt, "[NeonToolbar ", vbBinaryCompare)
+    If k > 0 Then
+        e = InStr(k, txt, "]", vbBinaryCompare)
+    End If
+    If k > 0 And e > k Then
+        r = r & Mid$(txt, k, e - k + 1)
+    Else
+        r = r & "[NeonToolbar 1]"
+    End If
+    ToolbarFilesInfo = r & ", " & Format$(FileDateTime(p), "yyyy-mm-dd hh:nn")
+    Exit Function
+Fail:
+    ToolbarFilesInfo = r & Err.Description
+End Function
+
 ' сбросить панель «Неон» к составу из AppUI.xslt; True — панель найдена и сброшена.
 ' rep — отчёт: имя панели, число кнопок до и после сброса (detail — и подписи кнопок)
 Private Function ResetNeonBar(ByRef rep As String, Optional ByVal detail As Boolean = False) As Boolean
@@ -281,11 +317,16 @@ Private Function ResetNeonBar(ByRef rep As String, Optional ByVal detail As Bool
             If Err.Number = 0 Then
                 ResetNeonBar = True
                 n1 = cb.Controls.Count
+                If n1 < 0 Then
+                    ' после сброса прежний объект панели может стать недействительным
+                    Err.Clear
+                    n1 = Application.CommandBars.Item(nm).Controls.Count
+                End If
                 rep = rep & nm & " / " & nl & ": " & n0 & " -> " & n1 & vbLf
                 If detail Then
                     For i = 1 To n1
                         cap = "?"
-                        cap = cb.Controls(i).Caption
+                        cap = Application.CommandBars.Item(nm).Controls(i).Caption
                         rep = rep & "    " & i & ". " & cap & vbLf
                     Next i
                 End If
