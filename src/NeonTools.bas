@@ -3251,7 +3251,7 @@ End Sub
 ' ---------------------------------------------------------------------
 Public Sub MakeNoodles()
     Dim oldUnit As cdrUnit, grp As Boolean, errText As String, ttl As String, msg As String
-    Dim l As Double, w As Double, n As Long, over As Double, cx As Double, cy As Double, i As Long
+    Dim l As Double, w As Double, n As Long, overH As Double, overV As Double, cx As Double, cy As Double, i As Long
     Dim lay As Layer, sr As ShapeRange, g As Shape, sh As Shape, pg As Object
     ttl = NeonL("noodle_title")
     If ActiveDocument Is Nothing Then
@@ -3262,7 +3262,8 @@ Public Sub MakeNoodles()
         Exit Sub
     End If
     l = NeonNoodleNum("Length", 300): w = NeonNoodleNum("Width", 12)
-    n = CLng(NeonNoodleNum("Count", 10)): over = NeonNoodleNum("Over", 10)
+    n = CLng(NeonNoodleNum("Count", 10))
+    overH = NeonNoodleNum("OverH", NeonNoodleNum("Over", 10)): overV = NeonNoodleNum("OverV", NeonNoodleNum("Over", 10))
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
     ActiveDocument.BeginCommandGroup ttl
@@ -3280,7 +3281,7 @@ Public Sub MakeNoodles()
         cy = pg.SizeHeight / 2
     End If
     On Error GoTo Fail
-    NoodleGeo cx, cy, l, w, n, over
+    NoodleGeo cx, cy, l, w, n, overH, overV
     Set sr = CreateShapeRange
     For i = 0 To NNd - 1
         Set sh = lay.CreateLineSegment(NdX1(i), NdY1(i), NdX2(i), NdY2(i))
@@ -3305,7 +3306,7 @@ Fin:
         MsgBox NeonLF("err_fail", errText), vbCritical, ttl
         Exit Sub
     End If
-    msg = NeonLF("noodle_report", n, NtMM(w), NtMM(l), n + 1, FmtNum(over), NtMM(l + 2 * over), NtMM(n * w + 2 * over))
+    msg = NeonLF("noodle_report", n, NtMM(w), NtMM(l), n + 1, FmtNum(overH), FmtNum(overV), NtMM(l + 2 * overH), NtMM(n * w + 2 * overV))
     MsgBox msg, vbInformation, ttl
     NeonToolbarCheck
     Exit Sub
@@ -4379,14 +4380,15 @@ End Function
 ' ---------------------------------------------------------------------
 '  Лапша — нарезка полос (повторяет proto/noodles.py один в один).
 '  n полос длиной l и шириной w: n + 1 горизонтальных резов через w и два вертикальных отреза на
-'  концах; резы выходят за край на over. Порядок резки: горизонтальные сверху вниз зигзагом (первый —
+'  концах; хвосты — выход реза за край: горизонтальных за отрезы на overH, отрезов за крайние
+'  горизонтальные на overV. Порядок резки: горизонтальные сверху вниз зигзагом (первый —
 '  слева направо), затем отрезы по ходу: на той стороне, где кончился последний горизонтальный (снизу
 '  вверх), потом на другой (сверху вниз). Отрезки — в обратном порядке (в порядке создания): в
 '  диспетчере объектов сверху вниз и при экспорте задом наперёд — как у образца автора, вертикальные
 '  в конце списка. Центр блока — (cx, cy), y вверх.
 ' ---------------------------------------------------------------------
 Public Sub NoodleGeo(ByVal cx As Double, ByVal cy As Double, ByVal l As Double, ByVal w As Double, _
-                     ByVal n As Long, ByVal over As Double)
+                     ByVal n As Long, ByVal overH As Double, ByVal overV As Double)
     Dim xl As Double, xr As Double, yt As Double, yb As Double, y As Double, k As Long, m As Long
     Dim a1 As Double, a2 As Double
     xl = cx - l / 2
@@ -4400,9 +4402,9 @@ Public Sub NoodleGeo(ByVal cx As Double, ByVal cy As Double, ByVal l As Double, 
         y = yt - k * w
         m = NNd - 1 - k
         If k Mod 2 = 0 Then
-            NdX1(m) = xl - over: NdX2(m) = xr + over
+            NdX1(m) = xl - overH: NdX2(m) = xr + overH
         Else
-            NdX1(m) = xr + over: NdX2(m) = xl - over
+            NdX1(m) = xr + overH: NdX2(m) = xl - overH
         End If
         NdY1(m) = y: NdY2(m) = y
     Next k
@@ -4411,8 +4413,8 @@ Public Sub NoodleGeo(ByVal cx As Double, ByVal cy As Double, ByVal l As Double, 
     Else
         a1 = xl: a2 = xr
     End If
-    NdX1(1) = a1: NdY1(1) = yb - over: NdX2(1) = a1: NdY2(1) = yt + over
-    NdX1(0) = a2: NdY1(0) = yt + over: NdX2(0) = a2: NdY2(0) = yb - over
+    NdX1(1) = a1: NdY1(1) = yb - overV: NdX2(1) = a1: NdY2(1) = yt + overV
+    NdX1(0) = a2: NdY1(0) = yt + overV: NdX2(0) = a2: NdY2(0) = yb - overV
 End Sub
 '@@NOODLEGEO_END
 

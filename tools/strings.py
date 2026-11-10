@@ -192,21 +192,24 @@ STRINGS = {
     'lbl_noodle_len':('Длина лапши, мм:', 'Strip length, mm:'),
     'lbl_noodle_wid':('Ширина лапши, мм:', 'Strip width, mm:'),
     'lbl_noodle_cnt':('Количество, шт:', 'Number of strips:'),
-    'lbl_noodle_over':('Выход реза за край, мм:', 'Cut overrun past the edge, mm:'),
+    'lbl_noodle_overh':('Хвосты горизонтальных резов, мм:', 'Tails of horizontal cuts, mm:'),
+    'lbl_noodle_overv':('Хвосты вертикальных отрезов, мм:', 'Tails of vertical end cuts, mm:'),
     'noodle_hint':   ('Полосы для плоттера, лазера, фрезера. Порядок резки — порядок объектов: горизонтальные резы сверху вниз зигзагом '
                       '(направления чередуются, станок не ходит вхолостую), в самом конце списка — два вертикальных отреза, тоже по ходу. '
-                      'Резы выходят за край на заданную величину, чтобы полоса отделилась целиком. Всё — одной группой в центре страницы.',
+                      'Хвосты — выход реза за край, чтобы полоса отделилась целиком: горизонтальные — за отрезы, отрезы — за крайние горизонтальные. '
+                      'Лазеру и плоттеру хватает 1–2 мм, фрезе — не меньше радиуса фрезы с запасом. Всё — одной группой в центре страницы.',
                       'Strips for a plotter, laser or router. The cutting order is the object order: horizontal cuts top to bottom in a zigzag '
                       '(directions alternate, no idle runs), and at the very end of the list two vertical end cuts, also along the way. '
-                      'Cuts run past the edge by the given amount so each strip comes off completely. One group in the middle of the page.'),
+                      'Tails run the cuts past the edge so each strip comes off completely: horizontal cuts past the end cuts, end cuts past the outer horizontal ones. '
+                      'A laser or plotter needs 1–2 mm, a router at least the cutter radius plus a margin. One group in the middle of the page.'),
     'btn_noodle':    ('Нарезать', 'Make strips'),
-    'bad_noodle':    ('Проверьте значения: длина 0–100000 мм, ширина 0–10000 мм, количество — целое 1–1000, выход реза 0–1000 мм.',
-                      'Check the values: length 0–100000 mm, width 0–10000 mm, count a whole number 1–1000, overrun 0–1000 mm.'),
+    'bad_noodle':    ('Проверьте значения: длина 0–100000 мм, ширина 0–10000 мм, количество — целое 1–1000, хвосты 0–1000 мм.',
+                      'Check the values: length 0–100000 mm, width 0–10000 mm, count a whole number 1–1000, tails 0–1000 mm.'),
     'noodle_group':  ('Лапша: {0} шт · {1} × {2} мм', 'Strips: {0} pcs · {1} × {2} mm'),
     'noodle_report': ('Лапша: {0} полос {1} × {2} мм.\nРезы: {3} горизонтальных сверху вниз зигзагом, затем 2 вертикальных отреза — в конце списка; '
-                      'выход реза за край {4} мм. Габарит с выходами: {5} × {6} мм.\n\nОдной группой в центре страницы; порядок объектов — порядок резки. Отменить — Ctrl+Z.',
+                      'хвосты: горизонтальных {4} мм, вертикальных {5} мм. Габарит с хвостами: {6} × {7} мм.\n\nОдной группой в центре страницы; порядок объектов — порядок резки. Отменить — Ctrl+Z.',
                       'Strips: {0} strips {1} × {2} mm.\nCuts: {3} horizontal ones top to bottom in a zigzag, then 2 vertical end cuts at the end of the list; '
-                      'overrun {4} mm. Size with overruns: {5} × {6} mm.\n\nOne group in the middle of the page; the object order is the cutting order. Undo: Ctrl+Z.'),
+                      'tails: horizontal {4} mm, vertical {5} mm. Size with tails: {6} × {7} mm.\n\nOne group in the middle of the page; the object order is the cutting order. Undo: Ctrl+Z.'),
     'same_title':    ('Неон: одинаковые — в группы', 'Neon: group identical'),
     'same_nosel':    ('Выделите объекты: кривые, текст, фигуры.', 'Select the objects: curves, text, shapes.'),
     'same_none':     ('Одинаковых объектов не найдено: все {0} разные.\n\nОдинаковые — одна форма с точностью до 0,1 мм (без поворота и зеркала) и один цвет.',

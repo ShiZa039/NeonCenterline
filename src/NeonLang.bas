@@ -435,28 +435,32 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#Wgogl_ j_nwg, kk:")
     Case "lbl_noodle_cnt"
         s = s & LD("#Imjgvdpqam, wq:")
-    Case "lbl_noodle_over"
-        s = s & LD("#Aztmc odf_ f_ io_h, kk:")
+    Case "lbl_noodle_overh"
+        s = s & LD("#Tampqz bmogfmlq_j{lzt odfma, kk:")
+    Case "lbl_noodle_overv"
+        s = s & LD("#Tampqz adoqgi_j{lzt mqodfma, kk:")
     Case "noodle_hint"
         s = s & LD("#Nmjmpz cj~ njmqqdo_, j_fdo_, sodfdo_. Nmo~cmi odfig $2014 nmo~cm")
         s = s & LD("#i m`ydiqma: bmogfmlq_j{lzd odfz padotr algf fgbf_bmk (l_no_a")
         s = s & LD("#jdlg~ vdodcr}qp~, pq_lmi ld tmcgq atmjmpqr}), a p_kmk imlud ")
-        s = s & LD("#pngpi_ $2014 ca_ adoqgi_j{lzt mqodf_, qmed nm tmcr. Odfz aztmc~q")
-        s = s & LD(" #f_ io_h l_ f_c_llr} adjgvglr, vqm`z nmjmp_ mqcdjgj_p{ udjgi")
-        s = s & LD("#mk. Ap$0451 $2014 mclmh bornnmh a udlqod pqo_lguz.")
+        s = s & LD("#pngpi_ $2014 ca_ adoqgi_j{lzt mqodf_, qmed nm tmcr. Tampqz $2014 azt")
+        s = s & LD("#mc odf_ f_ io_h, vqm`z nmjmp_ mqcdjgj_p{ udjgimk: bmogfmlq_j")
+        s = s & LD("#{lzd $2014 f_ mqodfz, mqodfz $2014 f_ io_hlgd bmogfmlq_j{lzd. J_fdor")
+        s = s & LD(" #g njmqqdor ta_q_dq 1$20132 kk, sodfd $2014 ld kdl{wd o_cgrp_ sodfz ")
+        s = s & LD("#p f_n_pmk. Ap$0451 $2014 mclmh bornnmh a udlqod pqo_lguz.")
     Case "btn_noodle"
         s = s & LD("#L_odf_q{")
     Case "bad_noodle"
         s = s & LD("#Nomado{qd fl_vdlg~: cjgl_ 0$2013100000 kk, wgogl_ 0$201310000 kk, im")
-        s = s & LD("#jgvdpqam $2014 udjmd 1$20131000, aztmc odf_ 0$20131000 kk.")
+        s = s & LD("#jgvdpqam $2014 udjmd 1$20131000, tampqz 0$20131000 kk.")
     Case "noodle_group"
         s = s & LD("#J_nw_: #{0} #wq $00B7 #{1} $00D7 {2} #kk")
     Case "noodle_report"
         s = s & LD("#J_nw_: #{0} #nmjmp #{1} $00D7 {2} #kk.$000AOdfz: #{3} #bmogfmlq_j{lzt pado")
         s = s & LD("#tr algf fgbf_bmk, f_qdk 2 adoqgi_j{lzt mqodf_ $2014 a imlud pngp")
-        s = s & LD("#i_; aztmc odf_ f_ io_h #{4} #kk. B_`_ogq p aztmc_kg: #{5} $00D7 {6}")
-        s = s & LD(" #kk.$000A$000AMclmh bornnmh a udlqod pqo_lguz; nmo~cmi m`ydiqma $2014 nm")
-        s = s & LD("#o~cmi odfig. Mqkdlgq{ $2014 #Ctrl+Z.")
+        s = s & LD("#i_; tampqz: bmogfmlq_j{lzt #{4} #kk, adoqgi_j{lzt #{5} #kk. B_`_")
+        s = s & LD("#ogq p tampq_kg: #{6} $00D7 {7} #kk.$000A$000AMclmh bornnmh a udlqod pqo_lg")
+        s = s & LD("#uz; nmo~cmi m`ydiqma $2014 nmo~cmi odfig. Mqkdlgq{ $2014 #Ctrl+Z.")
     Case "same_title"
         s = s & LD("#Ldml: mcgl_imazd $2014 a bornnz")
     Case "same_nosel"
@@ -526,8 +530,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#apd uadq_")
     Case "lbl_nest_size"
         s = s & LD("#Bmqmazh o_fkdo:")
-    Case "lbl_nest_len"
-        s = s & LD("#Cjgl_ jgpq_, kk:")
     Case Else
         LangRu_4 = False
     End Select
@@ -537,6 +539,8 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     LangRu_5 = True
     s = ""
     Select Case key
+    Case "lbl_nest_len"
+        s = s & LD("#Cjgl_ jgpq_, kk:")
     Case "lbl_nest_wid"
         s = s & LD("#Wgogl_ jgpq_, kk:")
     Case "prompt_nest_size"
@@ -939,28 +943,33 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("Strip width, mm:")
     Case "lbl_noodle_cnt"
         s = s & LD("Number of strips:")
-    Case "lbl_noodle_over"
-        s = s & LD("Cut overrun past the edge, mm:")
+    Case "lbl_noodle_overh"
+        s = s & LD("Tails of horizontal cuts, mm:")
+    Case "lbl_noodle_overv"
+        s = s & LD("Tails of vertical end cuts, mm:")
     Case "noodle_hint"
         s = s & LD("Strips for a plotter, laser or router. The cutting order is ")
         s = s & LD("the object order: horizontal cuts top to bottom in a zigzag ")
         s = s & LD("(directions alternate, no idle runs), and at the very end of")
-        s = s & LD(" the list two vertical end cuts, also along the way. Cuts ru")
-        s = s & LD("n past the edge by the given amount so each strip comes off ")
-        s = s & LD("completely. One group in the middle of the page.")
+        s = s & LD(" the list two vertical end cuts, also along the way. Tails r")
+        s = s & LD("un the cuts past the edge so each strip comes off completely")
+        s = s & LD(": horizontal cuts past the end cuts, end cuts past the outer")
+        s = s & LD(" horizontal ones. A laser or plotter needs 1$20132 mm, a router ")
+        s = s & LD("at least the cutter radius plus a margin. One group in the m")
+        s = s & LD("iddle of the page.")
     Case "btn_noodle"
         s = s & LD("Make strips")
     Case "bad_noodle"
         s = s & LD("Check the values: length 0$2013100000 mm, width 0$201310000 mm, coun")
-        s = s & LD("t a whole number 1$20131000, overrun 0$20131000 mm.")
+        s = s & LD("t a whole number 1$20131000, tails 0$20131000 mm.")
     Case "noodle_group"
         s = s & LD("Strips: {0} pcs $00B7 {1} $00D7 {2} mm")
     Case "noodle_report"
         s = s & LD("Strips: {0} strips {1} $00D7 {2} mm.$000ACuts: {3} horizontal ones t")
         s = s & LD("op to bottom in a zigzag, then 2 vertical end cuts at the en")
-        s = s & LD("d of the list; overrun {4} mm. Size with overruns: {5} $00D7 {6}")
-        s = s & LD(" mm.$000A$000AOne group in the middle of the page; the object order ")
-        s = s & LD("is the cutting order. Undo: Ctrl+Z.")
+        s = s & LD("d of the list; tails: horizontal {4} mm, vertical {5} mm. Si")
+        s = s & LD("ze with tails: {6} $00D7 {7} mm.$000A$000AOne group in the middle of the")
+        s = s & LD(" page; the object order is the cutting order. Undo: Ctrl+Z.")
     Case "same_title"
         s = s & LD("Neon: group identical")
     Case "same_nosel"
@@ -1030,8 +1039,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("all colours")
     Case "lbl_nest_size"
         s = s & LD("Preset size:")
-    Case "lbl_nest_len"
-        s = s & LD("Sheet length, mm:")
     Case Else
         LangEn_4 = False
     End Select
@@ -1041,6 +1048,8 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     LangEn_5 = True
     s = ""
     Select Case key
+    Case "lbl_nest_len"
+        s = s & LD("Sheet length, mm:")
     Case "lbl_nest_wid"
         s = s & LD("Sheet width, mm:")
     Case "prompt_nest_size"
