@@ -107,6 +107,22 @@ Private NtSW() As Double
 Private NtPW() As Double, NtPH() As Double, RnS() As Long, RnX() As Double, RnY() As Double
 Private FrS() As Long, FrX() As Double, FrY() As Double, FrW() As Double, FrH() As Double, NFr As Long
 Private NwX() As Double, NwY() As Double, NwW() As Double, NwH() As Double, NNw As Long
+' раскладка по контуру: клеток на лист (шаг сетки — от площади), открытых листов, полдиагонали клетки
+Private Const RN_OPEN As Long = 3
+Private Const RN_CELLS As Double = 1000000
+Private Const RN_SQ As Double = 0.7072
+' шаг, зазор, сетка листа (без транспонирования), направления и повороты
+Private RnR As Double, RnGap As Double, RnNxo As Long, RnNyo As Long, RnNT As Long, RnTrs(0 To 1) As Boolean
+Private RnNK As Long, RnKs(0 To 3) As Long
+' детали: варианты (по направлению — первый), клеток, габарит; варианты: куски (первый, число),
+' правый и нижний край, сдвиг габарита, габарит, поворот; куски строк; растр детали
+Private RpV0() As Long, RpCnt() As Long, RpW() As Double, RpH() As Double, NRp As Long
+Private RvRu0() As Long, RvRun() As Long, RvRight() As Long, RvLow() As Long, RvOffU() As Double, RvOffV() As Double
+Private RvW() As Double, RvH() As Double, RvRot() As Long, NRv As Long
+Private RuJ() As Long, RuI() As Long, RuL() As Long, NRu As Long, RgC() As Byte
+' проход: сетка, листы (слоты: R, O, M, номер листа, открытые по старшинству), порядок, поворот деталей
+Private RnNx As Long, RnNy As Long, ShR() As Long, ShO() As Long, ShM() As Long, ShNum() As Long, OpenSl() As Long
+Private RnOrd() As Long, RnRot() As Long, NtRot() As Long
 '@@NEST_DECL_END
 
 ' длина выделенного: контуры отдельно от центральных линий плагина
@@ -2897,8 +2913,9 @@ End Function
 '  NeonCenterline — раскладка (группа «Раскладка ▾»):
 '    GroupSame  — одинаковые объекты (один контур с точностью SAME_TOL — как бы ни стояли узлы, без
 '                 поворота и зеркала, и один цвет) — в группы «Одинаковые: N шт · Ш × В мм», ведомость форм;
-'    NestSheets — детали на листы: по габаритам, без поворота, с полем от края и зазором,
-'                 каждый цвет — на свои листы; длина листа (по горизонтали) — заданная или по раскладке.
+'    NestSheets — детали на листы: по контуру (растр, детали входят друг в друга и в дырки букв; поворот —
+'                 нет, 180° или по 90°) или по габаритам, с полем от края и зазором, каждый цвет — на свои
+'                 листы; длина листа (по горизонтали) — заданная или по раскладке.
 '  Деталь — выделенный объект. Группа одинаковых и лист прежней раскладки — поштучно (их
 '  элементы); одна выделенная группа — тоже (импорт SVG/DXF приходит одной группой).
 '  Цвет детали — цвет заливки, без заливки — цвет обводки.
@@ -2923,6 +2940,23 @@ End Function
 
 Public Function NeonNestFlag(ByVal key As String, ByVal def As Boolean) As Boolean
     NeonNestFlag = (GetSetting("NeonCenterline", "Nest", key, IIf(def, "1", "0")) = "1")
+End Function
+
+' способ раскладки: 0 — по контуру (по умолчанию), 1 — по габариту
+Public Function NeonNestMethod() As Long
+    If LCase$(GetSetting("NeonCenterline", "Nest", "Method", "contour")) = "box" Then
+        NeonNestMethod = 1
+    End If
+End Function
+
+' повороты при раскладке по контуру: 0 — нет (по умолчанию), 1 — на 180°, 2 — по 90°
+Public Function NeonNestRot() As Long
+    Dim v As Long
+    v = CLng(NeonNestNum("Rot", 0))
+    If v < 0 Or v > 2 Then
+        v = 0
+    End If
+    NeonNestRot = v
 End Function
 
 ' «3050x2050», «3050 × 2050», «3050х2050» (русская х), «3050*2050» -> ширина и высота; False — не размер
@@ -3140,6 +3174,46 @@ Private Sub SmReadGeo(sh As Shape)
     End If
 End Sub
 
+' контур детали для раскладки по контуру: объект 0 в SmX/SmY (точки по контуру, габарит SmSW(0) × SmSH(0)).
+' Без кривых (картинка и т. п.) — прямоугольник габарита w × h
+Private Sub NtPartGeo(sh As Shape, ByVal w As Double, ByVal h As Double)
+    Dim q As Long, s As Long
+    NSq = 0: NSg = 0: NSmP = 0
+    ReDim SqS0(0 To 63): ReDim SqN(0 To 63): ReDim SqC(0 To 63)
+    ReDim SgX(0 To 1023): ReDim SgY(0 To 1023): ReDim SgL(0 To 255)
+    On Error Resume Next
+    SmReadGeo sh
+    On Error GoTo 0
+    NSm = 1
+    ReDim SmQ0(0 To 1): ReDim SmQn(0 To 1)
+    ReDim SmSW(0 To 1): ReDim SmSH(0 To 1): ReDim SmLen(0 To 1)
+    ReDim SmX(0 To 1023): ReDim SmY(0 To 1023)
+    If NSq > 0 Then
+        ' незамкнутый контур, у которого концы сошлись (импорт DXF), — замкнутый: у него есть «внутри»
+        For q = 0 To NSq - 1
+            If Not SqC(q) And SqN(q) > 1 Then
+                s = SqS0(q) + SqN(q) - 1
+                SqC(q) = (SmDist(SgX(4 * SqS0(q)), SgY(4 * SqS0(q)), SgX(4 * s + 3), SgY(4 * s + 3)) < LT_NEAR)
+            End If
+        Next q
+        SmQ0(0) = 0: SmQn(0) = NSq
+        ReDim QP0(0 To NSq): ReDim QPn(0 To NSq)
+        SmSample 0
+    End If
+    If NSmP = 0 Then
+        NSq = 0: NSg = 0
+        SmAddSg 0, 0, 0, 0, w, 0, w, 0, True
+        SmAddSg w, 0, w, 0, w, h, w, h, True
+        SmAddSg w, h, w, h, 0, h, 0, h, True
+        SmAddSg 0, h, 0, h, 0, 0, 0, 0, True
+        SqS0(0) = 0: SqN(0) = 4: SqC(0) = True: NSq = 1
+        SmQ0(0) = 0: SmQn(0) = 1
+        ReDim QP0(0 To 1): ReDim QPn(0 To 1)
+        SmSW(0) = 0: SmSH(0) = 0
+        SmSample 0
+    End If
+End Sub
+
 Private Sub SmAddSg(ByVal x0 As Double, ByVal y0 As Double, ByVal x1 As Double, ByVal y1 As Double, _
                     ByVal x2 As Double, ByVal y2 As Double, ByVal x3 As Double, ByVal y3 As Double, ByVal isL As Boolean)
     If 4 * NSg + 3 > UBound(SgX) Then
@@ -3339,6 +3413,7 @@ Public Sub NestSheets()
     Dim lay As Layer, fr As Shape, sh As Shape, sr As ShapeRange, g As Shape, allR As ShapeRange, vis As ShapeRange, lc As Color
     Dim nPlaced As Long, nUnfit As Long, nSheets As Long, colRep As String, wl As String, msg As String, wo As Object
     Dim fillMode As Long, labels As Boolean, lab As ShapeRange, whole As ShapeRange
+    Dim method As Long, rotM As Long, pa() As Double, how As String
     ttl = NeonL("nest_title")
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, ttl
@@ -3363,6 +3438,12 @@ Public Sub NestSheets()
     End If
     fillMode = CLng(NeonNestNum("Fill", 0))
     labels = NeonNestFlag("Labels", True)
+    method = NeonNestMethod(): rotM = NeonNestRot()
+    If method = 1 Then
+        how = NeonL("nest_how_box")
+    Else
+        how = NeonL("nest_how_c" & rotM)
+    End If
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
     ActiveDocument.BeginCommandGroup ttl
@@ -3378,9 +3459,11 @@ Public Sub NestSheets()
         GoTo Fin
     End If
     ReDim bx(0 To n): ReDim by(0 To n): ReDim bw(0 To n): ReDim bh(0 To n): ReDim ck(0 To n): ReDim cn(0 To n)
+    ReDim pa(0 To n)
     For i = 0 To n - 1
         Set sh = col(i + 1)
         sh.GetBoundingBox bx(i), by(i), bw(i), bh(i)
+        pa(i) = bw(i) * bh(i)
         ck(i) = NtColorKey(sh, cn(i))
         If Not byColor Then
             ck(i) = ""
@@ -3439,7 +3522,19 @@ Public Sub NestSheets()
                 NNt = NNt + 1
             End If
         Next i
-        NestPack sw, shh, mg, gp, autoW, wmin, fillMode
+        If method = 1 Then
+            NestPack sw, shh, mg, gp, autoW, wmin, fillMode
+        Else
+            ' по контуру: контур каждой детали — в растр, площадь — для заполнения
+            RnBegin sw, shh, mg, gp, fillMode, rotM
+            For j = 0 To NNt - 1
+                i = idx(j)
+                NtPartGeo col(i + 1), bw(i), bh(i)
+                pa(i) = RnPolyArea()
+                RnAddPart
+            Next j
+            RnPack sw, mg, gp, autoW, wmin
+        End If
         Set lc = Nothing
         If byColor Then
             Set lc = NtColorOf(col(krep(k) + 1))
@@ -3461,9 +3556,14 @@ Public Sub NestSheets()
                 If NtS(j) = s Then
                     i = idx(j)
                     Set sh = col(i + 1)
+                    If method = 0 And NtRot(j) <> 0 Then
+                        ' 1 — 90° по часовой, 2 — 180°, 3 — 90° против; габарит — заново
+                        sh.Rotate Choose(NtRot(j), -90, 180, 90)
+                        sh.GetBoundingBox bx(i), by(i), bw(i), bh(i)
+                    End If
                     sh.Move cx + NtX(j) - bx(i), (cy - NtY(j)) - (by(i) + bh(i))
                     sr.Add sh
-                    cnt = cnt + 1: area = area + bw(i) * bh(i)
+                    cnt = cnt + 1: area = area + pa(i)
                 End If
             Next j
             Set lab = CreateShapeRange
@@ -3545,11 +3645,11 @@ Fin:
     Else
         msg = NeonLF("nest_rep_sheet", NtMM(sw), NtMM(shh))
     End If
-    msg = NeonLF("nest_report", nPlaced, nSheets, msg, FmtNum(mg), FmtNum(gp)) & vbCrLf & vbCrLf & colRep
+    msg = NeonLF("nest_report", nPlaced, nSheets, msg, FmtNum(mg), FmtNum(gp), how) & vbCrLf & vbCrLf & colRep
     If nUnfit > 0 Then
         msg = msg & vbCrLf & NeonLF("nest_unfit", nUnfit) & vbCrLf
     End If
-    msg = msg & vbCrLf & NeonL("nest_rep_tail") & vbCrLf & vbCrLf & NeonL("nest_beta")
+    msg = msg & vbCrLf & NeonL(IIf(method = 1, "nest_rep_tail", "nest_rep_tail_c")) & vbCrLf & vbCrLf & NeonL("nest_beta")
     If MsgBox(msg & vbCrLf & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, ttl) = vbYes Then
         CopyText msg
     End If
@@ -4798,4 +4898,784 @@ Private Function NtLastArea(ByVal nsh As Long) As Double
     NtLastArea = mx * my
 End Function
 '@@NESTGEO_END
+
+'@@NESTRASTER_BEGIN
+' ---------------------------------------------------------------------
+'  Раскладка по контуру (повторяет proto/rasternest.py один в один).
+'  Деталь — растр: клетки r × r, центр которых внутри контура (чёт-нечет) или не дальше
+'  d = g/2 + r·RN_SQ от него — с запасом: две детали на непересекающихся клетках не ближе зазора.
+'  Дырки букв пустые — в них может встать мелкая деталь. Повороты — тот же набор клеток,
+'  перевёрнутый по индексам. Лист — сетка рабочего поля (поле от края минус g/2); у строки —
+'  длина свободного (R) и занятого (O) куска от каждой клетки и самый длинный свободный (M).
+'  Деталь — в первое свободное место по строкам (сверху, затем слева); «столбцами» — то же на
+'  транспонированной сетке. Из поворотов — тот, у которого дальний край ближе. Детали — от больших
+'  к маленьким, каждая — на самый ранний из открытых листов (последние RN_OPEN), иначе — новый.
+'  Два порядка (по клеткам и по габариту), при «как плотнее» — оба направления; лучший: меньше
+'  листов, затем короче последний.
+'  Порядок вызова: RnBegin; на каждую деталь — её контур в SmX/SmY (объект 0, SmSample) и RnAddPart;
+'  RnPack -> NtS/NtX/NtY (левый верхний угол габарита повёрнутой детали), NtRot, NtSheets, NtSW.
+' ---------------------------------------------------------------------
+Public Sub RnBegin(ByVal sw As Double, ByVal sh As Double, ByVal margin As Double, ByVal gap As Double, _
+                   ByVal fillMode As Long, ByVal rotMode As Long)
+    Dim a As Double
+    a = (sw - 2 * margin + gap) * (sh - 2 * margin + gap)
+    If a < 1 Then
+        a = 1
+    End If
+    RnR = Sqr(a / RN_CELLS)
+    If RnR < 0.5 Then
+        RnR = 0.5
+    End If
+    If RnR > 5 Then
+        RnR = 5
+    End If
+    RnGap = gap
+    RnNxo = Int((sw - 2 * margin + gap) / RnR)
+    RnNyo = Int((sh - 2 * margin + gap) / RnR)
+    ' направления: 0 — столбцами, 1 — рядами, 2 — оба
+    If fillMode = 1 Then
+        RnNT = 1: RnTrs(0) = False
+    ElseIf fillMode = 2 Then
+        RnNT = 2: RnTrs(0) = True: RnTrs(1) = False
+    Else
+        RnNT = 1: RnTrs(0) = True
+    End If
+    ' повороты: 0 — нет, 1 — 0/180, 2 — 0/90/180/270
+    If rotMode = 1 Then
+        RnNK = 2: RnKs(0) = 0: RnKs(1) = 2
+    ElseIf rotMode = 2 Then
+        RnNK = 4: RnKs(0) = 0: RnKs(1) = 1: RnKs(2) = 2: RnKs(3) = 3
+    Else
+        RnNK = 1: RnKs(0) = 0
+    End If
+    NRp = 0: NRv = 0: NRu = 0
+    ReDim RpV0(0 To 63): ReDim RpCnt(0 To 31): ReDim RpW(0 To 31): ReDim RpH(0 To 31)
+    ReDim RvRu0(0 To 63): ReDim RvRun(0 To 63): ReDim RvRight(0 To 63): ReDim RvLow(0 To 63)
+    ReDim RvOffU(0 To 63): ReDim RvOffV(0 To 63): ReDim RvW(0 To 63): ReDim RvH(0 To 63): ReDim RvRot(0 To 63)
+    ReDim RuJ(0 To 4095): ReDim RuI(0 To 4095): ReDim RuL(0 To 4095)
+End Sub
+
+' деталь из точек объекта 0 (SmX/SmY, подпути QP0/QPn/SqC; габарит SmSW(0) × SmSH(0)): растр и варианты
+Public Sub RnAddPart()
+    Dim w As Double, h As Double, cols As Long, rows As Long, pad As Double, t As Long, q As Long, k As Long
+    Dim cnt As Long, i As Long
+    w = SmSW(0): h = SmSH(0)
+    If NRp + 1 > UBound(RpCnt) Then
+        ReDim Preserve RpCnt(0 To 2 * NRp + 2): ReDim Preserve RpW(0 To 2 * NRp + 2): ReDim Preserve RpH(0 To 2 * NRp + 2)
+        ReDim Preserve RpV0(0 To 4 * NRp + 4)
+    End If
+    RnCells w, h, cols, rows, pad
+    cnt = 0
+    For i = 0 To cols * rows - 1
+        If RgC(i) <> 0 Then
+            cnt = cnt + 1
+        End If
+    Next i
+    RpCnt(NRp) = cnt: RpW(NRp) = w: RpH(NRp) = h
+    For t = 0 To RnNT - 1
+        RpV0(2 * NRp + t) = NRv
+        For q = 0 To RnNK - 1
+            k = RnKs(q)
+            RnOrient cols, rows, pad, w, h, k, RnTrs(t)
+        Next q
+    Next t
+    NRp = NRp + 1
+End Sub
+
+' растр детали в RgC (cols × rows, y вниз): внутри — по пересечениям рёбер со строками, вдоль контура —
+' отрезки, раздутые на d (пересечение с каждой строкой — отрезок прямой)
+Private Sub RnCells(ByVal w As Double, ByVal h As Double, cols As Long, rows As Long, pad As Double)
+    Dim d As Double, r As Double, q As Long, n As Long, k As Long, j As Long, i As Long, j0 As Long, j1 As Long
+    Dim i0 As Long, i1 As Long, au As Double, av As Double, bu As Double, bv As Double, c As Double
+    Dim lo As Double, hi As Double, a1 As Long, m As Long
+    Dim xc() As Long, xs0() As Long, xv() As Double, pos() As Long, tot As Long, pass As Long
+    r = RnR
+    d = RnGap / 2 + r * RN_SQ
+    pad = d + 0.5 * r
+    cols = -Int(-((w + 2 * pad) / r))
+    rows = -Int(-((h + 2 * pad) / r))
+    ReDim RgC(0 To cols * rows)
+    ' внутри: пересечения — по рёбрам, в списки строк (подсчёт, затем раскладка)
+    ReDim xc(0 To rows): ReDim xs0(0 To rows + 1): ReDim pos(0 To rows)
+    For pass = 0 To 1
+        For q = SmQ0(0) To SmQ0(0) + SmQn(0) - 1
+            n = QPn(q)
+            If SqC(q) And n > 0 Then
+                For k = 0 To n - 1
+                    au = SmX(QP0(q) + k): av = h - SmY(QP0(q) + k)
+                    m = QP0(q) + (k + 1) Mod n
+                    bu = SmX(m): bv = h - SmY(m)
+                    If av <> bv Then
+                        If av < bv Then
+                            lo = av: hi = bv
+                        Else
+                            lo = bv: hi = av
+                        End If
+                        j0 = Int((lo + pad) / r - 0.5) + 1
+                        If j0 < 0 Then
+                            j0 = 0
+                        End If
+                        j1 = Int((hi + pad) / r - 0.5)
+                        If j1 > rows - 1 Then
+                            j1 = rows - 1
+                        End If
+                        For j = j0 To j1
+                            c = -pad + (j + 0.5) * r
+                            If (av > c) <> (bv > c) Then
+                                If pass = 0 Then
+                                    xc(j) = xc(j) + 1
+                                Else
+                                    xv(pos(j)) = au + (c - av) * (bu - au) / (bv - av)
+                                    pos(j) = pos(j) + 1
+                                End If
+                            End If
+                        Next j
+                    End If
+                Next k
+            End If
+        Next q
+        If pass = 0 Then
+            xs0(0) = 0
+            For j = 0 To rows - 1
+                xs0(j + 1) = xs0(j) + xc(j)
+                pos(j) = xs0(j)
+            Next j
+            tot = xs0(rows)
+            ReDim xv(0 To tot + 1)
+        End If
+    Next pass
+    For j = 0 To rows - 1
+        RnSortD xv, xs0(j), xs0(j + 1) - 1
+        For k = xs0(j) To xs0(j + 1) - 2 Step 2
+            i0 = -Int(-((xv(k) + pad) / r - 0.5))
+            If i0 < 0 Then
+                i0 = 0
+            End If
+            i1 = Int((xv(k + 1) + pad) / r - 0.5)
+            If i1 > cols - 1 Then
+                i1 = cols - 1
+            End If
+            For i = i0 To i1
+                RgC(j * cols + i) = 1
+            Next i
+        Next k
+    Next j
+    ' вдоль контура
+    For q = SmQ0(0) To SmQ0(0) + SmQn(0) - 1
+        n = QPn(q)
+        If SqC(q) Then
+            m = n
+        Else
+            m = n - 1
+        End If
+        For k = 0 To m - 1
+            au = SmX(QP0(q) + k): av = h - SmY(QP0(q) + k)
+            a1 = QP0(q) + (k + 1) Mod n
+            bu = SmX(a1): bv = h - SmY(a1)
+            If av < bv Then
+                lo = av: hi = bv
+            Else
+                lo = bv: hi = av
+            End If
+            j0 = -Int(-((lo - d + pad) / r - 0.5))
+            If j0 < 0 Then
+                j0 = 0
+            End If
+            j1 = Int((hi + d + pad) / r - 0.5)
+            If j1 > rows - 1 Then
+                j1 = rows - 1
+            End If
+            For j = j0 To j1
+                c = -pad + (j + 0.5) * r
+                If RnSegRow(au, av, bu, bv, c, d, lo, hi) Then
+                    i0 = -Int(-((lo + pad) / r - 0.5))
+                    If i0 < 0 Then
+                        i0 = 0
+                    End If
+                    i1 = Int((hi + pad) / r - 0.5)
+                    If i1 > cols - 1 Then
+                        i1 = cols - 1
+                    End If
+                    For i = i0 To i1
+                        RgC(j * cols + i) = 1
+                    Next i
+                End If
+            Next j
+        Next k
+    Next q
+End Sub
+
+' отрезок AB, раздутый на d, и прямая v = c: пересечение [lo, hi]; False — нет
+Private Function RnSegRow(ByVal au As Double, ByVal av As Double, ByVal bu As Double, ByVal bv As Double, _
+                          ByVal c As Double, ByVal d As Double, lo As Double, hi As Double) As Boolean
+    Dim e As Double, du As Double, dv As Double, l2 As Double, l As Double, nu As Double, nv As Double
+    Dim k As Double, x1 As Double, x2 As Double, s0 As Double, s1 As Double, t0 As Double, t1 As Double
+    Dim m As Double, a0 As Double, a1 As Double
+    lo = 1E+300: hi = -1E+300
+    e = d * d - (c - av) * (c - av)
+    If e >= 0 Then
+        e = Sqr(e)
+        If au - e < lo Then
+            lo = au - e
+        End If
+        If au + e > hi Then
+            hi = au + e
+        End If
+    End If
+    e = d * d - (c - bv) * (c - bv)
+    If e >= 0 Then
+        e = Sqr(e)
+        If bu - e < lo Then
+            lo = bu - e
+        End If
+        If bu + e > hi Then
+            hi = bu + e
+        End If
+    End If
+    du = bu - au
+    dv = bv - av
+    l2 = du * du + dv * dv
+    If l2 > 0 Then
+        l = Sqr(l2)
+        nu = -dv / l
+        nv = du / l
+        k = (c - av) * nv
+        If nu <> 0 Then
+            x1 = au + (-d - k) / nu
+            x2 = au + (d - k) / nu
+            If x1 < x2 Then
+                s0 = x1: s1 = x2
+            Else
+                s0 = x2: s1 = x1
+            End If
+        ElseIf Abs(k) <= d Then
+            s0 = -1E+300: s1 = 1E+300
+        Else
+            s0 = 1: s1 = -1
+        End If
+        m = (c - av) * dv
+        If du <> 0 Then
+            x1 = au + (0 - m) / du
+            x2 = au + (l2 - m) / du
+            If x1 < x2 Then
+                t0 = x1: t1 = x2
+            Else
+                t0 = x2: t1 = x1
+            End If
+        ElseIf 0 <= m And m <= l2 Then
+            t0 = -1E+300: t1 = 1E+300
+        Else
+            t0 = 1: t1 = -1
+        End If
+        If s0 > t0 Then
+            a0 = s0
+        Else
+            a0 = t0
+        End If
+        If s1 < t1 Then
+            a1 = s1
+        Else
+            a1 = t1
+        End If
+        If a0 <= a1 Then
+            If a0 < lo Then
+                lo = a0
+            End If
+            If a1 > hi Then
+                hi = a1
+            End If
+        End If
+    End If
+    RnSegRow = (lo <= hi)
+End Function
+
+' сортировка a(lo..hi) по возрастанию (вставками: в строке растра пересечений немного)
+Private Sub RnSortD(a() As Double, ByVal lo As Long, ByVal hi As Long)
+    Dim i As Long, j As Long, v As Double
+    For i = lo + 1 To hi
+        v = a(i)
+        j = i - 1
+        Do While j >= lo
+            If a(j) <= v Then
+                Exit Do
+            End If
+            a(j + 1) = a(j)
+            j = j - 1
+        Loop
+        a(j + 1) = v
+    Next i
+End Sub
+
+' вариант детали: поворот k, транспонирование tr -> куски строк в RuJ/RuI/RuL, край, сдвиг габарита
+Private Sub RnOrient(ByVal cols As Long, ByVal rows As Long, ByVal pad As Double, ByVal w As Double, _
+                     ByVal h As Double, ByVal k As Long, ByVal tr As Boolean)
+    Dim c As Long, rw As Long, i As Long, j As Long, a As Long, b As Long, t As Long, s As Long, r As Double
+    Dim g() As Byte, g2() As Byte, n0 As Long, n As Long, rgt As Long, lw As Long, offU As Double, offV As Double
+    Dim ww As Double, hh As Double
+    r = RnR
+    Select Case k
+    Case 1
+        c = rows: rw = cols: offU = rows * r - pad - h: offV = pad: ww = h: hh = w
+    Case 2
+        c = cols: rw = rows: offU = cols * r - pad - w: offV = rows * r - pad - h: ww = w: hh = h
+    Case 3
+        c = rows: rw = cols: offU = pad: offV = cols * r - pad - w: ww = h: hh = w
+    Case Else
+        c = cols: rw = rows: offU = pad: offV = pad: ww = w: hh = h
+    End Select
+    ReDim g(0 To c * rw)
+    For j = 0 To rows - 1
+        For i = 0 To cols - 1
+            If RgC(j * cols + i) <> 0 Then
+                Select Case k
+                Case 1
+                    a = rows - 1 - j: b = i
+                Case 2
+                    a = cols - 1 - i: b = rows - 1 - j
+                Case 3
+                    a = j: b = cols - 1 - i
+                Case Else
+                    a = i: b = j
+                End Select
+                g(b * c + a) = 1
+            End If
+        Next i
+    Next j
+    If tr Then
+        ReDim g2(0 To c * rw)
+        For j = 0 To rw - 1
+            For i = 0 To c - 1
+                If g(j * c + i) <> 0 Then
+                    g2(i * rw + j) = 1
+                End If
+            Next i
+        Next j
+        g = g2
+        t = c: c = rw: rw = t
+    End If
+    n0 = NRu
+    For j = 0 To rw - 1
+        i = 0
+        Do While i < c
+            If g(j * c + i) <> 0 Then
+                s = i
+                Do While i < c
+                    If g(j * c + i) = 0 Then
+                        Exit Do
+                    End If
+                    i = i + 1
+                Loop
+                RnAddRun j, s, i - s
+            Else
+                i = i + 1
+            End If
+        Loop
+    Next j
+    n = NRu - n0
+    RnSortRuns n0, n
+    rgt = 0: lw = 0
+    For t = n0 To NRu - 1
+        If RuI(t) + RuL(t) > rgt Then
+            rgt = RuI(t) + RuL(t)
+        End If
+        If RuJ(t) + 1 > lw Then
+            lw = RuJ(t) + 1
+        End If
+    Next t
+    If NRv > UBound(RvRu0) Then
+        ReDim Preserve RvRu0(0 To 2 * NRv): ReDim Preserve RvRun(0 To 2 * NRv): ReDim Preserve RvRight(0 To 2 * NRv)
+        ReDim Preserve RvLow(0 To 2 * NRv): ReDim Preserve RvOffU(0 To 2 * NRv): ReDim Preserve RvOffV(0 To 2 * NRv)
+        ReDim Preserve RvW(0 To 2 * NRv): ReDim Preserve RvH(0 To 2 * NRv): ReDim Preserve RvRot(0 To 2 * NRv)
+    End If
+    RvRu0(NRv) = n0: RvRun(NRv) = n: RvRight(NRv) = rgt: RvLow(NRv) = lw
+    RvOffU(NRv) = offU: RvOffV(NRv) = offV: RvW(NRv) = ww: RvH(NRv) = hh: RvRot(NRv) = k
+    NRv = NRv + 1
+End Sub
+
+Private Sub RnAddRun(ByVal j As Long, ByVal i As Long, ByVal l As Long)
+    If NRu > UBound(RuJ) Then
+        ReDim Preserve RuJ(0 To 2 * NRu): ReDim Preserve RuI(0 To 2 * NRu): ReDim Preserve RuL(0 To 2 * NRu)
+    End If
+    RuJ(NRu) = j: RuI(NRu) = i: RuL(NRu) = l
+    NRu = NRu + 1
+End Sub
+
+' куски n0..n0+n-1: длинные первыми, при равенстве — по строке, затем по столбцу (слиянием)
+Private Sub RnSortRuns(ByVal n0 As Long, ByVal n As Long)
+    Dim tj() As Long, ti() As Long, tl() As Long, w As Long, lo As Long, md As Long, hi As Long
+    Dim a As Long, b As Long, k As Long, tk As Long, x As Long
+    If n < 2 Then
+        Exit Sub
+    End If
+    ReDim tj(0 To n): ReDim ti(0 To n): ReDim tl(0 To n)
+    w = 1
+    Do While w < n
+        lo = 0
+        Do While lo < n
+            md = lo + w
+            If md > n Then
+                md = n
+            End If
+            hi = lo + 2 * w
+            If hi > n Then
+                hi = n
+            End If
+            a = lo: b = md: k = lo
+            Do While k < hi
+                tk = -1
+                If a < md And b < hi Then
+                    If RnRunLess(n0 + b, n0 + a) Then
+                        tk = b: b = b + 1
+                    Else
+                        tk = a: a = a + 1
+                    End If
+                ElseIf a < md Then
+                    tk = a: a = a + 1
+                Else
+                    tk = b: b = b + 1
+                End If
+                tj(k) = RuJ(n0 + tk): ti(k) = RuI(n0 + tk): tl(k) = RuL(n0 + tk)
+                k = k + 1
+            Loop
+            lo = hi
+        Loop
+        For x = 0 To n - 1
+            RuJ(n0 + x) = tj(x): RuI(n0 + x) = ti(x): RuL(n0 + x) = tl(x)
+        Next x
+        w = 2 * w
+    Loop
+End Sub
+
+Private Function RnRunLess(ByVal p As Long, ByVal q As Long) As Boolean
+    If RuL(p) <> RuL(q) Then
+        RnRunLess = (RuL(p) > RuL(q))
+    ElseIf RuJ(p) <> RuJ(q) Then
+        RnRunLess = (RuJ(p) < RuJ(q))
+    Else
+        RnRunLess = (RuI(p) < RuI(q))
+    End If
+End Function
+
+' раскладка всех деталей: направления × два порядка, лучший — в NtS/NtX/NtY/NtRot, NtSheets, NtSW
+Public Sub RnPack(ByVal sw As Double, ByVal margin As Double, ByVal gap As Double, ByVal autoW As Boolean, _
+                  ByVal wmin As Double)
+    Dim t As Long, om As Long, i As Long, nsh As Long, s As Long, has As Boolean, bestN As Long, bestU As Double
+    Dim ww As Double, w As Double, u As Double
+    Dim used() As Double, bused() As Double
+    NNt = NRp
+    ReDim NtS(0 To NRp): ReDim NtX(0 To NRp): ReDim NtY(0 To NRp): ReDim NtRot(0 To NRp)
+    ReDim RnS(0 To NRp): ReDim RnX(0 To NRp): ReDim RnY(0 To NRp): ReDim RnRot(0 To NRp)
+    For i = 0 To NRp - 1
+        NtS(i) = -1
+    Next i
+    NtSheets = 0
+    For t = 0 To RnNT - 1
+        For om = 0 To 1
+            RnOrderParts om
+            nsh = RnRun(t, margin, gap)
+            ReDim used(0 To nsh)
+            For i = 0 To NRp - 1
+                s = RnS(i)
+                If s >= 0 Then
+                    If RnRot(i) Mod 2 = 0 Then
+                        ww = RpW(i)
+                    Else
+                        ww = RpH(i)
+                    End If
+                    If RnX(i) + ww > used(s) Then
+                        used(s) = RnX(i) + ww
+                    End If
+                End If
+            Next i
+            u = 0
+            If nsh > 0 Then
+                u = used(nsh - 1)
+            End If
+            If Not has Or nsh < bestN Or (nsh = bestN And u < bestU - 0.000000001) Then
+                has = True: bestN = nsh: bestU = u
+                For i = 0 To NRp - 1
+                    NtS(i) = RnS(i): NtX(i) = RnX(i): NtY(i) = RnY(i): NtRot(i) = RnRot(i)
+                Next i
+                ReDim bused(0 To nsh)
+                For s = 0 To nsh - 1
+                    bused(s) = used(s)
+                Next s
+            End If
+        Next om
+    Next t
+    NtSheets = bestN
+    ReDim NtSW(0 To NtSheets)
+    For s = 0 To NtSheets - 1
+        If autoW Then
+            w = -Int(-((bused(s) + margin) / 10 - 0.000000001)) * 10
+            If w < wmin Then
+                w = wmin
+            End If
+            If w > sw Then
+                w = sw
+            End If
+            NtSW(s) = w
+        Else
+            NtSW(s) = sw
+        End If
+    Next s
+End Sub
+
+' порядок деталей RnOrd: 0 — по числу клеток, 1 — по площади габарита (по убыванию; при равенстве — по номеру)
+Private Sub RnOrderParts(ByVal om As Long)
+    Dim i As Long, j As Long, v As Long
+    ReDim RnOrd(0 To NRp)
+    For i = 0 To NRp - 1
+        v = i
+        j = i - 1
+        Do While j >= 0
+            If Not RnPartLess(v, RnOrd(j), om) Then
+                Exit Do
+            End If
+            RnOrd(j + 1) = RnOrd(j)
+            j = j - 1
+        Loop
+        RnOrd(j + 1) = v
+    Next i
+End Sub
+
+Private Function RnPartLess(ByVal a As Long, ByVal b As Long, ByVal om As Long) As Boolean
+    Dim ka As Double, kb As Double
+    If om = 0 Then
+        ka = RpCnt(a): kb = RpCnt(b)
+    Else
+        ka = RpW(a) * RpH(a): kb = RpW(b) * RpH(b)
+    End If
+    If ka <> kb Then
+        RnPartLess = (ka > kb)
+    Else
+        RnPartLess = (a < b)
+    End If
+End Function
+
+' один проход по порядку RnOrd в направлении t: RnS/RnX/RnY/RnRot, результат — число листов
+Private Function RnRun(ByVal t As Long, ByVal margin As Double, ByVal gap As Double) As Long
+    Dim nx As Long, ny As Long, tr As Boolean, q As Long, k As Long, v As Long, v0 As Long, nsh As Long
+    Dim o As Long, sl As Long, bs As Long, bv As Long, bx As Long, by As Long, b1 As Long, b2 As Long
+    Dim fx As Long, fy As Long, has As Boolean, x As Long, y As Long, slot As Long, nOpen As Long
+    tr = RnTrs(t)
+    If tr Then
+        nx = RnNyo: ny = RnNxo
+    Else
+        nx = RnNxo: ny = RnNyo
+    End If
+    RnNx = nx: RnNy = ny
+    ReDim ShR(0 To RN_OPEN * nx * ny): ReDim ShO(0 To RN_OPEN * nx * ny): ReDim ShM(0 To RN_OPEN * ny)
+    ReDim ShNum(0 To RN_OPEN): ReDim OpenSl(0 To RN_OPEN)
+    nOpen = 0: nsh = 0
+    For k = 0 To NRp - 1
+        RnS(k) = -1: RnX(k) = 0: RnY(k) = 0: RnRot(k) = 0
+    Next k
+    For q = 0 To NRp - 1
+        k = RnOrd(q)
+        v0 = RpV0(2 * k + t)
+        has = False
+        For o = 0 To nOpen - 1
+            sl = OpenSl(o)
+            For v = v0 To v0 + RnNK - 1
+                If RvRight(v) <= nx And RvLow(v) <= ny Then
+                    If RnFind(sl, v, fx, fy) Then
+                        If Not has Then
+                            has = True: bs = sl: bv = v: bx = fx: by = fy: b1 = fy + RvLow(v): b2 = fx
+                        ElseIf fy + RvLow(v) < b1 Or (fy + RvLow(v) = b1 And fx < b2) Then
+                            bs = sl: bv = v: bx = fx: by = fy: b1 = fy + RvLow(v): b2 = fx
+                        End If
+                    End If
+                End If
+            Next v
+            If has Then
+                Exit For
+            End If
+        Next o
+        If Not has Then
+            ' хоть какой-то вариант помещается на пустой лист?
+            For v = v0 To v0 + RnNK - 1
+                If RvRight(v) <= nx And RvLow(v) <= ny Then
+                    has = True
+                End If
+            Next v
+            If has Then
+                has = False
+                ' новый лист: свободный слот или самый старый из открытых
+                If nOpen < RN_OPEN Then
+                    slot = nOpen
+                    OpenSl(nOpen) = slot
+                    nOpen = nOpen + 1
+                Else
+                    slot = OpenSl(0)
+                    For o = 0 To nOpen - 2
+                        OpenSl(o) = OpenSl(o + 1)
+                    Next o
+                    OpenSl(nOpen - 1) = slot
+                End If
+                RnInitSheet slot
+                ShNum(slot) = nsh
+                nsh = nsh + 1
+                For v = v0 To v0 + RnNK - 1
+                    If RvRight(v) <= nx And RvLow(v) <= ny Then
+                        If RnFind(slot, v, fx, fy) Then
+                            If Not has Then
+                                has = True: bs = slot: bv = v: bx = fx: by = fy: b1 = fy + RvLow(v): b2 = fx
+                            ElseIf fy + RvLow(v) < b1 Or (fy + RvLow(v) = b1 And fx < b2) Then
+                                bs = slot: bv = v: bx = fx: by = fy: b1 = fy + RvLow(v): b2 = fx
+                            End If
+                        End If
+                    End If
+                Next v
+            End If
+        End If
+        If has Then
+            RnPut bs, bv, bx, by
+            If tr Then
+                x = by: y = bx
+            Else
+                x = bx: y = by
+            End If
+            RnS(k) = ShNum(bs)
+            RnX(k) = margin - gap / 2 + x * RnR + RvOffU(bv)
+            RnY(k) = margin - gap / 2 + y * RnR + RvOffV(bv)
+            RnRot(k) = RvRot(bv)
+        End If
+    Next q
+    RnRun = nsh
+End Function
+
+Private Sub RnInitSheet(ByVal sl As Long)
+    Dim y As Long, x As Long, b As Long
+    For y = 0 To RnNy - 1
+        b = (sl * RnNy + y) * RnNx
+        For x = 0 To RnNx - 1
+            ShR(b + x) = RnNx - x
+            ShO(b + x) = 0
+        Next x
+        ShM(sl * RnNy + y) = RnNx
+    Next y
+End Sub
+
+' первое место варианта v на листе-слоте sl (сверху, затем слева): fx, fy; False — нет
+Private Function RnFind(ByVal sl As Long, ByVal v As Long, fx As Long, fy As Long) As Boolean
+    Dim nx As Long, ny As Long, y As Long, x As Long, p As Long, j0 As Long, l0 As Long, r0 As Long, rn As Long
+    Dim rgt As Long, lw As Long, ok As Boolean, b As Long, xx As Long, f As Long, qq As Long
+    nx = RnNx: ny = RnNy
+    r0 = RvRu0(v): rn = RvRun(v): rgt = RvRight(v): lw = RvLow(v)
+    j0 = RuJ(r0): l0 = RuL(r0)
+    For y = 0 To ny - lw
+        If ShM(sl * ny + y + j0) >= l0 Then
+            x = 0
+            Do While x + rgt <= nx
+                ok = True
+                For p = r0 To r0 + rn - 1
+                    xx = x + RuI(p)
+                    b = (sl * ny + y + RuJ(p)) * nx
+                    f = ShR(b + xx)
+                    If f < RuL(p) Then
+                        ok = False
+                        If f = 0 Then
+                            x = x + ShO(b + xx)
+                        Else
+                            qq = xx + f
+                            If qq < nx Then
+                                x = x + f + ShO(b + qq)
+                            Else
+                                x = x + f + nx
+                            End If
+                        End If
+                        Exit For
+                    End If
+                Next p
+                If ok Then
+                    fx = x: fy = y
+                    RnFind = True
+                    Exit Function
+                End If
+            Loop
+        End If
+    Next y
+End Function
+
+' занять клетки варианта v на листе-слоте sl в (x0, y0) и пересчитать затронутые строки
+Private Sub RnPut(ByVal sl As Long, ByVal v As Long, ByVal x0 As Long, ByVal y0 As Long)
+    Dim p As Long, x As Long, y As Long, b As Long, nr As Long, no As Long, mx As Long, nx As Long, ny As Long
+    Dim mark() As Boolean
+    nx = RnNx: ny = RnNy
+    ReDim mark(0 To ny)
+    For p = RvRu0(v) To RvRu0(v) + RvRun(v) - 1
+        y = y0 + RuJ(p)
+        b = (sl * ny + y) * nx
+        For x = x0 + RuI(p) To x0 + RuI(p) + RuL(p) - 1
+            ShR(b + x) = 0
+        Next x
+        mark(y) = True
+    Next p
+    For y = 0 To ny - 1
+        If mark(y) Then
+            b = (sl * ny + y) * nx
+            nr = 0: no = 0: mx = 0
+            For x = nx - 1 To 0 Step -1
+                If ShR(b + x) = 0 Then
+                    no = no + 1: nr = 0
+                    ShO(b + x) = no
+                Else
+                    nr = nr + 1: no = 0
+                    ShR(b + x) = nr: ShO(b + x) = 0
+                    If nr > mx Then
+                        mx = nr
+                    End If
+                End If
+            Next x
+            ShM(sl * ny + y) = mx
+        End If
+    Next y
+End Sub
+' площадь детали (объект 0, замкнутые подпути, чёт-нечет: дырки вычитаются, остров в дырке — снова прибавляется)
+Public Function RnPolyArea() As Double
+    Dim q As Long, q2 As Long, i As Long, n As Long, a As Double, s As Double, dep As Long
+    Dim px As Double, py As Double, x0 As Double, y0 As Double, x1 As Double, y1 As Double, ins As Boolean
+    For q = SmQ0(0) To SmQ0(0) + SmQn(0) - 1
+        n = QPn(q)
+        If SqC(q) And n >= 3 Then
+            a = 0
+            For i = 0 To n - 1
+                x0 = SmX(QP0(q) + i): y0 = SmY(QP0(q) + i)
+                x1 = SmX(QP0(q) + (i + 1) Mod n): y1 = SmY(QP0(q) + (i + 1) Mod n)
+                a = a + x0 * y1 - x1 * y0
+            Next i
+            a = Abs(a) / 2
+            px = SmX(QP0(q)): py = SmY(QP0(q))
+            dep = 0
+            For q2 = SmQ0(0) To SmQ0(0) + SmQn(0) - 1
+                If q2 <> q And SqC(q2) And QPn(q2) >= 3 Then
+                    ins = False
+                    For i = 0 To QPn(q2) - 1
+                        x0 = SmX(QP0(q2) + i): y0 = SmY(QP0(q2) + i)
+                        x1 = SmX(QP0(q2) + (i + 1) Mod QPn(q2)): y1 = SmY(QP0(q2) + (i + 1) Mod QPn(q2))
+                        If (y0 > py) <> (y1 > py) Then
+                            If px < x0 + (py - y0) * (x1 - x0) / (y1 - y0) Then
+                                ins = Not ins
+                            End If
+                        End If
+                    Next i
+                    If ins Then
+                        dep = dep + 1
+                    End If
+                End If
+            Next q2
+            If dep Mod 2 = 0 Then
+                s = s + a
+            Else
+                s = s - a
+            End If
+        End If
+    Next q
+    If s < 0 Then
+        s = 0
+    End If
+    RnPolyArea = s
+End Function
+'@@NESTRASTER_END
 '@@NEST_END
