@@ -6,7 +6,7 @@
   itemData type="flyout" с flyoutBarRef на commandBarData type="menu" flyout="true" (как кнопки
   со списком в самом CorelDRAW, DrawUI.items.xml; без type="flyout" CorelDRAW 2026 кнопку не рисует).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 8]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 9]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
@@ -96,6 +96,20 @@
                 userCaption="Неон: люверсы"
                 userToolTip="Точки под люверсы по краю выделенного баннера: в каждом углу и равномерно по сторонам, не реже заданного расстояния"
                 enable="true"/>
+      <itemData guid="b4b6f389-35cc-5b46-b3db-ffb4e200250f"
+                icon="guid://b4b6f389-35cc-5b46-b3db-ffb4e200250f"
+                dynamicCommand="NeonCenterline.NeonTools.NestSheets"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Неон: раскладка на листы"
+                userToolTip="Разложить выделенные детали на листы: по габаритам, без поворота, с полем от края и зазором между деталями; каждый цвет — на свои листы, ширина листа — заданная или по раскладке. Отмена — Ctrl+Z"
+                enable="true"/>
+      <itemData guid="3ef0efdf-6719-53ff-a444-924cb4d86b5e"
+                icon="guid://3ef0efdf-6719-53ff-a444-924cb4d86b5e"
+                dynamicCommand="NeonCenterline.NeonTools.GroupSame"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Неон: одинаковые — в группы"
+                userToolTip="Собрать одинаковые объекты (одна форма с точностью 0,1 мм и один цвет) в группы «N шт» и показать ведомость форм. Отмена — Ctrl+Z"
+                enable="true"/>
       <!-- кнопки-группы: открывают выпадающий список команд -->
       <itemData guid="58b78302-39ef-5436-8097-5392406fe15a"
                 type="flyout"
@@ -111,7 +125,7 @@
                 flyoutBarRef="5731901c-4115-58a7-9466-9da0ca279658"
                 icon="guid://d32b7178-2e37-5391-aca2-12628ac3838b"
                 userCaption="Неон: раскладка"
-                userToolTip="Люверсы (дальше — раскладка модулей и другое для производства)"
+                userToolTip="Раскладка на листы, одинаковые — в группы, люверсы"
                 enable="true"/>
       <itemData guid="305a1621-a721-5784-9de2-b2338e83336c"
                 type="flyout"
@@ -165,6 +179,8 @@
                       nonLocalizableName="NeonCenterline Layout"
                       flyout="true">
         <menu>
+          <item guidRef="b4b6f389-35cc-5b46-b3db-ffb4e200250f"/>
+          <item guidRef="3ef0efdf-6719-53ff-a444-924cb4d86b5e"/>
           <item guidRef="67333f2d-18b9-5925-b8bc-24d97a6dff93"/>
         </menu>
       </commandBarData>

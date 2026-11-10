@@ -27,12 +27,15 @@ ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
          # кнопки-группы панели (выпадающие списки), с панели [NeonToolbar 3]
          ('lines-menu', 'neon_lines', 108, 'Неон: линии'),
          ('settings-menu', 'neon_settings', 103, 'Неон: настройки и помощь'),
-         # с панели [NeonToolbar 5]: люверсы; с [NeonToolbar 6]: группа «Раскладка»
+         # с панели [NeonToolbar 5]: люверсы; с [NeonToolbar 6]: группа «Раскладка» (значок — с [NeonToolbar 9])
          ('grommets', 'neon_grommets', 111, 'Неон: люверсы'),
-         ('layout-menu', 'neon_grommets', 111, 'Неон: раскладка'),
+         ('layout-menu', 'neon_nest', 113, 'Неон: раскладка'),
          # с [NeonToolbar 8]: очистка контура и группа «Контур» (упростить + очистить)
          ('clean', 'neon_clean', 112, 'Неон: очистить контур'),
-         ('outline-menu', 'neon_simplify', 107, 'Неон: контур')]
+         ('outline-menu', 'neon_simplify', 107, 'Неон: контур'),
+         # с [NeonToolbar 9]: раскладка на листы и одинаковые — в группы (группа «Раскладка»)
+         ('nest', 'neon_nest', 113, 'Неон: раскладка на листы'),
+         ('same', 'neon_same', 114, 'Неон: одинаковые — в группы')]
 
 def bmp_entry(im):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()
@@ -85,10 +88,15 @@ try:
     import pefile
     pe = pefile.PE(os.path.join(A, DLL))
     d = {e.id: e for e in pe.DIRECTORY_ENTRY_RESOURCE.entries}
-    blk = d[6].directory.entries[0].directory.entries[0].data.struct
-    raw = pe.get_data(blk.OffsetToData, blk.Size); o = 0; got = []
-    for i in range(len(ITEMS) + 1):
-        n = struct.unpack_from('<H', raw, o)[0]; got.append(raw[o + 2:o + 2 + 2 * n].decode('utf-16le')); o += 2 + 2 * n
+    # строки — блоками по 16: блок (id >> 4) + 1, в блоке — по порядку (id & 15)
+    blocks = {}
+    for b in d[6].directory.entries:
+        blk = b.directory.entries[0].data.struct
+        raw = pe.get_data(blk.OffsetToData, blk.Size); o = 0; tab = []
+        for i in range(16):
+            n = struct.unpack_from('<H', raw, o)[0]; tab.append(raw[o + 2:o + 2 + 2 * n].decode('utf-16le')); o += 2 + 2 * n
+        blocks[b.id] = tab
+    got = [blocks[(s >> 4) + 1][s & 15] for s in range(20000, 20001 + len(ITEMS))]
     assert got == ['Неон (NeonCenterline)'] + [c for k, ico, r, c in ITEMS], got
     icons = {e.id: e for e in d[3].directory.entries}
     for g in d[14].directory.entries:

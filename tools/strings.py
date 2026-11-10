@@ -181,4 +181,53 @@ STRINGS = {
     'btn_grom':      ('Расставить', 'Place'),
     'bad_grom':      ('Проверьте значения: от края 0–500 мм, расстояние 20–10000 мм, точка 0–100 мм.',
                       'Check the values: edge 0–500 mm, distance 20–10000 mm, point 0–100 mm.'),
+    'same_title':    ('Неон: одинаковые — в группы', 'Neon: group identical'),
+    'same_nosel':    ('Выделите объекты: кривые, текст, фигуры.', 'Select the objects: curves, text, shapes.'),
+    'same_none':     ('Одинаковых объектов не найдено: все {0} разные.\n\nОдинаковые — одна форма с точностью до 0,1 мм (без поворота и зеркала) и один цвет.',
+                      'No identical objects found: all {0} are different.\n\nIdentical means the same shape within 0.1 mm (no rotation or mirroring) and the same colour.'),
+    'same_report':   ('Объектов: {0}, разных форм: {1}.\nОдинаковые собраны в группы: групп {2}, в них объектов {3}. Без пары: {4}.\n\n'
+                      'Одинаковые — одна форма с точностью до 0,1 мм (без поворота и зеркала) и один цвет. Отменить — Ctrl+Z.',
+                      'Objects: {0}, different shapes: {1}.\nIdentical ones are grouped: {2} groups with {3} objects. Without a pair: {4}.\n\n'
+                      'Identical means the same shape within 0.1 mm (no rotation or mirroring) and the same colour. Undo: Ctrl+Z.'),
+    'same_list':     ('Формы (штук — габарит — цвет):', 'Shapes (count — size — colour):'),
+    'same_line':     ('{0} шт — {1} × {2} мм — {3}', '{0} pcs — {1} × {2} mm — {3}'),
+    'same_more':     ('… и ещё форм: {0}', '… and {0} more shapes'),
+    'same_group':    ('Одинаковые: {0} шт · {1} × {2} мм', 'Identical: {0} pcs · {1} × {2} mm'),
+    'same_failed':   ('Не удалось сгруппировать наборов: {0} (объекты на разных слоях?).', 'Could not group {0} sets (objects on different layers?).'),
+    'no_color':      ('без цвета', 'no colour'),
+    'nest_title':    ('Неон: раскладка на листы', 'Neon: nest on sheets'),
+    'nest_nosel':    ('Выделите детали для раскладки.', 'Select the parts to nest.'),
+    'nest_layer':    ('Раскладка', 'Nesting'),
+    'nest_frame':    ('Раскладка: рамка листа {0}', 'Nesting: sheet frame {0}'),
+    'nest_group':    ('Раскладка: лист {0} из {1} · {2}', 'Nesting: sheet {0} of {1} · {2}'),
+    'nest_label':    ('Лист {0} из {1} · {2} × {3} мм · {4} · деталей {5} · заполнение {6}%',
+                      'Sheet {0} of {1} · {2} × {3} mm · {4} · {5} parts · {6}% filled'),
+    'nest_report':   ('Разложено деталей: {0}, листов: {1}.\n{2}Поле от края {3} мм, зазор между деталями {4} мм, без поворота.',
+                      'Parts nested: {0}, sheets: {1}.\n{2}Edge margin {3} mm, gap between parts {4} mm, no rotation.'),
+    'nest_rep_sheet':('Лист {0} × {1} мм. ', 'Sheet {0} × {1} mm. '),
+    'nest_rep_auto': ('Высота листа {0} мм, ширина по раскладке ({1}–{2} мм, вверх до 10 мм). ',
+                      'Sheet height {0} mm, width to fit the parts ({1}–{2} mm, rounded up to 10 mm). '),
+    'nest_rep_color':('{0}: листов {1}, деталей {2}, заполнение {3}%', '{0}: {1} sheets, {2} parts, {3}% filled'),
+    'nest_rep_widths':(' (ширина: {0})', ' (width: {0})'),
+    'nest_rep_tail': ('Каждый лист — группа на своём месте справа от выделения, рамки и подписи — на слое «{0}» (не печатается). '
+                      'Заполнение — по габаритам деталей. Отменить — Ctrl+Z.',
+                      'Each sheet is a group to the right of the selection; frames and labels are on the "{0}" layer (not printed). '
+                      'Fill is by part bounding boxes. Undo: Ctrl+Z.'),
+    'nest_unfit':    ('Больше рабочего поля листа, оставлены на месте: {0}.', 'Larger than the sheet working area, left in place: {0}.'),
+    'nest_none':     ('Ни одна деталь не помещается на лист с такими полями.', 'No part fits on the sheet with these margins.'),
+    'all_colors':    ('все цвета', 'all colours'),
+    'lbl_nest_size': ('Лист, ширина × высота, мм:', 'Sheet, width × height, mm:'),
+    'lbl_nest_margin': ('Поле от края листа, мм:', 'Margin from the sheet edge, mm:'),
+    'lbl_nest_gap':  ('Зазор между деталями, мм:', 'Gap between parts, mm:'),
+    'chk_nest_color':('Каждый цвет — на свои листы', 'Each colour on its own sheets'),
+    'chk_nest_auto': ('Ширина по раскладке, не меньше, мм:', 'Width to fit the parts, at least, mm:'),
+    'nest_hint':     ('Раскладка по габаритам, без поворота: ни одна деталь не ближе поля к краю и зазора к соседней. '
+                      'Для фрезы зазор — не меньше её диаметра. С галочкой «Ширина по раскладке» ширина из первого поля — наибольшая, '
+                      'лист обрезается по деталям. Одинаковые, собранные в группы, раскладываются поштучно.',
+                      'Nesting by bounding boxes, no rotation: no part is closer than the margin to the edge or the gap to another part. '
+                      'For a router, use a gap of at least the cutter diameter. With "Width to fit" the width in the first field is the maximum '
+                      'and each sheet is trimmed to the parts. Grouped identical objects are nested one by one.'),
+    'btn_nest':      ('Разложить', 'Nest'),
+    'bad_nest':      ('Проверьте значения: лист 10–100000 мм (например 3050×2050), поле 0–1000 мм, зазор 0–1000 мм, наименьшая ширина не больше ширины листа.',
+                      'Check the values: sheet 10–100000 mm (e.g. 3050×2050), margin 0–1000 mm, gap 0–1000 mm, minimum width not above the sheet width.'),
 }

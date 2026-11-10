@@ -7,7 +7,9 @@ Attribute VB_Name = "NeonTools"
 '    NeonLineIds / NeonLinesNew — какие линии появились после расчёта (для подгонки под рез);
 '    SimplifyContours — упростить выделенные кривые (меньше узлов в пределах допуска);
 '    PlaceGrommets   — точки под люверсы по краю выделенных баннеров (подложек);
-'    CleanContours   — очистить контур: убрать наложения и петли (каждый объект — одна кривая).
+'    CleanContours   — очистить контур: убрать наложения и петли (каждый объект — одна кривая);
+'    GroupSame       — одинаковые объекты (форма и цвет) — в группы;
+'    NestSheets      — раскладка деталей на листы: по габаритам, без поворота, с полем и зазором.
 ' =====================================================================
 Option Explicit
 
@@ -60,6 +62,27 @@ Private WPx() As Double, WPy() As Double
 Private COX() As Double, COY() As Double, COL() As Boolean, NCO As Long
 Private COS0() As Long, CON() As Long, NCOP As Long, CLCuts As Long
 '@@CLEAN_DECL_END
+
+' ---- одинаковые формы и раскладка на листы (см. раздел «Раскладка» ниже) ----
+'@@NEST_DECL_BEGIN
+Private Const NT_EPS As Double = 0.000001
+Private Const SAME_TOL As Double = 0.1
+' объекты: цвет (ключ, название), подпути, узлы, сегменты, габарит; точки: первая, число (сначала узлы, потом управляющие)
+Private SmCk() As String, SmCn() As String, SmSub() As Long, SmNn() As Long, SmNs() As Long, SmW() As Double, SmH() As Double
+Private SmP0() As Long, SmPn() As Long, NSm As Long
+Private SmX() As Double, SmY() As Double, NSmP As Long
+' результат: класс каждого объекта, число классов; рабочий массив сравнения
+Private SmCls() As Long, NSmCls As Long, SmUsed() As Boolean
+' раскладка: детали (габарит без зазора), порядок, результат (лист, x, y от левого верхнего угла листа)
+Private NtW() As Double, NtH() As Double, NNt As Long, NtOrd() As Long
+Private NtS() As Long, NtX() As Double, NtY() As Double, NtSheets As Long, NtMode As Long, NtHeur As Long
+' ширина каждого листа
+Private NtSW() As Double
+' проход: габарит с зазором, размещение; свободные прямоугольники (лист, x, y, ш, в) и новые при разрезе
+Private NtPW() As Double, NtPH() As Double, RnS() As Long, RnX() As Double, RnY() As Double
+Private FrS() As Long, FrX() As Double, FrY() As Double, FrW() As Double, FrH() As Double, NFr As Long
+Private NwX() As Double, NwY() As Double, NwW() As Double, NwH() As Double, NNw As Long
+'@@NEST_DECL_END
 
 ' длина выделенного: контуры отдельно от центральных линий плагина
 Public Sub MeasureLength()
@@ -2843,3 +2866,1265 @@ Public Function CleanTest(inX() As Double, inY() As Double, inL() As Boolean, By
 End Function
 '@@CLEANTEST_END
 '@@CLEAN_END
+
+'@@NEST_BEGIN
+' =====================================================================
+'  NeonCenterline — раскладка (группа «Раскладка ▾»):
+'    GroupSame  — одинаковые объекты (одна форма с точностью SAME_TOL, без поворота и зеркала,
+'                 и один цвет) — в группы «Одинаковые: N шт · Ш × В мм», ведомость форм;
+'    NestSheets — детали на листы: по габаритам, без поворота, с полем от края и зазором,
+'                 каждый цвет — на свои листы; ширина листа — заданная или по раскладке.
+'  Деталь — выделенный объект. Группа одинаковых и лист прежней раскладки — поштучно (их
+'  элементы); одна выделенная группа — тоже (импорт SVG/DXF приходит одной группой).
+'  Цвет детали — цвет заливки, без заливки — цвет обводки.
+' =====================================================================
+Private Const NT_ROW As Long = 5
+
+' ---------------------------------------------------------------------
+'  Настройки раскладки (окно — frmNeonRun в режиме 3, NeonUI.AskNestParams)
+' ---------------------------------------------------------------------
+Public Function NeonNestSize() As String
+    NeonNestSize = GetSetting("NeonCenterline", "Nest", "Size", "3050x2050")
+End Function
+
+Public Function NeonNestNum(ByVal key As String, ByVal def As Double) As Double
+    Dim s As String
+    s = GetSetting("NeonCenterline", "Nest", key, "")
+    If Len(Trim$(s)) = 0 Then
+        NeonNestNum = def
+    Else
+        NeonNestNum = ParseNum(s)
+    End If
+End Function
+
+Public Function NeonNestFlag(ByVal key As String, ByVal def As Boolean) As Boolean
+    NeonNestFlag = (GetSetting("NeonCenterline", "Nest", key, IIf(def, "1", "0")) = "1")
+End Function
+
+' «3050x2050», «3050 × 2050», «3050х2050» (русская х), «3050*2050» -> ширина и высота; False — не размер
+Public Function NeonNestParse(ByVal s As String, w As Double, h As Double) As Boolean
+    Dim a() As String, i As Long, n As Long, v(0 To 2) As Double
+    s = LCase$(Trim$(s))
+    s = Replace(s, ChrW(&HD7), " "): s = Replace(s, ChrW(&H445), " "): s = Replace(s, ChrW(&H425), " ")
+    s = Replace(s, "x", " "): s = Replace(s, "*", " "): s = Replace(s, ";", " "): s = Replace(s, "/", " ")
+    a = Split(s, " ")
+    For i = 0 To UBound(a)
+        If Len(a(i)) > 0 Then
+            If n < 3 Then
+                v(n) = ParseNum(a(i))
+            End If
+            n = n + 1
+        End If
+    Next i
+    If n = 2 Then
+        w = v(0): h = v(1)
+        NeonNestParse = (w >= 10 And w <= 100000 And h >= 10 And h <= 100000)
+    End If
+End Function
+
+' ---------------------------------------------------------------------
+'  Кнопка «Одинаковые — в группы»
+' ---------------------------------------------------------------------
+Public Sub GroupSame()
+    Dim col As Collection, old As ShapeRange, oldUnit As cdrUnit, grp As Boolean, errText As String, ttl As String
+    Dim i As Long, c As Long, k As Long, t As Long, nGrp As Long, nIn As Long, nFail As Long, nSingle As Long
+    Dim cnt() As Long, first() As Long, ord() As Long, sr As ShapeRange, g As Shape, allR As ShapeRange
+    Dim msg As String, lst As String
+    ttl = NeonL("same_title")
+    If ActiveDocument Is Nothing Then
+        MsgBox NeonL("err_nodoc"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If ActiveSelectionRange.Count = 0 Then
+        MsgBox NeonL("same_nosel"), vbExclamation, ttl
+        Exit Sub
+    End If
+    oldUnit = ActiveDocument.Unit
+    ActiveDocument.Unit = cdrMillimeter
+    ActiveDocument.BeginCommandGroup ttl
+    grp = True
+    Optimization = True
+    EventsEnabled = False
+    On Error GoTo Fail
+    Set col = New Collection
+    Set old = CreateShapeRange
+    NtCollect ActiveSelectionRange, col, old, True
+    NSm = 0: NSmCls = 0
+    If col.Count = 0 Then
+        GoTo Fin
+    End If
+    SmLoad col
+    SameGeo SAME_TOL
+    ReDim cnt(0 To NSmCls): ReDim first(0 To NSmCls)
+    For i = 0 To NSm - 1
+        c = SmCls(i)
+        If cnt(c) = 0 Then
+            first(c) = i
+        End If
+        cnt(c) = cnt(c) + 1
+    Next i
+    Set allR = CreateShapeRange
+    For c = 0 To NSmCls - 1
+        If cnt(c) >= 2 Then
+            Set sr = CreateShapeRange
+            For i = 0 To NSm - 1
+                If SmCls(i) = c Then
+                    sr.Add col(i + 1)
+                End If
+            Next i
+            Set g = NtGroup(sr)
+            If g Is Nothing Then
+                nFail = nFail + 1
+                allR.AddRange sr
+            Else
+                g.Name = NeonLF("same_group", cnt(c), NtMM(SmW(first(c))), NtMM(SmH(first(c))))
+                NtTag g, "same"
+                allR.Add g
+                nGrp = nGrp + 1: nIn = nIn + cnt(c)
+            End If
+        Else
+            allR.Add col(first(c) + 1)
+            nSingle = nSingle + 1
+        End If
+    Next c
+    On Error Resume Next
+    allR.CreateSelection
+    On Error GoTo Fail
+Fin:
+    On Error Resume Next
+    EventsEnabled = True
+    Optimization = False
+    If grp Then
+        ActiveDocument.EndCommandGroup
+    End If
+    ActiveDocument.Unit = oldUnit
+    ActiveWindow.Refresh
+    Application.Refresh
+    On Error GoTo 0
+    If Len(errText) > 0 Then
+        MsgBox NeonLF("err_fail", errText), vbCritical, ttl
+        Exit Sub
+    End If
+    If NSm = 0 Then
+        MsgBox NeonL("same_nosel"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If nGrp = 0 And nFail = 0 Then
+        MsgBox NeonLF("same_none", NSm), vbInformation, ttl
+        Exit Sub
+    End If
+    msg = NeonLF("same_report", NSm, NSmCls, nGrp, nIn, nSingle)
+    If nFail > 0 Then
+        msg = msg & vbCrLf & NeonLF("same_failed", nFail)
+    End If
+    ' ведомость: формы по убыванию числа штук (при равенстве — по порядку в выделении)
+    ReDim ord(0 To NSmCls)
+    For c = 0 To NSmCls - 1
+        k = c
+        Do While k > 0
+            If cnt(ord(k - 1)) >= cnt(c) Then
+                Exit Do
+            End If
+            ord(k) = ord(k - 1)
+            k = k - 1
+        Loop
+        ord(k) = c
+    Next c
+    For t = 0 To NSmCls - 1
+        c = ord(t)
+        lst = lst & NeonLF("same_line", cnt(c), NtMM(SmW(first(c))), NtMM(SmH(first(c))), SmCn(first(c))) & vbCrLf
+    Next t
+    If NSmCls <= 25 Then
+        msg = msg & vbCrLf & vbCrLf & NeonL("same_list") & vbCrLf & lst
+    Else
+        For t = 0 To 24
+            c = ord(t)
+            msg = msg & IIf(t = 0, vbCrLf & vbCrLf & NeonL("same_list") & vbCrLf, "") & _
+                  NeonLF("same_line", cnt(c), NtMM(SmW(first(c))), NtMM(SmH(first(c))), SmCn(first(c))) & vbCrLf
+        Next t
+        msg = msg & NeonLF("same_more", NSmCls - 25) & vbCrLf
+    End If
+    If MsgBox(msg & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, ttl) = vbYes Then
+        CopyText NeonL("same_list") & vbCrLf & lst
+    End If
+    NeonToolbarCheck
+    Exit Sub
+Fail:
+    errText = Err.Description
+    Resume Fin
+End Sub
+
+' объекты для сравнения: счётчики, габарит, цвет; точки — только у тех, у кого есть похожий
+Private Sub SmLoad(col As Collection)
+    Dim i As Long, sh As Shape, x As Double, y As Double, w As Double, h As Double
+    NSm = col.Count: NSmP = 0
+    ReDim SmCk(0 To NSm): ReDim SmCn(0 To NSm): ReDim SmSub(0 To NSm): ReDim SmNn(0 To NSm): ReDim SmNs(0 To NSm)
+    ReDim SmW(0 To NSm): ReDim SmH(0 To NSm): ReDim SmP0(0 To NSm): ReDim SmPn(0 To NSm)
+    ReDim SmX(0 To 1023): ReDim SmY(0 To 1023)
+    For i = 0 To NSm - 1
+        Set sh = col(i + 1)
+        sh.GetBoundingBox x, y, w, h
+        SmW(i) = w: SmH(i) = h
+        SmCk(i) = NtColorKey(sh, SmCn(i))
+        SmCount sh, SmSub(i), SmNn(i), SmNs(i)
+    Next i
+    For i = 0 To NSm - 1
+        SmP0(i) = NSmP
+        If SmHasTwin(i, SAME_TOL) Then
+            ' сначала все узлы, потом управляющие точки (SameGeo сдвигает к минимуму узлов)
+            SmReadPts col(i + 1), 0
+            SmReadPts col(i + 1), 1
+        End If
+        SmPn(i) = NSmP - SmP0(i)
+    Next i
+End Sub
+
+' подпути, узлы, сегменты объекта (у группы — всех элементов)
+Private Sub SmCount(sh As Shape, nSub As Long, nn As Long, ns As Long)
+    Dim s As Shape, crv As Curve, tmp As Shape
+    If sh.Type = cdrGroupShape Then
+        For Each s In sh.Shapes
+            SmCount s, nSub, nn, ns
+        Next s
+        Exit Sub
+    End If
+    Set crv = NtCurve(sh, tmp)
+    If Not crv Is Nothing Then
+        nSub = nSub + crv.SubPaths.Count
+        nn = nn + crv.Nodes.Count
+        ns = ns + crv.Segments.Count
+    End If
+    If Not tmp Is Nothing Then
+        tmp.Delete
+    End If
+End Sub
+
+' точки объекта в SmX/SmY: pass 0 — узлы, 1 — управляющие точки кривых сегментов
+Private Sub SmReadPts(sh As Shape, ByVal pass As Long)
+    Dim s As Shape, crv As Curve, tmp As Shape, nd As Node, sg As Segment, x As Double, y As Double
+    If sh.Type = cdrGroupShape Then
+        For Each s In sh.Shapes
+            SmReadPts s, pass
+        Next s
+        Exit Sub
+    End If
+    Set crv = NtCurve(sh, tmp)
+    If Not crv Is Nothing Then
+        If pass = 0 Then
+            For Each nd In crv.Nodes
+                SmAddPt nd.PositionX, nd.PositionY
+            Next nd
+        Else
+            For Each sg In crv.Segments
+                If sg.Type = cdrCurveSegment Then
+                    sg.GetStartingControlPointPosition x, y
+                    SmAddPt x, y
+                    sg.GetEndingControlPointPosition x, y
+                    SmAddPt x, y
+                End If
+            Next sg
+        End If
+    End If
+    If Not tmp Is Nothing Then
+        tmp.Delete
+    End If
+End Sub
+
+Private Sub SmAddPt(ByVal x As Double, ByVal y As Double)
+    If NSmP > UBound(SmX) Then
+        ReDim Preserve SmX(0 To 2 * NSmP): ReDim Preserve SmY(0 To 2 * NSmP)
+    End If
+    SmX(NSmP) = x: SmY(NSmP) = y
+    NSmP = NSmP + 1
+End Sub
+
+' ---------------------------------------------------------------------
+'  Кнопка «Раскладка на листы»
+' ---------------------------------------------------------------------
+Public Sub NestSheets()
+    Dim col As Collection, old As ShapeRange, oldUnit As cdrUnit, grp As Boolean, errText As String, ttl As String
+    Dim sw As Double, shh As Double, mg As Double, gp As Double, byColor As Boolean, autoW As Boolean, wmin As Double
+    Dim n As Long, i As Long, j As Long, k As Long, s As Long, nKey As Long, rows As Long
+    Dim bx() As Double, by() As Double, bw() As Double, bh() As Double, ck() As String, cn() As String
+    Dim keys() As String, knm() As String, krep() As Long, idx() As Long
+    Dim minX As Double, maxX As Double, maxY As Double, x0 As Double, yTop As Double, cx As Double, cy As Double
+    Dim sp As Double, lh As Double, area As Double, kArea As Double, kSheet As Double, cnt As Long, kCnt As Long
+    Dim lay As Layer, fr As Shape, sh As Shape, sr As ShapeRange, g As Shape, allR As ShapeRange, vis As ShapeRange, lc As Color
+    Dim nPlaced As Long, nUnfit As Long, nSheets As Long, colRep As String, wl As String, msg As String, wo As Object
+    ttl = NeonL("nest_title")
+    If ActiveDocument Is Nothing Then
+        MsgBox NeonL("err_nodoc"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If ActiveSelectionRange.Count = 0 Then
+        MsgBox NeonL("nest_nosel"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If Not AskNestParams() Then
+        Exit Sub
+    End If
+    If Not NeonNestParse(NeonNestSize(), sw, shh) Then
+        sw = 3050: shh = 2050
+    End If
+    mg = NeonNestNum("Margin", 10): gp = NeonNestNum("Gap", 10)
+    byColor = NeonNestFlag("ByColor", True)
+    autoW = NeonNestFlag("AutoW", False)
+    wmin = NeonNestNum("WMin", 0)
+    If wmin > sw Then
+        wmin = sw
+    End If
+    oldUnit = ActiveDocument.Unit
+    ActiveDocument.Unit = cdrMillimeter
+    ActiveDocument.BeginCommandGroup ttl
+    grp = True
+    Optimization = True
+    EventsEnabled = False
+    On Error GoTo Fail
+    Set col = New Collection
+    Set old = CreateShapeRange
+    NtCollect ActiveSelectionRange, col, old, True
+    n = col.Count
+    If n = 0 Then
+        GoTo Fin
+    End If
+    ReDim bx(0 To n): ReDim by(0 To n): ReDim bw(0 To n): ReDim bh(0 To n): ReDim ck(0 To n): ReDim cn(0 To n)
+    For i = 0 To n - 1
+        Set sh = col(i + 1)
+        sh.GetBoundingBox bx(i), by(i), bw(i), bh(i)
+        ck(i) = NtColorKey(sh, cn(i))
+        If Not byColor Then
+            ck(i) = ""
+        End If
+        If i = 0 Or bx(i) < minX Then
+            minX = bx(i)
+        End If
+        If i = 0 Or bx(i) + bw(i) > maxX Then
+            maxX = bx(i) + bw(i)
+        End If
+        If i = 0 Or by(i) + bh(i) > maxY Then
+            maxY = by(i) + bh(i)
+        End If
+    Next i
+    ' рамки и подписи прежней раскладки из выделения — долой
+    If old.Count > 0 Then
+        old.Delete
+    End If
+    ' цвета — по порядку появления
+    ReDim keys(0 To n): ReDim knm(0 To n): ReDim krep(0 To n)
+    For i = 0 To n - 1
+        For k = 0 To nKey - 1
+            If keys(k) = ck(i) Then
+                Exit For
+            End If
+        Next k
+        If k = nKey Then
+            keys(nKey) = ck(i): krep(nKey) = i
+            If byColor Then
+                knm(nKey) = cn(i)
+            Else
+                knm(nKey) = NeonL("all_colors")
+            End If
+            nKey = nKey + 1
+        End If
+    Next i
+    Set lay = NtLayer()
+    sp = 50
+    If shh * 0.05 > sp Then
+        sp = Int(shh * 0.05)
+    End If
+    lh = 8
+    If shh * 0.025 > lh Then
+        lh = shh * 0.025
+    End If
+    x0 = maxX + 2 * sp: yTop = maxY
+    Set allR = CreateShapeRange
+    Set vis = CreateShapeRange
+    ReDim idx(0 To n)
+    For k = 0 To nKey - 1
+        NNt = 0
+        ReDim NtW(0 To n): ReDim NtH(0 To n)
+        For i = 0 To n - 1
+            If ck(i) = keys(k) Then
+                NtW(NNt) = bw(i): NtH(NNt) = bh(i): idx(NNt) = i
+                NNt = NNt + 1
+            End If
+        Next i
+        NestPack sw, shh, mg, gp, autoW, wmin
+        Set lc = Nothing
+        If byColor Then
+            Set lc = NtColorOf(col(krep(k) + 1))
+        End If
+        kArea = 0: kSheet = 0: kCnt = 0: wl = ""
+        cx = x0: cy = yTop - 2 * lh
+        For s = 0 To NtSheets - 1
+            If s > 0 And s Mod NT_ROW = 0 Then
+                cx = x0: cy = cy - (shh + 2 * lh + sp)
+            End If
+            Set fr = lay.CreateRectangle2(cx, cy - shh, NtSW(s), shh)
+            NtFrameStyle fr
+            fr.Name = NeonLF("nest_frame", s + 1)
+            vis.Add fr
+            Set sr = CreateShapeRange
+            cnt = 0: area = 0
+            For j = 0 To NNt - 1
+                If NtS(j) = s Then
+                    i = idx(j)
+                    Set sh = col(i + 1)
+                    sh.Move cx + NtX(j) - bx(i), (cy - NtY(j)) - (by(i) + bh(i))
+                    sr.Add sh
+                    cnt = cnt + 1: area = area + bw(i) * bh(i)
+                End If
+            Next j
+            NtLabel lay, vis, cx, cy + lh * 0.5, lh, NeonLF("nest_label", s + 1, NtSheets, NtMM(NtSW(s)), NtMM(shh), knm(k), cnt, _
+                    CLng(100 * area / (NtSW(s) * shh))), lc
+            Set g = Nothing
+            If sr.Count > 1 Then
+                Set g = NtGroup(sr)
+            End If
+            If g Is Nothing Then
+                allR.AddRange sr
+            Else
+                g.Name = NeonLF("nest_group", s + 1, NtSheets, knm(k))
+                NtTag g, "sheet"
+                allR.Add g
+            End If
+            kArea = kArea + area: kSheet = kSheet + NtSW(s) * shh: kCnt = kCnt + cnt
+            wl = wl & IIf(s > 0, ", ", "") & NtMM(NtSW(s))
+            cx = cx + NtSW(s) + sp
+        Next s
+        For j = 0 To NNt - 1
+            If NtS(j) < 0 Then
+                nUnfit = nUnfit + 1
+            End If
+        Next j
+        If NtSheets > 0 Then
+            rows = (NtSheets + NT_ROW - 1) \ NT_ROW
+            yTop = yTop - rows * (shh + 2 * lh + sp) - sp
+            colRep = colRep & "  " & NeonLF("nest_rep_color", knm(k), NtSheets, kCnt, CLng(100 * kArea / kSheet))
+            If autoW Then
+                colRep = colRep & NeonLF("nest_rep_widths", wl)
+            End If
+            colRep = colRep & vbCrLf
+        End If
+        nPlaced = nPlaced + kCnt: nSheets = nSheets + NtSheets
+    Next k
+    On Error Resume Next
+    allR.CreateSelection
+    vis.AddRange allR
+    Set wo = ActiveWindow
+    wo.ActiveView.ToFitShapeRange vis
+    On Error GoTo Fail
+Fin:
+    On Error Resume Next
+    EventsEnabled = True
+    Optimization = False
+    If grp Then
+        ActiveDocument.EndCommandGroup
+    End If
+    ActiveDocument.Unit = oldUnit
+    ActiveWindow.Refresh
+    Application.Refresh
+    On Error GoTo 0
+    If Len(errText) > 0 Then
+        MsgBox NeonLF("err_fail", errText), vbCritical, ttl
+        Exit Sub
+    End If
+    If n = 0 Then
+        MsgBox NeonL("nest_nosel"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If nPlaced = 0 Then
+        MsgBox NeonL("nest_none"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If autoW Then
+        msg = NeonLF("nest_rep_auto", NtMM(shh), NtMM(wmin), NtMM(sw))
+    Else
+        msg = NeonLF("nest_rep_sheet", NtMM(sw), NtMM(shh))
+    End If
+    msg = NeonLF("nest_report", nPlaced, nSheets, msg, FmtNum(mg), FmtNum(gp)) & vbCrLf & vbCrLf & colRep
+    If nUnfit > 0 Then
+        msg = msg & vbCrLf & NeonLF("nest_unfit", nUnfit) & vbCrLf
+    End If
+    msg = msg & vbCrLf & NeonLF("nest_rep_tail", NeonL("nest_layer"))
+    If MsgBox(msg & vbCrLf & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, ttl) = vbYes Then
+        CopyText msg
+    End If
+    NeonToolbarCheck
+    Exit Sub
+Fail:
+    errText = Err.Description
+    Resume Fin
+End Sub
+
+' рамка листа: без заливки, тонкая серая обводка
+Private Sub NtFrameStyle(fr As Shape)
+    On Error Resume Next
+    fr.Fill.ApplyNoFill
+    fr.Outline.Width = 0.5
+    fr.Outline.Color.RGBAssign 128, 128, 128
+End Sub
+
+' подпись листа над рамкой: образец цвета (если есть) и текст высотой ~lh мм
+Private Sub NtLabel(lay As Layer, vis As ShapeRange, ByVal x As Double, ByVal y As Double, ByVal lh As Double, _
+                    ByVal txt As String, c As Color)
+    Dim t As Shape, r As Shape, pt As Double
+    On Error Resume Next
+    If Not c Is Nothing Then
+        Set r = lay.CreateRectangle2(x, y, lh, lh)
+        r.Fill.ApplyUniformFill c
+        r.Outline.Width = 0.2
+        r.Outline.Color.RGBAssign 128, 128, 128
+        r.Name = txt
+        vis.Add r
+        x = x + lh * 1.5
+    End If
+    ' кегль: заглавная ~0.7 кегля, 1 пт = 0.3528 мм
+    pt = lh / 0.7 / 0.3528
+    If pt > 2000 Then
+        pt = 2000
+    End If
+    If pt < 4 Then
+        pt = 4
+    End If
+    Set t = lay.CreateArtisticText(x, y, txt, , , , pt)
+    If Not t Is Nothing Then
+        t.Fill.UniformColor.RGBAssign 90, 90, 90
+        vis.Add t
+    End If
+End Sub
+
+' ---------------------------------------------------------------------
+'  Общее: детали выделения, цвет, кривая, группы и метки
+' ---------------------------------------------------------------------
+' детали выделения в col; рамки и подписи прежней раскладки — в old. Группа одинаковых и лист
+' раскладки — поштучно; одна выделенная группа (top) — тоже: импорт SVG/DXF приходит одной группой
+Private Sub NtCollect(sr As ShapeRange, col As Collection, old As ShapeRange, ByVal top As Boolean)
+    Dim sh As Shape
+    If top And sr.Count = 1 Then
+        Set sh = sr(1)
+        If sh.Type = cdrGroupShape Then
+            If Not NtIsLayout(sh) And Len(NtTagOf(sh)) = 0 Then
+                NtCollect NtUngroup(sh), col, old, True
+                Exit Sub
+            End If
+        End If
+    End If
+    For Each sh In sr
+        If NtIsLayout(sh) Then
+            old.Add sh
+        ElseIf sh.Type = cdrGroupShape Then
+            If Len(NtTagOf(sh)) > 0 Then
+                NtCollect NtUngroup(sh), col, old, False
+            Else
+                col.Add sh
+            End If
+        Else
+            col.Add sh
+        End If
+    Next sh
+End Sub
+
+' разгруппировать один уровень: элементы группы
+Private Function NtUngroup(sh As Shape) As ShapeRange
+    Dim r As ShapeRange, o As Object
+    On Error Resume Next
+    Set o = sh
+    Set r = o.UngroupEx
+    If r Is Nothing Then
+        Err.Clear
+        Set r = sh.Shapes.All
+        sh.Ungroup
+    End If
+    If r Is Nothing Then
+        Set r = CreateShapeRange
+    End If
+    Set NtUngroup = r
+End Function
+
+Private Function NtGroup(sr As ShapeRange) As Shape
+    On Error Resume Next
+    Set NtGroup = sr.Group
+    Err.Clear
+End Function
+
+' метка группы плагина: "same" — одинаковые, "sheet" — лист раскладки. Без свойств (старый
+' CorelDRAW) — по началу имени
+Private Sub NtTag(sh As Shape, ByVal tg As String)
+    Dim o As Object
+    On Error Resume Next
+    Set o = sh
+    o.Properties("NeonCenterline", 1) = tg
+    Err.Clear
+End Sub
+
+Private Function NtTagOf(sh As Shape) As String
+    Dim v As Variant, nm As String, o As Object
+    On Error Resume Next
+    Set o = sh
+    v = Empty
+    v = o.Properties("NeonCenterline", 1)
+    If Err.Number = 0 And Not IsEmpty(v) And Not IsNull(v) Then
+        NtTagOf = CStr(v)
+    End If
+    Err.Clear
+    If Len(NtTagOf) = 0 Then
+        nm = sh.Name
+        If NtStarts(nm, "same_group") Then
+            NtTagOf = "same"
+        ElseIf NtStarts(nm, "nest_group") Then
+            NtTagOf = "sheet"
+        End If
+    End If
+End Function
+
+' имя начинается с постоянной части строки key (до первой подстановки)
+Private Function NtStarts(ByVal nm As String, ByVal key As String) As Boolean
+    Dim p As String, q As Long
+    p = NeonL(key)
+    q = InStr(p, "{")
+    If q > 1 Then
+        p = Left$(p, q - 1)
+        NtStarts = (Left$(nm, Len(p)) = p)
+    End If
+End Function
+
+' объект на слое раскладки (рамка или подпись прежнего расчёта)
+Private Function NtIsLayout(sh As Shape) As Boolean
+    On Error Resume Next
+    NtIsLayout = (sh.Layer.Name = NeonL("nest_layer"))
+End Function
+
+' слой «Раскладка» на текущей странице (не печатается)
+Private Function NtLayer() As Layer
+    Dim ly As Layer, nm As String
+    nm = NeonL("nest_layer")
+    For Each ly In ActivePage.Layers
+        If ly.Name = nm Then
+            Set NtLayer = ly
+            Exit Function
+        End If
+    Next ly
+    Set ly = ActivePage.CreateLayer(nm)
+    On Error Resume Next
+    ly.Printable = False
+    Set NtLayer = ly
+End Function
+
+' цвет детали: заливка, без неё — обводка; у группы — первого элемента с цветом
+Private Function NtColorOf(sh As Shape) As Color
+    Dim s As Shape, c As Color
+    On Error Resume Next
+    If sh.Type = cdrGroupShape Then
+        For Each s In sh.Shapes
+            Set c = NtColorOf(s)
+            If Not c Is Nothing Then
+                Set NtColorOf = c
+                Exit Function
+            End If
+        Next s
+        Exit Function
+    End If
+    If sh.Fill.Type = cdrUniformFill Then
+        Set c = sh.Fill.UniformColor
+    ElseIf sh.Outline.Type <> cdrNoOutline Then
+        Set c = sh.Outline.Color
+    End If
+    Set NtColorOf = c
+End Function
+
+' ключ цвета (для сравнения) и название (для подписей)
+Private Function NtColorKey(sh As Shape, nm As String) As String
+    Dim c As Color
+    Set c = NtColorOf(sh)
+    If c Is Nothing Then
+        nm = NeonL("no_color")
+    Else
+        On Error Resume Next
+        NtColorKey = c.ToString
+        nm = NtColorName(c)
+    End If
+End Function
+
+Private Function NtColorName(c As Color) As String
+    Dim s As String, nm As String
+    On Error Resume Next
+    Select Case c.Type
+    Case cdrColorRGB
+        s = "#" & Right$("0" & Hex$(c.RGBRed), 2) & Right$("0" & Hex$(c.RGBGreen), 2) & Right$("0" & Hex$(c.RGBBlue), 2)
+    Case cdrColorCMYK
+        s = "C" & c.CMYKCyan & " M" & c.CMYKMagenta & " Y" & c.CMYKYellow & " K" & c.CMYKBlack
+    End Select
+    nm = c.Name
+    If Len(s) = 0 Then
+        s = nm
+        If Len(s) = 0 Then
+            s = c.ToString
+        End If
+    ElseIf Len(nm) > 0 And nm <> s Then
+        s = nm & " (" & s & ")"
+    End If
+    NtColorName = s
+End Function
+
+' кривая объекта: своя, кривая отображения, иначе — временная копия в кривых (tmp — удалить после)
+Private Function NtCurve(sh As Shape, tmp As Shape) As Curve
+    Dim crv As Curve
+    On Error Resume Next
+    Set tmp = Nothing
+    If sh.Type = cdrCurveShape Then
+        Set crv = sh.Curve
+    Else
+        Set crv = sh.DisplayCurve
+        If crv Is Nothing Then
+            Set tmp = sh.Duplicate
+            tmp.ConvertToCurves
+            If tmp.Type = cdrCurveShape Then
+                Set crv = tmp.Curve
+            End If
+        End If
+    End If
+    Err.Clear
+    Set NtCurve = crv
+End Function
+
+' мм для подписей: целые, у мелких — с десятыми
+Private Function NtMM(ByVal v As Double) As String
+    If v >= 100 Then
+        NtMM = FmtNum(Round(v, 0))
+    Else
+        NtMM = FmtNum(Round(v, 1))
+    End If
+End Function
+
+'@@SAMEGEO_BEGIN
+' ---------------------------------------------------------------------
+'  Одинаковые формы: геометрия (повторяет proto/nesting.py один в один).
+'  Вход: объекты SmCk/SmSub/SmNn/SmNs/SmW/SmH, точки SmX/SmY (у объекта — с SmP0, SmPn штук:
+'  сначала SmNn узлов, потом управляющие; SmPn = 0 — точки не нужны: похожих объектов нет).
+'  Выход: SmCls (класс по порядку появления), NSmCls. Точки сдвигаются к минимуму узлов и сортируются.
+' ---------------------------------------------------------------------
+Public Sub SameGeo(ByVal tol As Double)
+    Dim i As Long, k As Long, c As Long, reps() As Long
+    For i = 0 To NSm - 1
+        SmNormPts i
+    Next i
+    ReDim SmCls(0 To NSm): ReDim reps(0 To NSm)
+    NSmCls = 0
+    For i = 0 To NSm - 1
+        c = -1
+        For k = 0 To NSmCls - 1
+            If SmEq(reps(k), i, tol) Then
+                c = k
+                Exit For
+            End If
+        Next k
+        If c < 0 Then
+            c = NSmCls
+            reps(NSmCls) = i
+            NSmCls = NSmCls + 1
+        End If
+        SmCls(i) = c
+    Next i
+End Sub
+
+' точки объекта: относительно минимума узлов, по x, затем y
+Private Sub SmNormPts(ByVal o As Long)
+    Dim p0 As Long, n As Long, j As Long, mx As Double, my As Double
+    p0 = SmP0(o): n = SmPn(o)
+    If n <= 0 Or SmNn(o) <= 0 Then
+        Exit Sub
+    End If
+    mx = SmX(p0): my = SmY(p0)
+    For j = 1 To SmNn(o) - 1
+        If SmX(p0 + j) < mx Then
+            mx = SmX(p0 + j)
+        End If
+        If SmY(p0 + j) < my Then
+            my = SmY(p0 + j)
+        End If
+    Next j
+    For j = 0 To n - 1
+        SmX(p0 + j) = SmX(p0 + j) - mx
+        SmY(p0 + j) = SmY(p0 + j) - my
+    Next j
+    SmQSort p0, p0 + n - 1
+End Sub
+
+Private Sub SmQSort(ByVal lo As Long, ByVal hi As Long)
+    Dim i As Long, j As Long, qx As Double, qy As Double, t As Double
+    Do While lo < hi
+        qx = SmX((lo + hi) \ 2): qy = SmY((lo + hi) \ 2)
+        i = lo: j = hi
+        Do While i <= j
+            Do While SmPtLess(SmX(i), SmY(i), qx, qy)
+                i = i + 1
+            Loop
+            Do While SmPtLess(qx, qy, SmX(j), SmY(j))
+                j = j - 1
+            Loop
+            If i <= j Then
+                t = SmX(i): SmX(i) = SmX(j): SmX(j) = t
+                t = SmY(i): SmY(i) = SmY(j): SmY(j) = t
+                i = i + 1: j = j - 1
+            End If
+        Loop
+        ' меньшую часть — рекурсией, большую — циклом
+        If j - lo < hi - i Then
+            If lo < j Then
+                SmQSort lo, j
+            End If
+            lo = i
+        Else
+            If i < hi Then
+                SmQSort i, hi
+            End If
+            hi = j
+        End If
+    Loop
+End Sub
+
+Private Function SmPtLess(ByVal ax As Double, ByVal ay As Double, ByVal bx As Double, ByVal by As Double) As Boolean
+    If ax < bx Then
+        SmPtLess = True
+    ElseIf ax = bx Then
+        SmPtLess = (ay < by)
+    End If
+End Function
+
+' объекты a и b одинаковые: цвет, счётчики, габарит, и каждой точке a — своя точка b не дальше tol
+Private Function SmEq(ByVal a As Long, ByVal b As Long, ByVal tol As Double) As Boolean
+    Dim n As Long, lo As Long, k As Long, j As Long, pa As Long, pb As Long, ax As Double, ay As Double
+    Dim found As Boolean
+    If SmCk(a) <> SmCk(b) Or SmSub(a) <> SmSub(b) Or SmNn(a) <> SmNn(b) Or SmNs(a) <> SmNs(b) Then
+        Exit Function
+    End If
+    If Abs(SmW(a) - SmW(b)) > tol Or Abs(SmH(a) - SmH(b)) > tol Then
+        Exit Function
+    End If
+    n = SmPn(a)
+    If n <> SmPn(b) Then
+        Exit Function
+    End If
+    pa = SmP0(a): pb = SmP0(b)
+    ReDim SmUsed(0 To n)
+    lo = 0
+    For j = 0 To n - 1
+        ax = SmX(pa + j): ay = SmY(pa + j)
+        Do While lo < n
+            If SmX(pb + lo) >= ax - tol Then
+                Exit Do
+            End If
+            lo = lo + 1
+        Loop
+        k = lo
+        found = False
+        Do While k < n
+            If SmX(pb + k) > ax + tol Then
+                Exit Do
+            End If
+            If Not SmUsed(k) Then
+                If Abs(SmY(pb + k) - ay) <= tol Then
+                    SmUsed(k) = True
+                    found = True
+                    Exit Do
+                End If
+            End If
+            k = k + 1
+        Loop
+        If Not found Then
+            Exit Function
+        End If
+    Next j
+    SmEq = True
+End Function
+
+' похожие по счётчикам и габариту (без точек): есть ли у объекта o пара
+Public Function SmHasTwin(ByVal o As Long, ByVal tol As Double) As Boolean
+    Dim j As Long
+    For j = 0 To NSm - 1
+        If j <> o Then
+            If SmCk(j) = SmCk(o) And SmSub(j) = SmSub(o) And SmNn(j) = SmNn(o) And SmNs(j) = SmNs(o) Then
+                If Abs(SmW(j) - SmW(o)) <= tol And Abs(SmH(j) - SmH(o)) <= tol Then
+                    SmHasTwin = True
+                    Exit Function
+                End If
+            End If
+        End If
+    Next j
+End Function
+'@@SAMEGEO_END
+
+'@@NESTGEO_BEGIN
+' ---------------------------------------------------------------------
+'  Раскладка на листы: MaxRects без поворота (повторяет proto/nesting.py один в один).
+'  Вход: габариты деталей NtW/NtH (NNt штук). Деталь — габарит + зазор, лист — без полей + зазор:
+'  так между деталями ровно зазор, от края — ровно поле. Детали по очереди, каждая — на самый
+'  ранний лист, где есть место, на листе — лучшее место по эвристике. Четыре порядка × три
+'  эвристики, лучший результат: меньше листов, затем меньше занятый габарит последнего листа.
+'  autoW: ширина листа — по раскладке (поле + детали + поле, вверх до 10 мм, от wmin до sw);
+'  тогда ещё эвристика «по столбцам», а при равном числе листов лучше меньшая общая ширина.
+'  Выход: NtS (лист с 0, -1 — не помещается), NtX/NtY (от левого верхнего угла листа, y вниз),
+'  NtSheets, ширина каждого листа NtSW.
+' ---------------------------------------------------------------------
+Public Sub NestPack(ByVal sw As Double, ByVal sh As Double, ByVal margin As Double, ByVal gap As Double, _
+                    ByVal autoW As Boolean, ByVal wmin As Double)
+    Dim bw As Double, bh As Double, mode As Long, heur As Long, nsh As Long, la As Double, nh As Long
+    Dim bestN As Long, bestA As Double, has As Boolean, i As Long, s As Long, w As Double
+    ReDim NtPW(0 To NNt): ReDim NtPH(0 To NNt)
+    ReDim NtS(0 To NNt): ReDim NtX(0 To NNt): ReDim NtY(0 To NNt)
+    ReDim RnS(0 To NNt): ReDim RnX(0 To NNt): ReDim RnY(0 To NNt)
+    For i = 0 To NNt - 1
+        NtPW(i) = NtW(i) + gap: NtPH(i) = NtH(i) + gap
+        NtS(i) = -1: NtX(i) = 0: NtY(i) = 0
+    Next i
+    bw = sw - 2 * margin + gap
+    bh = sh - 2 * margin + gap
+    NtSheets = 0: NtMode = 0: NtHeur = 0
+    nh = 2
+    If autoW Then
+        nh = 3
+    End If
+    For mode = 0 To 3
+        NtOrder mode
+        For heur = 0 To nh
+            nsh = NtRun(bw, bh, heur)
+            If autoW Then
+                NtUsedW nsh
+                la = 0
+                For s = 0 To nsh - 1
+                    la = la + NtSW(s)
+                Next s
+            Else
+                la = NtLastArea(nsh)
+            End If
+            If Not has Or nsh < bestN Or (nsh = bestN And la < bestA - NT_EPS) Then
+                has = True
+                bestN = nsh: bestA = la
+                NtMode = mode: NtHeur = heur
+                For i = 0 To NNt - 1
+                    NtS(i) = RnS(i)
+                    If RnS(i) >= 0 Then
+                        NtX(i) = RnX(i) + margin: NtY(i) = RnY(i) + margin
+                    Else
+                        NtX(i) = 0: NtY(i) = 0
+                    End If
+                Next i
+            End If
+        Next heur
+    Next mode
+    NtSheets = bestN
+    ' ширина листов: у лучшего прохода
+    For i = 0 To NNt - 1
+        RnS(i) = NtS(i): RnX(i) = NtX(i) - margin
+    Next i
+    NtUsedW NtSheets
+    For s = 0 To NtSheets - 1
+        If autoW Then
+            w = -Int(-(2 * margin + NtSW(s) - gap) / 10 + 0.000000001) * 10
+            If w < wmin Then
+                w = wmin
+            End If
+            If w > sw Then
+                w = sw
+            End If
+            NtSW(s) = w
+        Else
+            NtSW(s) = sw
+        End If
+    Next s
+End Sub
+
+' занятая ширина каждого листа прохода RnS/RnX (с зазором справа) — в NtSW
+Private Sub NtUsedW(ByVal nsh As Long)
+    Dim i As Long, s As Long
+    ReDim NtSW(0 To nsh)
+    For i = 0 To NNt - 1
+        s = RnS(i)
+        If s >= 0 Then
+            If RnX(i) + NtPW(i) > NtSW(s) Then
+                NtSW(s) = RnX(i) + NtPW(i)
+            End If
+        End If
+    Next i
+End Sub
+
+' порядок деталей NtOrd: 0 — по высоте, 1 — по ширине, 2 — по площади, 3 — по большей стороне (по убыванию)
+Private Sub NtOrder(ByVal mode As Long)
+    Dim i As Long, j As Long, t As Long, tmp() As Long, w As Long, lo As Long, md As Long, hi As Long
+    Dim a As Long, b As Long, k As Long
+    ReDim NtOrd(0 To NNt): ReDim tmp(0 To NNt)
+    For i = 0 To NNt - 1
+        NtOrd(i) = i
+    Next i
+    ' сортировка слиянием снизу вверх (порядок полный: при равенстве — по номеру)
+    w = 1
+    Do While w < NNt
+        lo = 0
+        Do While lo < NNt
+            md = lo + w
+            If md > NNt Then
+                md = NNt
+            End If
+            hi = lo + 2 * w
+            If hi > NNt Then
+                hi = NNt
+            End If
+            a = lo: b = md: k = lo
+            Do While k < hi
+                If a < md And b < hi Then
+                    If NtLess(NtOrd(b), NtOrd(a), mode) Then
+                        tmp(k) = NtOrd(b): b = b + 1
+                    Else
+                        tmp(k) = NtOrd(a): a = a + 1
+                    End If
+                ElseIf a < md Then
+                    tmp(k) = NtOrd(a): a = a + 1
+                Else
+                    tmp(k) = NtOrd(b): b = b + 1
+                End If
+                k = k + 1
+            Loop
+            lo = hi
+        Loop
+        For j = 0 To NNt - 1
+            t = tmp(j): NtOrd(j) = t
+        Next j
+        w = 2 * w
+    Loop
+End Sub
+
+' деталь i раньше j
+Private Function NtLess(ByVal i As Long, ByVal j As Long, ByVal mode As Long) As Boolean
+    Dim a1 As Double, a2 As Double, b1 As Double, b2 As Double
+    Select Case mode
+    Case 0
+        a1 = NtPH(i): a2 = NtPW(i): b1 = NtPH(j): b2 = NtPW(j)
+    Case 1
+        a1 = NtPW(i): a2 = NtPH(i): b1 = NtPW(j): b2 = NtPH(j)
+    Case 2
+        a1 = NtPW(i) * NtPH(i): a2 = NtPH(i): b1 = NtPW(j) * NtPH(j): b2 = NtPH(j)
+    Case Else
+        a1 = NtPW(i): a2 = NtPH(i)
+        If a2 > a1 Then
+            a1 = NtPH(i): a2 = NtPW(i)
+        End If
+        b1 = NtPW(j): b2 = NtPH(j)
+        If b2 > b1 Then
+            b1 = NtPH(j): b2 = NtPW(j)
+        End If
+    End Select
+    If a1 <> b1 Then
+        NtLess = (a1 > b1)
+    ElseIf a2 <> b2 Then
+        NtLess = (a2 > b2)
+    Else
+        NtLess = (i < j)
+    End If
+End Function
+
+' один проход по порядку NtOrd: RnS/RnX/RnY, результат — число листов
+Private Function NtRun(ByVal bw As Double, ByVal bh As Double, ByVal heur As Long) As Long
+    Dim q As Long, i As Long, j As Long, nsh As Long, pw As Double, ph As Double, s As Long
+    Dim x As Double, y As Double, bj As Long, bs As Long, b1 As Double, b2 As Double
+    Dim s1 As Double, s2 As Double, dw As Double, dh As Double, better As Boolean
+    Dim mw() As Double, mh() As Double
+    NFr = 0
+    ReDim FrS(0 To 63): ReDim FrX(0 To 63): ReDim FrY(0 To 63): ReDim FrW(0 To 63): ReDim FrH(0 To 63)
+    For i = 0 To NNt - 1
+        RnS(i) = -1: RnX(i) = 0: RnY(i) = 0
+    Next i
+    ' наименьшие ширина и высота среди деталей после q-й: свободное место меньше — уже никому
+    ReDim mw(0 To NNt): ReDim mh(0 To NNt)
+    mw(NNt) = 1E+300: mh(NNt) = 1E+300
+    For q = NNt - 1 To 0 Step -1
+        mw(q) = mw(q + 1): mh(q) = mh(q + 1)
+        If NtPW(NtOrd(q)) < mw(q) Then
+            mw(q) = NtPW(NtOrd(q))
+        End If
+        If NtPH(NtOrd(q)) < mh(q) Then
+            mh(q) = NtPH(NtOrd(q))
+        End If
+    Next q
+    For q = 0 To NNt - 1
+        i = NtOrd(q)
+        pw = NtPW(i): ph = NtPH(i)
+        If pw <= bw + NT_EPS And ph <= bh + NT_EPS Then
+            bj = -1
+            For j = 0 To NFr - 1
+                If bj >= 0 And FrS(j) > bs Then
+                    ' лист позже лучшего — не лучше
+                ElseIf pw <= FrW(j) + NT_EPS And ph <= FrH(j) + NT_EPS Then
+                    dw = FrW(j) - pw: dh = FrH(j) - ph
+                    If heur = 0 Then
+                        ' лучшая короткая сторона
+                        If dw < dh Then
+                            s1 = dw: s2 = dh
+                        Else
+                            s1 = dh: s2 = dw
+                        End If
+                    ElseIf heur = 1 Then
+                        ' выше и левее (по строкам)
+                        s1 = FrY(j) + ph: s2 = FrX(j)
+                    ElseIf heur = 2 Then
+                        ' лучшая площадь
+                        s1 = FrW(j) * FrH(j) - pw * ph
+                        If dw < dh Then
+                            s2 = dw
+                        Else
+                            s2 = dh
+                        End If
+                    Else
+                        ' левее и выше (по столбцам: раскладка как можно уже)
+                        s1 = FrX(j) + pw: s2 = FrY(j)
+                    End If
+                    better = False
+                    If bj < 0 Then
+                        better = True
+                    ElseIf FrS(j) < bs Then
+                        better = True
+                    ElseIf FrS(j) = bs Then
+                        If s1 < b1 Then
+                            better = True
+                        ElseIf s1 = b1 And s2 < b2 Then
+                            better = True
+                        End If
+                    End If
+                    If better Then
+                        bj = j: bs = FrS(j): b1 = s1: b2 = s2
+                    End If
+                End If
+            Next j
+            If bj < 0 Then
+                s = nsh
+                nsh = nsh + 1
+                NtAddFr s, 0, 0, bw, bh
+                x = 0: y = 0
+            Else
+                s = bs
+                x = FrX(bj): y = FrY(bj)
+            End If
+            RnS(i) = s: RnX(i) = x: RnY(i) = y
+            NtSplit s, x, y, pw, ph, mw(q + 1), mh(q + 1)
+        End If
+    Next q
+    NtRun = nsh
+End Function
+
+Private Sub NtAddFr(ByVal s As Long, ByVal x As Double, ByVal y As Double, ByVal w As Double, ByVal h As Double)
+    If NFr > UBound(FrS) Then
+        ReDim Preserve FrS(0 To 2 * NFr): ReDim Preserve FrX(0 To 2 * NFr): ReDim Preserve FrY(0 To 2 * NFr)
+        ReDim Preserve FrW(0 To 2 * NFr): ReDim Preserve FrH(0 To 2 * NFr)
+    End If
+    FrS(NFr) = s: FrX(NFr) = x: FrY(NFr) = y: FrW(NFr) = w: FrH(NFr) = h
+    NFr = NFr + 1
+End Sub
+
+Private Sub NtAddNw(ByVal x As Double, ByVal y As Double, ByVal w As Double, ByVal h As Double)
+    If NNw > UBound(NwX) Then
+        ReDim Preserve NwX(0 To 2 * NNw): ReDim Preserve NwY(0 To 2 * NNw)
+        ReDim Preserve NwW(0 To 2 * NNw): ReDim Preserve NwH(0 To 2 * NNw)
+    End If
+    NwX(NNw) = x: NwY(NNw) = y: NwW(NNw) = w: NwH(NNw) = h
+    NNw = NNw + 1
+End Sub
+
+' деталь (x, y, w, h) на листе s: свободные прямоугольники, которые она задевает, — на части;
+' части, лежащие внутри других, — долой; уже́ mw или ниже mh (меньше любой оставшейся детали) — тоже
+Private Sub NtSplit(ByVal s As Long, ByVal x As Double, ByVal y As Double, ByVal w As Double, ByVal h As Double, _
+                    ByVal mw As Double, ByVal mh As Double)
+    Dim j As Long, nKeep As Long, ia As Long, ib As Long, rx As Double, ry As Double, rw As Double, rh As Double
+    Dim drop As Boolean, nNew As Long
+    NNw = 0
+    ReDim NwX(0 To 15): ReDim NwY(0 To 15): ReDim NwW(0 To 15): ReDim NwH(0 To 15)
+    nKeep = 0
+    For j = 0 To NFr - 1
+        rx = FrX(j): ry = FrY(j): rw = FrW(j): rh = FrH(j)
+        If rw < mw - NT_EPS Or rh < mh - NT_EPS Then
+            ' никому не подойдёт
+        ElseIf FrS(j) <> s Or x >= rx + rw - NT_EPS Or x + w <= rx + NT_EPS Or y >= ry + rh - NT_EPS Or y + h <= ry + NT_EPS Then
+            FrS(nKeep) = FrS(j): FrX(nKeep) = rx: FrY(nKeep) = ry: FrW(nKeep) = rw: FrH(nKeep) = rh
+            nKeep = nKeep + 1
+        Else
+            If x > rx + NT_EPS Then
+                NtAddNw rx, ry, x - rx, rh
+            End If
+            If x + w < rx + rw - NT_EPS Then
+                NtAddNw x + w, ry, rx + rw - (x + w), rh
+            End If
+            If y > ry + NT_EPS Then
+                NtAddNw rx, ry, rw, y - ry
+            End If
+            If y + h < ry + rh - NT_EPS Then
+                NtAddNw rx, y + h, rw, ry + rh - (y + h)
+            End If
+        End If
+    Next j
+    NFr = nKeep
+    ' новые — только те, куда ещё что-то встанет
+    nNew = 0
+    For ia = 0 To NNw - 1
+        If NwW(ia) >= mw - NT_EPS And NwH(ia) >= mh - NT_EPS Then
+            NwX(nNew) = NwX(ia): NwY(nNew) = NwY(ia): NwW(nNew) = NwW(ia): NwH(nNew) = NwH(ia)
+            nNew = nNew + 1
+        End If
+    Next ia
+    NNw = nNew
+    For ia = 0 To NNw - 1
+        drop = False
+        For ib = 0 To NNw - 1
+            If ib <> ia Then
+                If NtIn(NwX(ib), NwY(ib), NwW(ib), NwH(ib), NwX(ia), NwY(ia), NwW(ia), NwH(ia)) Then
+                    If ib < ia Then
+                        drop = True
+                    ElseIf Not NtIn(NwX(ia), NwY(ia), NwW(ia), NwH(ia), NwX(ib), NwY(ib), NwW(ib), NwH(ib)) Then
+                        drop = True
+                    End If
+                    If drop Then
+                        Exit For
+                    End If
+                End If
+            End If
+        Next ib
+        If Not drop Then
+            For j = 0 To nKeep - 1
+                If FrS(j) = s Then
+                    If NtIn(FrX(j), FrY(j), FrW(j), FrH(j), NwX(ia), NwY(ia), NwW(ia), NwH(ia)) Then
+                        drop = True
+                        Exit For
+                    End If
+                End If
+            Next j
+        End If
+        If Not drop Then
+            NtAddFr s, NwX(ia), NwY(ia), NwW(ia), NwH(ia)
+        End If
+    Next ia
+End Sub
+
+' прямоугольник a внутри b
+Private Function NtIn(ByVal bx As Double, ByVal by As Double, ByVal bw As Double, ByVal bh As Double, _
+                      ByVal ax As Double, ByVal ay As Double, ByVal aw As Double, ByVal ah As Double) As Boolean
+    NtIn = (ax >= bx - NT_EPS And ay >= by - NT_EPS And ax + aw <= bx + bw + NT_EPS And ay + ah <= by + bh + NT_EPS)
+End Function
+
+' занятый габарит последнего листа прохода
+Private Function NtLastArea(ByVal nsh As Long) As Double
+    Dim i As Long, mx As Double, my As Double
+    If nsh = 0 Then
+        Exit Function
+    End If
+    For i = 0 To NNt - 1
+        If RnS(i) = nsh - 1 Then
+            If RnX(i) + NtPW(i) > mx Then
+                mx = RnX(i) + NtPW(i)
+            End If
+            If RnY(i) + NtPH(i) > my Then
+                my = RnY(i) + NtPH(i)
+            End If
+        End If
+    Next i
+    NtLastArea = mx * my
+End Function
+'@@NESTGEO_END
+'@@NEST_END
