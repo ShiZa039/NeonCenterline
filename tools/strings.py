@@ -206,11 +206,11 @@ STRINGS = {
                       'Sheet {0} of {1} · {2} × {3} mm · {4} · {5} parts · {6}% filled'),
     'nest_report':   ('Разложено деталей: {0}, листов: {1}.\n{2}Поле от края {3} мм, зазор между деталями {4} мм, без поворота.',
                       'Parts nested: {0}, sheets: {1}.\n{2}Edge margin {3} mm, gap between parts {4} mm, no rotation.'),
-    'nest_rep_sheet':('Лист {0} × {1} мм. ', 'Sheet {0} × {1} mm. '),
-    'nest_rep_auto': ('Высота листа {0} мм, ширина по раскладке ({1}–{2} мм, вверх до 10 мм). ',
-                      'Sheet height {0} mm, width to fit the parts ({1}–{2} mm, rounded up to 10 mm). '),
+    'nest_rep_sheet':('Лист {0} × {1} мм (длина × ширина). ', 'Sheet {0} × {1} mm (length × width). '),
+    'nest_rep_auto': ('Ширина листа {0} мм, длина по раскладке ({1}–{2} мм, вверх до 10 мм). ',
+                      'Sheet width {0} mm, length to fit the parts ({1}–{2} mm, rounded up to 10 mm). '),
     'nest_rep_color':('{0}: листов {1}, деталей {2}, заполнение {3}%', '{0}: {1} sheets, {2} parts, {3}% filled'),
-    'nest_rep_widths':(' (ширина: {0})', ' (width: {0})'),
+    'nest_rep_widths':(' (длина: {0})', ' (length: {0})'),
     'nest_rep_tail': ('Каждый лист — группа на своём месте справа от выделения, рамки и подписи — на слое «{0}» (не печатается). '
                       'Заполнение — по габаритам деталей. Отменить — Ctrl+Z.',
                       'Each sheet is a group to the right of the selection; frames and labels are on the "{0}" layer (not printed). '
@@ -218,18 +218,21 @@ STRINGS = {
     'nest_unfit':    ('Больше рабочего поля листа, оставлены на месте: {0}.', 'Larger than the sheet working area, left in place: {0}.'),
     'nest_none':     ('Ни одна деталь не помещается на лист с такими полями.', 'No part fits on the sheet with these margins.'),
     'all_colors':    ('все цвета', 'all colours'),
-    'lbl_nest_size': ('Лист Ш × В, мм (любой — впишите):', 'Sheet W × H, mm (type any size):'),
+    'lbl_nest_size': ('Готовый размер:', 'Preset size:'),
+    'lbl_nest_len':  ('Длина листа, мм:', 'Sheet length, mm:'),
+    'lbl_nest_wid':  ('Ширина листа, мм:', 'Sheet width, mm:'),
+    'prompt_nest_size': ('Лист: длина × ширина, мм (например 900x600):', 'Sheet: length × width, mm (e.g. 900x600):'),
     'lbl_nest_margin': ('Поле от края листа, мм:', 'Margin from the sheet edge, mm:'),
     'lbl_nest_gap':  ('Зазор между деталями, мм:', 'Gap between parts, mm:'),
     'chk_nest_color':('Каждый цвет — на свои листы', 'Each colour on its own sheets'),
-    'chk_nest_auto': ('Ширина по раскладке, не меньше, мм:', 'Width to fit the parts, at least, mm:'),
-    'nest_hint':     ('Бета. Размер листа — любой: впишите свой (стол лазера, заготовка), он запомнится в списке. Раскладка по габаритам, без поворота: ни одна деталь не ближе поля к краю и зазора к соседней. '
-                      'Для фрезы зазор — не меньше её диаметра. С галочкой «Ширина по раскладке» ширина из первого поля — наибольшая, '
-                      'лист обрезается по деталям. Одинаковые, собранные в группы, раскладываются поштучно.',
-                      'Beta. Any sheet size: type your own (laser bed, offcut) and it is kept in the list. Nesting by bounding boxes, no rotation: no part is closer than the margin to the edge or the gap to another part. '
-                      'For a router, use a gap of at least the cutter diameter. With "Width to fit" the width in the first field is the maximum '
-                      'and each sheet is trimmed to the parts. Grouped identical objects are nested one by one.'),
+    'chk_nest_auto': ('Длина по раскладке, не меньше, мм:', 'Length to fit the parts, at least, mm:'),
+    'nest_hint':     ('Бета. Длина — по горизонтали, ширина — по вертикали; размер любой: впишите свой (стол лазера, заготовка), он появится в готовых. '
+                      'Раскладка по габаритам, без поворота: ни одна деталь не ближе поля к краю и зазора к соседней; для фрезы зазор — не меньше её диаметра. '
+                      'С галочкой «Длина по раскладке» длина листа — наибольшая, лист обрезается по деталям. Одинаковые, собранные в группы, раскладываются поштучно.',
+                      'Beta. Length is horizontal, width is vertical; any size: type your own (laser bed, offcut) and it appears in the presets. '
+                      'Nesting by bounding boxes, no rotation: no part is closer than the margin to the edge or the gap to another part; for a router, use a gap of at least the cutter diameter. '
+                      'With "Length to fit" the sheet length is the maximum and each sheet is trimmed to the parts. Grouped identical objects are nested one by one.'),
     'btn_nest':      ('Разложить', 'Nest'),
-    'bad_nest':      ('Проверьте значения: лист 10–100000 мм (например 3050×2050), поле 0–1000 мм, зазор 0–1000 мм, наименьшая ширина не больше ширины листа.',
-                      'Check the values: sheet 10–100000 mm (e.g. 3050×2050), margin 0–1000 mm, gap 0–1000 mm, minimum width not above the sheet width.'),
+    'bad_nest':      ('Проверьте значения: длина и ширина листа 10–100000 мм, поле 0–1000 мм и меньше половины листа, зазор 0–1000 мм, наименьшая длина не больше длины листа.',
+                      'Check the values: sheet length and width 10–100000 mm, margin 0–1000 mm and under half the sheet, gap 0–1000 mm, minimum length not above the sheet length.'),
 }

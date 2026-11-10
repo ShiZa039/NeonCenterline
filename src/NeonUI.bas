@@ -520,7 +520,7 @@ Public Function AskNestParams() As Boolean
         Exit Function
     End If
     NeonRunMode = 0
-    s = InputBox(NeonL("lbl_nest_size"), NeonL("nest_title"), NeonNestSize())
+    s = InputBox(NeonL("prompt_nest_size"), NeonL("nest_title"), NeonNestSize())
     If Len(Trim$(s)) = 0 Then
         Exit Function
     End If

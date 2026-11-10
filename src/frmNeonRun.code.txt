@@ -5,10 +5,13 @@ Option Explicit
 ' элементы скрываются, окно становится короче — сборщик менять не нужно).
 ' NeonRunMode = 2 — перед расстановкой люверсов: отступ от края, расстояние между люверсами,
 ' диаметр и цвет точки, усиление углов (элементы те же, подписи и места — свои).
-' NeonRunMode = 3 — перед раскладкой на листы: размер листа, поле, зазор, по цвету, ширина по раскладке.
+' NeonRunMode = 3 — перед раскладкой на листы: готовый размер, длина и ширина листа, поле, зазор, по цвету,
+' длина по раскладке.
 
 ' люверсы: свой цвет ("S:..."), последний выбранный цвет из списка, защита от повторного Change
 Private gCustom As String, gLastIdx As Long, gBusy As Boolean
+' раскладка: поле ширины листа и его подпись (создаются при открытии окна)
+Private gH As Object, gHL As Object
 
 Private Sub UserForm_Initialize()
     If NeonRunMode = 1 Then
@@ -187,46 +190,75 @@ Private Sub InitGrommets()
 End Sub
 
 Private Sub InitNest()
-    Dim c As Object, v As Variant, wm As Double, i As Long
+    Dim c As Object, v As Variant, wm As Double, i As Long, w As Double, h As Double
+    gBusy = True
     For Each c In Me.Controls
         c.Visible = False
     Next c
     Me.Caption = NeonL("nest_title")
-    GromRow lblTool, cboTool, 14, NeonL("lbl_nest_size")
-    ' список: свои размеры (последние введённые), затем стандартные листы и стол лазера
-    cboTool.Clear
+    ' готовые размеры: свои (последние введённые), затем стандартные листы и стол лазера
+    lblType.Left = 12: lblType.Top = 18: lblType.Width = 120
+    lblType.Caption = NeonL("lbl_nest_size")
+    lblType.Visible = True
+    cboType.Left = 140: cboType.Top = 14: cboType.Width = 198
+    cboType.Clear
     For Each v In Split(GetSetting("NeonCenterline", "Nest", "Recent", "") & ";3050x2050;3050x2030;3000x2000;2050x1525;" & _
                         "2000x1000;1525x1025;1000x600;900x600;600x400;500x300", ";")
-        If Len(v) > 0 And Not NestInList(CStr(v)) Then
-            cboTool.AddItem v
+        If Len(v) > 0 Then
+            If NestInList(NestShow(CStr(v))) < 0 Then
+                cboType.AddItem NestShow(CStr(v))
+            End If
         End If
     Next v
-    cboTool.Text = NeonNestSize()
-    GromRow lblEnd, cboEnd, 40, NeonL("lbl_nest_margin")
+    cboType.Visible = True
+    ' длина (по горизонтали) и ширина (по вертикали) — отдельными полями; поле ширины окно создаёт
+    ' само (сборщик его не делает)
+    GromRow lblTool, cboTool, 40, NeonL("lbl_nest_len")
+    cboTool.Clear
+    For Each v In Array("3050", "3000", "2050", "1525", "1000", "900", "600")
+        cboTool.AddItem v
+    Next v
+    If gH Is Nothing Then
+        Set gHL = Me.Controls.Add("Forms.Label.1", "lblNestH", True)
+        Set gH = Me.Controls.Add("Forms.ComboBox.1", "cboNestH", True)
+        gH.Height = cboTool.Height
+    End If
+    GromRow gHL, gH, 66, NeonL("lbl_nest_wid")
+    gH.Clear
+    For Each v In Array("2050", "2030", "2000", "1525", "1025", "600", "400")
+        gH.AddItem v
+    Next v
+    If Not NeonNestParse(NeonNestSize(), w, h) Then
+        w = 3050: h = 2050
+    End If
+    cboTool.Text = FmtNum(w)
+    gH.Text = FmtNum(h)
+    cboType.ListIndex = NestInList(NestShow(FmtNum(w) & "x" & FmtNum(h)))
+    GromRow lblEnd, cboEnd, 92, NeonL("lbl_nest_margin")
     cboEnd.Clear
     For Each v In Array("0", "5", "10", "15", "20")
         cboEnd.AddItem v
     Next v
     cboEnd.Text = FmtNum(NeonNestNum("Margin", 10))
-    GromRow lblCut, cboCut, 66, NeonL("lbl_nest_gap")
+    GromRow lblCut, cboCut, 118, NeonL("lbl_nest_gap")
     cboCut.Clear
     For Each v In Array("3", "5", "8", "10", "12", "15")
         cboCut.AddItem v
     Next v
     cboCut.Text = FmtNum(NeonNestNum("Gap", 10))
-    chkFit.Left = 12: chkFit.Top = 94: chkFit.Width = 326
+    chkFit.Left = 12: chkFit.Top = 146: chkFit.Width = 326
     chkFit.Caption = NeonL("chk_nest_color")
     chkFit.Value = NeonNestFlag("ByColor", True)
     chkFit.Visible = True
-    chkAsk.Left = 12: chkAsk.Top = 120: chkAsk.Width = 232
+    chkAsk.Left = 12: chkAsk.Top = 172: chkAsk.Width = 232
     chkAsk.Caption = NeonL("chk_nest_auto")
     chkAsk.Value = NeonNestFlag("AutoW", False)
     chkAsk.Visible = True
-    ' наименьшая ширина: список с правом ввести своё (если окно позволяет)
+    ' наименьшая длина: список с правом ввести своё (если окно позволяет)
     On Error Resume Next
     cboTrim.Style = 0
     On Error GoTo 0
-    cboTrim.Left = 250: cboTrim.Top = 118: cboTrim.Width = 88
+    cboTrim.Left = 250: cboTrim.Top = 170: cboTrim.Width = 88
     cboTrim.Clear
     For Each v In Array("0", "300", "500", "1000", "1500", "2000")
         cboTrim.AddItem v
@@ -243,7 +275,7 @@ Private Sub InitNest()
     On Error GoTo 0
     cboTrim.Enabled = chkAsk.Value
     cboTrim.Visible = True
-    lblHint.Left = 12: lblHint.Top = 148: lblHint.Width = 326
+    lblHint.Left = 12: lblHint.Top = 200: lblHint.Width = 326
     lblHint.WordWrap = True
     lblHint.Height = 108
     lblHint.Caption = NeonL("nest_hint")
@@ -256,20 +288,39 @@ Private Sub InitNest()
     btnCancel.Visible = True
     Me.Height = btnOK.Top + btnOK.Height + 50
     NeonRunConfirmed = False
+    gBusy = False
 End Sub
 
-' раскладка: размер уже есть в списке листов
-Private Function NestInList(ByVal s As String) As Boolean
+' раскладка: «3050x2050» -> «3050 × 2050» для списка готовых размеров
+Private Function NestShow(ByVal s As String) As String
+    NestShow = Replace(s, "x", " " & ChrW(&HD7) & " ")
+End Function
+
+' раскладка: готовый размер выбран — длина и ширина в поля
+Private Sub NestPreset()
+    Dim w As Double, h As Double
+    If cboType.ListIndex < 0 Then
+        Exit Sub
+    End If
+    If NeonNestParse(cboType.List(cboType.ListIndex), w, h) Then
+        cboTool.Text = FmtNum(w)
+        gH.Text = FmtNum(h)
+    End If
+End Sub
+
+' раскладка: номер размера в списке готовых, -1 — нет
+Private Function NestInList(ByVal s As String) As Long
     Dim i As Long
-    For i = 0 To cboTool.ListCount - 1
-        If cboTool.List(i) = s Then
-            NestInList = True
+    NestInList = -1
+    For i = 0 To cboType.ListCount - 1
+        If cboType.List(i) = s Then
+            NestInList = i
             Exit Function
         End If
     Next i
 End Function
 
-' раскладка: наименьшая ширина — только с галочкой «Ширина по раскладке»
+' раскладка: наименьшая длина — только с галочкой «Длина по раскладке»
 Private Sub chkAsk_Click()
     If NeonRunMode = 3 Then
         cboTrim.Enabled = chkAsk.Value
@@ -288,6 +339,10 @@ End Sub
 ' люверсы: «Другой…» в списке цветов — окно выбора цвета CorelDRAW
 Private Sub cboType_Change()
     Dim s As String, cur As String
+    If NeonRunMode = 3 And Not gBusy Then
+        NestPreset
+        Exit Sub
+    End If
     If NeonRunMode <> 2 Or gBusy Then
         Exit Sub
     End If
@@ -314,7 +369,8 @@ Private Sub btnOK_Click()
     Dim t As Double, c As Double, st As Double, d As Double, w As Double, h As Double
     If NeonRunMode = 3 Then
         t = ParseNum(cboEnd.Text): c = ParseNum(cboCut.Text): d = ParseNum(cboTrim.Text)
-        If Not NeonNestParse(cboTool.Text, w, h) Then
+        w = ParseNum(cboTool.Text): h = ParseNum(gH.Text)
+        If w < 10 Or w > 100000 Or h < 10 Or h > 100000 Then
             MsgBox NeonL("bad_nest"), vbExclamation, NeonL("nest_title")
             Exit Sub
         End If
