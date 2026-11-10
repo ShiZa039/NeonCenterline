@@ -193,9 +193,13 @@ Private Sub InitNest()
     Next c
     Me.Caption = NeonL("nest_title")
     GromRow lblTool, cboTool, 14, NeonL("lbl_nest_size")
+    ' список: свои размеры (последние введённые), затем стандартные листы и стол лазера
     cboTool.Clear
-    For Each v In Array("3050x2050", "3050x2030", "3000x2000", "2050x1525", "2000x1000", "1525x1025")
-        cboTool.AddItem v
+    For Each v In Split(GetSetting("NeonCenterline", "Nest", "Recent", "") & ";3050x2050;3050x2030;3000x2000;2050x1525;" & _
+                        "2000x1000;1525x1025;1000x600;900x600;600x400;500x300", ";")
+        If Len(v) > 0 And Not NestInList(CStr(v)) Then
+            cboTool.AddItem v
+        End If
     Next v
     cboTool.Text = NeonNestSize()
     GromRow lblEnd, cboEnd, 40, NeonL("lbl_nest_margin")
@@ -241,7 +245,7 @@ Private Sub InitNest()
     cboTrim.Visible = True
     lblHint.Left = 12: lblHint.Top = 148: lblHint.Width = 326
     lblHint.WordWrap = True
-    lblHint.Height = 84
+    lblHint.Height = 108
     lblHint.Caption = NeonL("nest_hint")
     lblHint.Visible = True
     btnOK.Top = lblHint.Top + lblHint.Height + 10
@@ -253,6 +257,17 @@ Private Sub InitNest()
     Me.Height = btnOK.Top + btnOK.Height + 50
     NeonRunConfirmed = False
 End Sub
+
+' раскладка: размер уже есть в списке листов
+Private Function NestInList(ByVal s As String) As Boolean
+    Dim i As Long
+    For i = 0 To cboTool.ListCount - 1
+        If cboTool.List(i) = s Then
+            NestInList = True
+            Exit Function
+        End If
+    Next i
+End Function
 
 ' раскладка: наименьшая ширина — только с галочкой «Ширина по раскладке»
 Private Sub chkAsk_Click()
@@ -308,6 +323,7 @@ Private Sub btnOK_Click()
             Exit Sub
         End If
         SaveSetting "NeonCenterline", "Nest", "Size", FmtNum(w) & "x" & FmtNum(h)
+        NestRemember FmtNum(w) & "x" & FmtNum(h)
         SaveSetting "NeonCenterline", "Nest", "Margin", FmtNum(t)
         SaveSetting "NeonCenterline", "Nest", "Gap", FmtNum(c)
         SaveSetting "NeonCenterline", "Nest", "ByColor", IIf(chkFit.Value, "1", "0")
@@ -380,6 +396,20 @@ Private Sub btnOK_Click()
     SaveSetting "NeonCenterline", "UI", "AskTool", IIf(chkAsk.Value, "1", "0")
     NeonRunConfirmed = True
     Me.Hide
+End Sub
+
+' раскладка: размер листа — первым в список последних (не больше шести)
+Private Sub NestRemember(ByVal s As String)
+    Dim a() As String, r As String, i As Long, n As Long
+    r = s: n = 1
+    a = Split(GetSetting("NeonCenterline", "Nest", "Recent", ""), ";")
+    For i = 0 To UBound(a)
+        If Len(a(i)) > 0 And a(i) <> s And n < 6 Then
+            r = r & ";" & a(i)
+            n = n + 1
+        End If
+    Next i
+    SaveSetting "NeonCenterline", "Nest", "Recent", r
 End Sub
 
 Private Sub btnCancel_Click()

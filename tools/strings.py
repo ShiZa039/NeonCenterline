@@ -218,15 +218,15 @@ STRINGS = {
     'nest_unfit':    ('Больше рабочего поля листа, оставлены на месте: {0}.', 'Larger than the sheet working area, left in place: {0}.'),
     'nest_none':     ('Ни одна деталь не помещается на лист с такими полями.', 'No part fits on the sheet with these margins.'),
     'all_colors':    ('все цвета', 'all colours'),
-    'lbl_nest_size': ('Лист, ширина × высота, мм:', 'Sheet, width × height, mm:'),
+    'lbl_nest_size': ('Лист Ш × В, мм (любой — впишите):', 'Sheet W × H, mm (type any size):'),
     'lbl_nest_margin': ('Поле от края листа, мм:', 'Margin from the sheet edge, mm:'),
     'lbl_nest_gap':  ('Зазор между деталями, мм:', 'Gap between parts, mm:'),
     'chk_nest_color':('Каждый цвет — на свои листы', 'Each colour on its own sheets'),
     'chk_nest_auto': ('Ширина по раскладке, не меньше, мм:', 'Width to fit the parts, at least, mm:'),
-    'nest_hint':     ('Бета. Раскладка по габаритам, без поворота: ни одна деталь не ближе поля к краю и зазора к соседней. '
+    'nest_hint':     ('Бета. Размер листа — любой: впишите свой (стол лазера, заготовка), он запомнится в списке. Раскладка по габаритам, без поворота: ни одна деталь не ближе поля к краю и зазора к соседней. '
                       'Для фрезы зазор — не меньше её диаметра. С галочкой «Ширина по раскладке» ширина из первого поля — наибольшая, '
                       'лист обрезается по деталям. Одинаковые, собранные в группы, раскладываются поштучно.',
-                      'Beta. Nesting by bounding boxes, no rotation: no part is closer than the margin to the edge or the gap to another part. '
+                      'Beta. Any sheet size: type your own (laser bed, offcut) and it is kept in the list. Nesting by bounding boxes, no rotation: no part is closer than the margin to the edge or the gap to another part. '
                       'For a router, use a gap of at least the cutter diameter. With "Width to fit" the width in the first field is the maximum '
                       'and each sheet is trimmed to the parts. Grouped identical objects are nested one by one.'),
     'btn_nest':      ('Разложить', 'Nest'),
