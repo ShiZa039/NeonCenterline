@@ -9,7 +9,8 @@ Attribute VB_Name = "NeonTools"
 '    PlaceGrommets   — точки под люверсы по краю выделенных баннеров (подложек);
 '    CleanContours   — очистить контур: убрать наложения и петли (каждый объект — одна кривая);
 '    GroupSame       — одинаковые объекты (форма и цвет) — в группы;
-'    NestSheets      — раскладка деталей на листы: по габаритам, без поворота, с полем и зазором.
+'    NestSheets      — раскладка деталей на листы: по габаритам, без поворота, с полем и зазором;
+'    SplitLetters    — разбить на буквы: по объекту на букву, дырки остаются в своих буквах.
 ' =====================================================================
 Option Explicit
 
@@ -83,6 +84,9 @@ Private SmSW() As Double, SmSH() As Double, SmLen() As Double
 ' результат: класс каждого объекта, число классов; сетка сравнения (отрезки, ячейки)
 Private SmCls() As Long, NSmCls As Long
 Private GrA() As Long, GrB() As Long, NGr As Long, GrCnt() As Long, GrSt() As Long, GrIdx() As Long
+' разбить на буквы: почти замкнутый контур (мм), число букв, у буквы — подпути в LtIdx (первый, число)
+Private Const LT_NEAR As Double = 0.05
+Private LtNG As Long, LtG0() As Long, LtGn() As Long, LtIdx() As Long
 ' раскладка: детали (габарит без зазора), порядок, результат (лист, x, y от левого верхнего угла листа)
 Private NtW() As Double, NtH() As Double, NNt As Long, NtOrd() As Long
 Private NtS() As Long, NtX() As Double, NtY() As Double, NtSheets As Long, NtMode As Long, NtHeur As Long
@@ -3140,6 +3144,97 @@ Private Sub SmAddSg(ByVal x0 As Double, ByVal y0 As Double, ByVal x1 As Double, 
 End Sub
 
 ' ---------------------------------------------------------------------
+'  Кнопка «Разбить на буквы» (группа «Контур ▾»)
+' ---------------------------------------------------------------------
+' кривая из многих контуров (текст в кривых, объединённые буквы) -> по объекту на букву, дырки — в
+' своих буквах. Каждая буква — копия исходной кривой (заливка, обводка, слой те же) с своими
+' контурами, исходная удаляется. Текст переводится в кривые сам
+Public Sub SplitLetters()
+    Dim col As Collection, oldUnit As cdrUnit, grp As Boolean, errText As String, ttl As String, msg As String
+    Dim i As Long, g As Long, m As Long, q As Long, nSkip As Long, nObj As Long, nLet As Long, nKeep As Long
+    Dim shp As Shape, d As Shape, crv As Curve, res As ShapeRange
+    ttl = NeonL("split_title")
+    If ActiveDocument Is Nothing Then
+        MsgBox NeonL("err_nodoc"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If ActiveSelectionRange.Count = 0 Then
+        MsgBox NeonL("err_nosel_any"), vbExclamation, ttl
+        Exit Sub
+    End If
+    oldUnit = ActiveDocument.Unit
+    ActiveDocument.Unit = cdrMillimeter
+    ActiveDocument.BeginCommandGroup ttl
+    grp = True
+    Optimization = True
+    EventsEnabled = False
+    On Error GoTo Fail
+    Set col = New Collection
+    CollectClean ActiveSelectionRange, col, nSkip
+    Set res = CreateShapeRange
+    For i = 1 To col.Count
+        Set shp = col(i)
+        NSq = 0: NSg = 0
+        ReDim SqS0(0 To 63): ReDim SqN(0 To 63): ReDim SqC(0 To 63)
+        ReDim SgX(0 To 1023): ReDim SgY(0 To 1023): ReDim SgL(0 To 255)
+        SmReadGeo shp
+        LtNG = 0
+        If NSq >= 2 Then
+            LettersGeo
+        End If
+        If LtNG <= 1 Then
+            res.Add shp
+            nKeep = nKeep + 1
+        Else
+            For g = 0 To LtNG - 1
+                Set crv = Application.CreateCurve(ActiveDocument)
+                For m = LtG0(g) To LtG0(g) + LtGn(g) - 1
+                    q = LtIdx(m)
+                    AppendSubCO crv, SgX, SgY, SgL, SqS0(q), SqN(q), SqC(q)
+                Next m
+                Set d = shp.Duplicate(0, 0)
+                d.Curve.CopyAssign crv
+                res.Add d
+            Next g
+            shp.Delete
+            nObj = nObj + 1: nLet = nLet + LtNG
+        End If
+    Next i
+    On Error Resume Next
+    res.CreateSelection
+    On Error GoTo Fail
+Fin:
+    On Error Resume Next
+    EventsEnabled = True
+    Optimization = False
+    If grp Then
+        ActiveDocument.EndCommandGroup
+    End If
+    ActiveDocument.Unit = oldUnit
+    ActiveWindow.Refresh
+    Application.Refresh
+    On Error GoTo 0
+    If Len(errText) > 0 Then
+        MsgBox NeonLF("err_fail", errText), vbCritical, ttl
+        Exit Sub
+    End If
+    If nObj = 0 Then
+        msg = NeonL("split_none")
+    Else
+        msg = NeonLF("split_report", nObj, nLet, nKeep)
+    End If
+    If nSkip > 0 Then
+        msg = msg & vbCrLf & vbCrLf & NeonLF("clean_skipped", nSkip)
+    End If
+    MsgBox msg, vbInformation, ttl
+    NeonToolbarCheck
+    Exit Sub
+Fail:
+    errText = Err.Description
+    Resume Fin
+End Sub
+
+' ---------------------------------------------------------------------
 '  Кнопка «Раскладка на листы»
 ' ---------------------------------------------------------------------
 Public Sub NestSheets()
@@ -3928,6 +4023,165 @@ Public Function SmHasTwin(ByVal o As Long, ByVal tol As Double) As Boolean
     Next j
 End Function
 '@@SAMEGEO_END
+
+'@@LETTERSGEO_BEGIN
+' ---------------------------------------------------------------------
+'  Разбить на буквы: геометрия (повторяет proto/letters.py один в один).
+'  Вход: подпути одного объекта SqS0/SqN/SqC (NSq), сегменты SgX/SgY/SgL. Контуры — точки, как у
+'  «Одинаковых» (SmSample). У замкнутого контура — точка на нём (середина самого длинного отрезка)
+'  и сколько других контуров её окружают: чётное число — наружный контур буквы, нечётное — дырка;
+'  дырка — к самому маленькому из окружающих. Незамкнутые — каждый отдельно.
+'  Выход: LtNG букв, у буквы — LtGn подпутей с LtG0 в LtIdx (наружный первым); буквы слева направо.
+' ---------------------------------------------------------------------
+Public Sub LettersGeo()
+    Dim k As Long, i As Long, j As Long, n As Long, s As Long, m As Long, best As Double, l As Double
+    Dim ax As Double, ay As Double, bx As Double, by As Double, a As Double, has() As Boolean, ng As Long
+    Dim cl() As Boolean, bx0() As Double, by0() As Double, bx1() As Double, by1() As Double
+    Dim prx() As Double, pry() As Double, ar() As Double, dep() As Long, par() As Long, used() As Boolean
+    Dim g0() As Long, gn() As Long, ord() As Long, t As Long
+    n = NSq
+    NSm = 1
+    ReDim SmQ0(0 To 1): ReDim SmQn(0 To 1)
+    SmQ0(0) = 0: SmQn(0) = n
+    NSmP = 0
+    ReDim SmX(0 To 1023): ReDim SmY(0 To 1023)
+    ReDim QP0(0 To n): ReDim QPn(0 To n)
+    ReDim SmSW(0 To 1): ReDim SmSH(0 To 1): ReDim SmLen(0 To 1)
+    SmSample 0
+    ReDim cl(0 To n): ReDim has(0 To n): ReDim bx0(0 To n): ReDim by0(0 To n): ReDim bx1(0 To n): ReDim by1(0 To n)
+    ReDim prx(0 To n): ReDim pry(0 To n): ReDim ar(0 To n): ReDim dep(0 To n): ReDim par(0 To n)
+    For k = 0 To n - 1
+        s = SqS0(k) + SqN(k) - 1
+        cl(k) = SqC(k)
+        If Not cl(k) Then
+            cl(k) = (SmDist(SgX(4 * SqS0(k)), SgY(4 * SqS0(k)), SgX(4 * s + 3), SgY(4 * s + 3)) < LT_NEAR)
+        End If
+        par(k) = -1
+        If QPn(k) > 0 Then
+            bx0(k) = SmX(QP0(k)): by0(k) = SmY(QP0(k)): bx1(k) = bx0(k): by1(k) = by0(k)
+            For i = QP0(k) + 1 To QP0(k) + QPn(k) - 1
+                If SmX(i) < bx0(k) Then
+                    bx0(k) = SmX(i)
+                End If
+                If SmY(i) < by0(k) Then
+                    by0(k) = SmY(i)
+                End If
+                If SmX(i) > bx1(k) Then
+                    bx1(k) = SmX(i)
+                End If
+                If SmY(i) > by1(k) Then
+                    by1(k) = SmY(i)
+                End If
+            Next i
+        End If
+        If cl(k) And QPn(k) >= 3 Then
+            has(k) = True
+            best = -1
+            a = 0
+            For m = 0 To QPn(k) - 1
+                i = QP0(k) + m
+                j = QP0(k) + (m + 1) Mod QPn(k)
+                ax = SmX(i): ay = SmY(i): bx = SmX(j): by = SmY(j)
+                l = SmDist(ax, ay, bx, by)
+                If l > best Then
+                    best = l
+                    prx(k) = (ax + bx) / 2: pry(k) = (ay + by) / 2
+                End If
+                a = a + (ax * by - bx * ay)
+            Next m
+            ar(k) = Abs(a / 2)
+        End If
+    Next k
+    For i = 0 To n - 1
+        If has(i) Then
+            For j = 0 To n - 1
+                If j <> i And has(j) Then
+                    If Not (bx0(i) < bx0(j) - 0.000000001 Or by0(i) < by0(j) - 0.000000001 Or _
+                            bx1(i) > bx1(j) + 0.000000001 Or by1(i) > by1(j) + 0.000000001) Then
+                        If LtInside(prx(i), pry(i), j) Then
+                            dep(i) = dep(i) + 1
+                            If par(i) < 0 Then
+                                par(i) = j
+                            ElseIf ar(j) < ar(par(i)) Then
+                                par(i) = j
+                            End If
+                        End If
+                    End If
+                End If
+            Next j
+        End If
+    Next i
+    ' буквы: наружный контур и его дырки; незамкнутый — отдельно; оставшееся (не должно быть) — отдельно
+    ReDim LtIdx(0 To n): ReDim g0(0 To n): ReDim gn(0 To n): ReDim used(0 To n)
+    ng = 0: t = 0
+    For k = 0 To n - 1
+        If Not has(k) Or dep(k) Mod 2 = 0 Then
+            g0(ng) = t
+            LtIdx(t) = k: t = t + 1: used(k) = True
+            If has(k) Then
+                For i = 0 To n - 1
+                    If has(i) And dep(i) Mod 2 = 1 And par(i) = k Then
+                        LtIdx(t) = i: t = t + 1: used(i) = True
+                    End If
+                Next i
+            End If
+            gn(ng) = t - g0(ng)
+            ng = ng + 1
+        End If
+    Next k
+    For k = 0 To n - 1
+        If Not used(k) Then
+            g0(ng) = t: LtIdx(t) = k: t = t + 1: gn(ng) = 1
+            ng = ng + 1
+        End If
+    Next k
+    ' слева направо: по левому краю наружного контура, затем сверху, затем по номеру
+    ReDim ord(0 To ng)
+    For i = 0 To ng - 1
+        k = i
+        Do While k > 0
+            If Not LtBefore(LtIdx(g0(i)), LtIdx(g0(ord(k - 1))), bx0, by1) Then
+                Exit Do
+            End If
+            ord(k) = ord(k - 1)
+            k = k - 1
+        Loop
+        ord(k) = i
+    Next i
+    LtNG = ng
+    ReDim LtG0(0 To ng): ReDim LtGn(0 To ng)
+    For i = 0 To ng - 1
+        LtG0(i) = g0(ord(i)): LtGn(i) = gn(ord(i))
+    Next i
+End Sub
+
+' буква с наружным контуром a раньше, чем с b
+Private Function LtBefore(ByVal a As Long, ByVal b As Long, bx0() As Double, by1() As Double) As Boolean
+    If bx0(a) <> bx0(b) Then
+        LtBefore = (bx0(a) < bx0(b))
+    ElseIf by1(a) <> by1(b) Then
+        LtBefore = (by1(a) > by1(b))
+    Else
+        LtBefore = (a < b)
+    End If
+End Function
+
+' точка внутри контура k (чёт-нечет по точкам контура)
+Private Function LtInside(ByVal px As Double, ByVal py As Double, ByVal k As Long) As Boolean
+    Dim m As Long, i As Long, j As Long, ax As Double, ay As Double, bx As Double, by As Double, c As Boolean
+    For m = 0 To QPn(k) - 1
+        i = QP0(k) + m
+        j = QP0(k) + (m + 1) Mod QPn(k)
+        ax = SmX(i): ay = SmY(i): bx = SmX(j): by = SmY(j)
+        If (ay > py) <> (by > py) Then
+            If px < (bx - ax) * (py - ay) / (by - ay) + ax Then
+                c = Not c
+            End If
+        End If
+    Next m
+    LtInside = c
+End Function
+'@@LETTERSGEO_END
 
 '@@NESTGEO_BEGIN
 ' ---------------------------------------------------------------------

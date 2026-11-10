@@ -6,7 +6,7 @@
   itemData type="flyout" с flyoutBarRef на commandBarData type="menu" flyout="true" (как кнопки
   со списком в самом CorelDRAW, DrawUI.items.xml; без type="flyout" CorelDRAW 2026 кнопку не рисует).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 9]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 10]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
@@ -89,6 +89,13 @@
                 userCaption="Неон: очистить контур"
                 userToolTip="Убрать наложения и петли: перекрывающиеся части букв и фигур сливаются в один контур, внутренние линии уходят, дырки остаются. Текст переводится в кривые. Отмена — Ctrl+Z"
                 enable="true"/>
+      <itemData guid="61d74f9e-be33-5689-a10a-7913d24a91f5"
+                icon="guid://61d74f9e-be33-5689-a10a-7913d24a91f5"
+                dynamicCommand="NeonCenterline.NeonTools.SplitLetters"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Неон: разбить на буквы"
+                userToolTip="Разбить текст в кривых или объединённые буквы на отдельные буквы: дырки остаются в своих буквах (не нужно вычитать меньшее из большего). Текст переводится в кривые сам. Отмена — Ctrl+Z"
+                enable="true"/>
       <itemData guid="67333f2d-18b9-5925-b8bc-24d97a6dff93"
                 icon="guid://67333f2d-18b9-5925-b8bc-24d97a6dff93"
                 dynamicCommand="NeonCenterline.NeonTools.PlaceGrommets"
@@ -117,7 +124,7 @@
                 flyoutBarRef="5adecbd6-e92f-5962-9db2-01885295268a"
                 icon="guid://58b78302-39ef-5436-8097-5392406fe15a"
                 userCaption="Неон: контур"
-                userToolTip="Упростить контур, очистить наложения и петли"
+                userToolTip="Упростить контур, очистить наложения и петли, разбить на буквы"
                 enable="true"/>
       <itemData guid="d32b7178-2e37-5391-aca2-12628ac3838b"
                 type="flyout"
@@ -172,6 +179,7 @@
         <menu>
           <item guidRef="18048cca-273b-50eb-9d03-54111cc920ce"/>
           <item guidRef="f694ba63-40ea-5adc-b912-0cea2e6c287a"/>
+          <item guidRef="61d74f9e-be33-5689-a10a-7913d24a91f5"/>
         </menu>
       </commandBarData>
       <commandBarData guid="5731901c-4115-58a7-9466-9da0ca279658"

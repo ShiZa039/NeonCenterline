@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <config>
   <resources>
-    <resource name="e679441a-cbd6-5d39-a310-03516f03525e" path="Resources9.dll">
+    <resource name="e679441a-cbd6-5d39-a310-03516f03525e" path="Resources10.dll">
       <resourceMap>
         <resEntry id="3d22040b-4ee7-596d-91ae-1653ffb39f77" string="20000"/>
         <resEntry id="4e6d43bf-0b2d-500c-b154-b553b6087991" string="20001" icon="101"/>
@@ -21,6 +21,7 @@
         <resEntry id="58b78302-39ef-5436-8097-5392406fe15a" string="20015" icon="107"/>
         <resEntry id="b4b6f389-35cc-5b46-b3db-ffb4e200250f" string="20016" icon="113"/>
         <resEntry id="3ef0efdf-6719-53ff-a444-924cb4d86b5e" string="20017" icon="114"/>
+        <resEntry id="61d74f9e-be33-5689-a10a-7913d24a91f5" string="20018" icon="115"/>
       </resourceMap>
     </resource>
   </resources>

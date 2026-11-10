@@ -181,6 +181,13 @@ STRINGS = {
     'btn_grom':      ('Расставить', 'Place'),
     'bad_grom':      ('Проверьте значения: от края 0–500 мм, расстояние 20–10000 мм, точка 0–100 мм.',
                       'Check the values: edge 0–500 mm, distance 20–10000 mm, point 0–100 mm.'),
+    'split_title':   ('Неон: разбить на буквы', 'Neon: split into letters'),
+    'split_none':    ('В выделении нет кривых или текста из нескольких букв — разбивать нечего.',
+                      'The selection has no curves or text made of several letters — nothing to split.'),
+    'split_report':  ('Разбито объектов: {0}, получилось отдельных букв и знаков: {1}. Дырки остались в своих буквах; точки над Ё, Й, i и детали внутри дырок (буква в «®») — отдельными объектами. '
+                      'Объектов из одной буквы — не тронуты: {2}.\n\nЕсли буквы налезают друг на друга, сначала «Очистить контур». Отменить — Ctrl+Z.',
+                      'Objects split: {0}, separate letters and signs: {1}. Holes stay in their letters; the dots of Ё, Й, i and parts inside holes (the letter in ®) are separate objects. '
+                      'Single-letter objects left as they were: {2}.\n\nIf letters overlap, run "Clean outline" first. Undo: Ctrl+Z.'),
     'same_title':    ('Неон: одинаковые — в группы', 'Neon: group identical'),
     'same_nosel':    ('Выделите объекты: кривые, текст, фигуры.', 'Select the objects: curves, text, shapes.'),
     'same_none':     ('Одинаковых объектов не найдено: все {0} разные.\n\nОдинаковые — одна форма с точностью до 0,1 мм (без поворота и зеркала) и один цвет.',
