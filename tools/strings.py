@@ -184,9 +184,9 @@ STRINGS = {
     'split_title':   ('Неон: разбить на буквы', 'Neon: split into letters'),
     'split_none':    ('В выделении нет кривых или текста из нескольких букв — разбивать нечего.',
                       'The selection has no curves or text made of several letters — nothing to split.'),
-    'split_report':  ('Разбито объектов: {0}, получилось отдельных букв и знаков: {1}. Дырки остались в своих буквах; точки над Ё, Й, i и детали внутри дырок (буква в «®») — отдельными объектами. '
+    'split_report':  ('Разбито объектов: {0}, получилось отдельных букв и знаков: {1}. Дырки остались в своих буквах, точки и акценты (Ё, Й, i, !, ?) — со своей буквой; детали внутри дырок (буква в «®», точка в нуле) — отдельными объектами. '
                       'Объектов из одной буквы — не тронуты: {2}.\n\nЕсли буквы налезают друг на друга, сначала «Очистить контур». Отменить — Ctrl+Z.',
-                      'Objects split: {0}, separate letters and signs: {1}. Holes stay in their letters; the dots of Ё, Й, i and parts inside holes (the letter in ®) are separate objects. '
+                      'Objects split: {0}, separate letters and signs: {1}. Holes stay in their letters, dots and accents (Ё, Й, i, !, ?) stay with their letter; parts inside holes (the letter in ®, the dot in a zero) are separate objects. '
                       'Single-letter objects left as they were: {2}.\n\nIf letters overlap, run "Clean outline" first. Undo: Ctrl+Z.'),
     'same_title':    ('Неон: одинаковые — в группы', 'Neon: group identical'),
     'same_nosel':    ('Выделите объекты: кривые, текст, фигуры.', 'Select the objects: curves, text, shapes.'),

@@ -5,7 +5,8 @@
 каждого замкнутого контура — точка на нём (середина самого длинного отрезка) и сколько других
 контуров её окружают (чёт-нечет): чётное число — наружный контур буквы, нечётное — дырка; дырка
 идёт к самому маленькому из окружающих контуров. Остров в дырке («®», буква в «О») — отдельная
-буква. Незамкнутые контуры — каждый отдельно. Буквы — слева направо (по левому краю, затем сверху).
+буква. Незамкнутые контуры — каждый отдельно. Точки и акценты (Ё, Й, i, ї, !, ?, ÷) — со своей буквой
+(attach_marks). Буквы — слева направо (по левому краю, затем сверху).
 """
 import math
 from nesting import shape, _d
@@ -91,5 +92,78 @@ def split(subs):
     for i in range(n):
         if i not in used:
             groups.append([i])
+    groups = attach_marks(groups, bb, parent)
     groups.sort(key=lambda g: (bb[g[0]][0], -bb[g[0]][3], g[0]))
     return groups
+
+
+MARK_SIZE = 0.4  # знак — не больше 0.4 буквы по большей стороне габарита,
+MARK_AREA = 0.3  # или не больше 0.3 её площади (по габариту) и не больше 0.7 по большей стороне
+MARK_SIZE2 = 0.7
+MARK_X = 0.25    # центр знака — над буквой или под ней (её габарит по горизонтали + 0.25 её размера с каждой стороны)
+MARK_GAP = 0.35  # и не дальше 0.35 её размера по вертикали
+
+
+def attach_marks(groups, bb, par):
+    """Точки и акценты — к своей букве (Ё, Й, i, ї, !, ?, ÷): кусок, который намного меньше буквы,
+    стоит над ней или под ней (центр — выше или ниже её габарита) и близко по вертикали, идёт к ней; из таких букв — к той, у которой
+    меньше зазор по вертикали плюс сдвиг центров по горизонтали. Только внутри одного уровня
+    вложенности (тот же окружающий контур): буквы в дырке рамки к рамке не липнут, точка в нуле и
+    буква в «®» остаются отдельными. Куски одного размера (двоеточие, «=», «ы») и стоящие рядом
+    (точка после буквы, кольца «%») не сливаются."""
+    n = len(groups)
+    if n < 2:
+        return groups
+    box = [bb[g[0]] for g in groups]
+    size = [max(b[2] - b[0], b[3] - b[1]) for b in box]
+    area = [(b[2] - b[0]) * (b[3] - b[1]) for b in box]
+    lvl = [par[g[0]] for g in groups]
+    up = list(range(n))
+
+    def find(i):
+        while up[i] != i:
+            i = up[i]
+        return i
+    for i in range(n):
+        x0, y0, x1, y1 = box[i]
+        cx = (x0 + x1) / 2
+        cy = (y0 + y1) / 2
+        best = -1
+        bs = 0.0
+        ba = 0.0
+        for j in range(n):
+            if j == i or lvl[j] != lvl[i]:
+                continue
+            if not (size[i] <= MARK_SIZE * size[j] or
+                    (area[i] <= MARK_AREA * area[j] and size[i] <= MARK_SIZE2 * size[j])):
+                continue
+            u0, v0, u1, v1 = box[j]
+            if cx < u0 - MARK_X * size[j] or cx > u1 + MARK_X * size[j]:
+                continue
+            # знак — над или под буквой, а не рядом (точка после «Ш.» — не её)
+            if cy >= v0 and cy <= v1:
+                continue
+            gap = max(0.0, v0 - y1, y0 - v1)
+            if gap > MARK_GAP * size[j]:
+                continue
+            sc = gap + abs(cx - (u0 + u1) / 2)
+            if best < 0 or sc < bs or (sc == bs and area[j] > ba):
+                best = j
+                bs = sc
+                ba = area[j]
+        if best >= 0:
+            a = find(i)
+            b = find(best)
+            if a != b:
+                up[a] = b
+    out = []
+    for r in range(n):
+        if find(r) != r:
+            continue
+        # кусок-корень первым (его наружный контур задаёт место буквы), затем остальные по номеру
+        g = list(groups[r])
+        for i in range(n):
+            if i != r and find(i) == r:
+                g += groups[i]
+        out.append(g)
+    return out

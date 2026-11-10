@@ -86,6 +86,14 @@ Private SmCls() As Long, NSmCls As Long
 Private GrA() As Long, GrB() As Long, NGr As Long, GrCnt() As Long, GrSt() As Long, GrIdx() As Long
 ' разбить на буквы: почти замкнутый контур (мм), число букв, у буквы — подпути в LtIdx (первый, число)
 Private Const LT_NEAR As Double = 0.05
+' точки и акценты — к своей букве: знак не больше 0.4 буквы по большей стороне габарита или не больше 0.3
+' её площади и 0.7 по стороне; центр — над буквой или под ней (её габарит + 0.25 её размера по
+' горизонтали), не дальше 0.35 её размера по вертикали
+Private Const MARK_SIZE As Double = 0.4
+Private Const MARK_AREA As Double = 0.3
+Private Const MARK_SIZE2 As Double = 0.7
+Private Const MARK_X As Double = 0.25
+Private Const MARK_GAP As Double = 0.35
 Private LtNG As Long, LtG0() As Long, LtGn() As Long, LtIdx() As Long
 ' раскладка: детали (габарит без зазора), порядок, результат (лист, x, y от левого верхнего угла листа)
 Private NtW() As Double, NtH() As Double, NNt As Long, NtOrd() As Long
@@ -4030,7 +4038,8 @@ End Function
 '  Вход: подпути одного объекта SqS0/SqN/SqC (NSq), сегменты SgX/SgY/SgL. Контуры — точки, как у
 '  «Одинаковых» (SmSample). У замкнутого контура — точка на нём (середина самого длинного отрезка)
 '  и сколько других контуров её окружают: чётное число — наружный контур буквы, нечётное — дырка;
-'  дырка — к самому маленькому из окружающих. Незамкнутые — каждый отдельно.
+'  дырка — к самому маленькому из окружающих. Незамкнутые — каждый отдельно. Точки и акценты — к
+'  своей букве (LtAttach).
 '  Выход: LtNG букв, у буквы — LtGn подпутей с LtG0 в LtIdx (наружный первым); буквы слева направо.
 ' ---------------------------------------------------------------------
 Public Sub LettersGeo()
@@ -4135,6 +4144,7 @@ Public Sub LettersGeo()
             ng = ng + 1
         End If
     Next k
+    LtAttach ng, g0, gn, bx0, by0, bx1, by1, par
     ' слева направо: по левому краю наружного контура, затем сверху, затем по номеру
     ReDim ord(0 To ng)
     For i = 0 To ng - 1
@@ -4154,6 +4164,106 @@ Public Sub LettersGeo()
         LtG0(i) = g0(ord(i)): LtGn(i) = gn(ord(i))
     Next i
 End Sub
+
+' точки и акценты — к своей букве (Ё, Й, i, ї, !, ?, ÷): кусок, который намного меньше буквы, стоит над
+' ней или под ней и близко по вертикали, идёт к ней; из таких — к той, у которой меньше зазор по
+' вертикали плюс сдвиг центров по горизонтали. Только внутри одного уровня вложенности (буквы в дырке
+' рамки к рамке не липнут). Куски сливаются в LtIdx: буква-корень первой, затем остальные по номеру
+Private Sub LtAttach(ng As Long, g0() As Long, gn() As Long, bx0() As Double, by0() As Double, _
+                     bx1() As Double, by1() As Double, par() As Long)
+    Dim i As Long, j As Long, k As Long, r As Long, t As Long, best As Long, a As Long, b As Long
+    Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, u0 As Double, v0 As Double, u1 As Double, v1 As Double
+    Dim cx As Double, cy As Double, gap As Double, sc As Double, bs As Double, ba As Double
+    Dim sz() As Double, ar() As Double, up() As Long, nidx() As Long, n0() As Long, nn() As Long, nng As Long
+    If ng < 2 Then
+        Exit Sub
+    End If
+    ReDim sz(0 To ng): ReDim ar(0 To ng): ReDim up(0 To ng)
+    For i = 0 To ng - 1
+        k = LtIdx(g0(i))
+        sz(i) = bx1(k) - bx0(k)
+        If by1(k) - by0(k) > sz(i) Then
+            sz(i) = by1(k) - by0(k)
+        End If
+        ar(i) = (bx1(k) - bx0(k)) * (by1(k) - by0(k))
+        up(i) = i
+    Next i
+    For i = 0 To ng - 1
+        k = LtIdx(g0(i))
+        x0 = bx0(k): y0 = by0(k): x1 = bx1(k): y1 = by1(k)
+        cx = (x0 + x1) / 2
+        cy = (y0 + y1) / 2
+        best = -1
+        For j = 0 To ng - 1
+            If j <> i Then
+                r = LtIdx(g0(j))
+                If par(r) = par(k) And (sz(i) <= MARK_SIZE * sz(j) Or _
+                        (ar(i) <= MARK_AREA * ar(j) And sz(i) <= MARK_SIZE2 * sz(j))) Then
+                    u0 = bx0(r): v0 = by0(r): u1 = bx1(r): v1 = by1(r)
+                    If cx >= u0 - MARK_X * sz(j) And cx <= u1 + MARK_X * sz(j) And (cy < v0 Or cy > v1) Then
+                        gap = 0
+                        If v0 - y1 > gap Then
+                            gap = v0 - y1
+                        End If
+                        If y0 - v1 > gap Then
+                            gap = y0 - v1
+                        End If
+                        If gap <= MARK_GAP * sz(j) Then
+                            sc = gap + Abs(cx - (u0 + u1) / 2)
+                            If best < 0 Then
+                                best = j: bs = sc: ba = ar(j)
+                            ElseIf sc < bs Or (sc = bs And ar(j) > ba) Then
+                                best = j: bs = sc: ba = ar(j)
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        Next j
+        If best >= 0 Then
+            a = LtFind(up, i)
+            b = LtFind(up, best)
+            If a <> b Then
+                up(a) = b
+            End If
+        End If
+    Next i
+    ReDim nidx(0 To UBound(LtIdx)): ReDim n0(0 To ng): ReDim nn(0 To ng)
+    t = 0: nng = 0
+    For r = 0 To ng - 1
+        If LtFind(up, r) = r Then
+            n0(nng) = t
+            For k = g0(r) To g0(r) + gn(r) - 1
+                nidx(t) = LtIdx(k): t = t + 1
+            Next k
+            For i = 0 To ng - 1
+                If i <> r Then
+                    If LtFind(up, i) = r Then
+                        For k = g0(i) To g0(i) + gn(i) - 1
+                            nidx(t) = LtIdx(k): t = t + 1
+                        Next k
+                    End If
+                End If
+            Next i
+            nn(nng) = t - n0(nng)
+            nng = nng + 1
+        End If
+    Next r
+    For k = 0 To t - 1
+        LtIdx(k) = nidx(k)
+    Next k
+    For i = 0 To nng - 1
+        g0(i) = n0(i): gn(i) = nn(i)
+    Next i
+    ng = nng
+End Sub
+
+Private Function LtFind(up() As Long, ByVal i As Long) As Long
+    Do While up(i) <> i
+        i = up(i)
+    Loop
+    LtFind = i
+End Function
 
 ' буква с наружным контуром a раньше, чем с b
 Private Function LtBefore(ByVal a As Long, ByVal b As Long, bx0() As Double, by1() As Double) As Boolean
