@@ -226,8 +226,8 @@ STRINGS = {
     'same_failed':   ('Не удалось сгруппировать наборов: {0} (объекты на разных слоях?).', 'Could not group {0} sets (objects on different layers?).'),
     'no_color':      ('без цвета', 'no colour'),
     'nest_title':    ('Раскладка на листы (бета)', 'Nest on sheets (beta)'),
-    'nest_beta':     ('⚠ Раскладка в разработке: по контуру — на сетке около 1 мм (на больших листах — крупнее), детали могут встать в дырки букв и внутрь других деталей. Контур детали должен быть замкнутым — иначе внутрь неё тоже может встать деталь. Проверяйте раскладку перед резкой.',
-                      '⚠ Nesting is a work in progress: by outline on a grid of about 1 mm (coarser on large sheets); parts may go into letter holes and inside other parts. A part\'s outline must be closed, otherwise another part may be placed inside it too. Check the layout before cutting.'),
+    'nest_beta':     ('⚠ Раскладка в разработке: по контуру — на сетке около 1 мм (на больших листах — крупнее), детали могут встать в дырки букв и внутрь других деталей (галочка «матрёшкой» в окне). Контур детали должен быть замкнутым — иначе внутрь неё может встать деталь даже без «матрёшки». Проверяйте раскладку перед резкой.',
+                      '⚠ Nesting is a work in progress: by outline on a grid of about 1 mm (coarser on large sheets); parts may go into letter holes and inside other parts (the "nested" box in the window). A part\'s outline must be closed, otherwise another part may go inside it even without nesting. Check the layout before cutting.'),
     'nest_nosel':    ('Выделите детали для раскладки.', 'Select the parts to nest.'),
     'nest_layer':    ('Раскладка', 'Nesting'),
     'nest_frame':    ('Раскладка: рамка листа {0}', 'Nesting: sheet frame {0}'),
@@ -241,6 +241,7 @@ STRINGS = {
     'nest_how_c1':   ('по контуру, с поворотом на 180°', 'by outline, rotation by 180°'),
     'nest_how_c2':   ('по контуру, с поворотами по 90°', 'by outline, rotation in 90° steps'),
     'nest_how_box':  ('по габаритам, без поворота', 'by bounding boxes, no rotation'),
+    'nest_how_noin': (', не внутрь других деталей', ', not inside other parts'),
     'nest_rep_sheet':('Лист {0} × {1} мм (длина × ширина). ', 'Sheet {0} × {1} mm (length × width). '),
     'nest_rep_auto': ('Ширина листа {0} мм, длина по раскладке ({1}–{2} мм, вверх до 10 мм). ',
                       'Sheet width {0} mm, length to fit the parts ({1}–{2} mm, rounded up to 10 mm). '),
@@ -269,6 +270,7 @@ STRINGS = {
     'nest_m_rot180': ('по контуру, поворот на 180°', 'by outline, rotate by 180°'),
     'nest_m_rot90':  ('по контуру, повороты по 90°', 'by outline, rotate in 90° steps'),
     'nest_m_box':    ('по габаритам — быстрее', 'by bounding boxes — faster'),
+    'chk_nest_inside':('Детали внутрь других (матрёшкой): в дырки букв, рамки', 'Parts inside other parts (nested): letter holes, frames'),
     'lbl_nest_fill': ('Заполнять лист:', 'Fill the sheet:'),
     'nest_fill_cols':('столбцами — сверху вниз', 'in columns — top to bottom'),
     'nest_fill_rows':('рядами — слева направо', 'in rows — left to right'),
@@ -276,11 +278,11 @@ STRINGS = {
     'chk_nest_labels':('Подписи листов (над рамкой, в группе листа)', 'Sheet labels (above the frame, in the sheet group)'),
     'chk_nest_auto': ('Длина по раскладке, не меньше, мм:', 'Length to fit the parts, at least, mm:'),
     'nest_hint':     ('Бета. Длина — по горизонтали, ширина — по вертикали; размер любой: впишите свой (стол лазера, заготовка), он появится в готовых. '
-                      'По контуру — плотнее: детали входят друг в друга и в дырки букв; поворот — если материалу всё равно (без текстуры и направления). По габаритам — быстрее. '
+                      'По контуру — плотнее: детали входят друг в друга, «матрёшкой» — ещё и в дырки букв и рамки; поворот — если материалу всё равно (без текстуры и направления). По габаритам — быстрее. '
                       'Ни одна деталь не ближе поля к краю и зазора к соседней; для фрезы зазор — не меньше её диаметра. '
                       'С галочкой «Длина по раскладке» лист обрезается по деталям. Одинаковые, собранные в группы, раскладываются поштучно.',
                       'Beta. Length is horizontal, width is vertical; any size: type your own (laser bed, offcut) and it appears in the presets. '
-                      'By outline is tighter: parts fit into each other and into letter holes; rotate only if the material allows it (no texture or grain). By bounding boxes is faster. '
+                      'By outline is tighter: parts fit into each other, and with "nested" also into letter holes and frames; rotate only if the material allows it (no texture or grain). By bounding boxes is faster. '
                       'No part is closer than the margin to the edge or the gap to another part; for a router, use a gap of at least the cutter diameter. '
                       'With "Length to fit" each sheet is trimmed to the parts. Grouped identical objects are nested one by one.'),
     'btn_nest':      ('Разложить', 'Nest'),

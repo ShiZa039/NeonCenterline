@@ -494,9 +494,10 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
     Case "nest_beta"
         s = s & LD("$26A0 #O_pij_ci_ a o_fo_`mqid: nm imlqror $2014 l_ pdqid mimjm 1 kk (")
         s = s & LD("#l_ `mj{wgt jgpq_t $2014 iornldd), cdq_jg kmbrq apq_q{ a czoig `r")
-        s = s & LD("#ia g alrqo{ corbgt cdq_jdh. Imlqro cdq_jg cmjedl `zq{ f_kilr")
-        s = s & LD("#qzk $2014 gl_vd alrqo{ ld$0451 qmed kmedq apq_q{ cdq_j{. Nomado~hqd ")
-        s = s & LD("#o_pij_cir ndodc odfimh.")
+        s = s & LD("#ia g alrqo{ corbgt cdq_jdh (b_jmvi_ $00ABk_qo$0451wimh$00BB a mild). Iml")
+        s = s & LD("#qro cdq_jg cmjedl `zq{ f_kilrqzk $2014 gl_vd alrqo{ ld$0451 kmedq ap")
+        s = s & LD("#q_q{ cdq_j{ c_ed `df $00ABk_qo$0451wig$00BB. Nomado~hqd o_pij_cir ndodc ")
+        s = s & LD("#odfimh.")
     Case "nest_nosel"
         s = s & LD("#Azcdjgqd cdq_jg cj~ o_pij_cig.")
     Case "nest_layer"
@@ -521,6 +522,8 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#nm imlqror, p nmamomq_kg nm 90$00B0")
     Case "nest_how_box"
         s = s & LD("#nm b_`_ogq_k, `df nmamomq_")
+    Case "nest_how_noin"
+        s = s & LD(", #ld alrqo{ corbgt cdq_jdh")
     Case "nest_rep_sheet"
         s = s & LD("#Jgpq #{0} $00D7 {1} #kk (cjgl_ $00D7 wgogl_). ")
     Case "nest_rep_auto"
@@ -528,8 +531,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#m 10 kk). ")
     Case "nest_rep_color"
         s = s & LD("{0}: #jgpqma #{1}, #cdq_jdh #{2}, #f_nmjldlgd #{3}%")
-    Case "nest_rep_widths"
-        s = s & LD(" (#cjgl_: #{0})")
     Case Else
         LangRu_4 = False
     End Select
@@ -539,6 +540,8 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     LangRu_5 = True
     s = ""
     Select Case key
+    Case "nest_rep_widths"
+        s = s & LD(" (#cjgl_: #{0})")
     Case "nest_rep_tail"
         s = s & LD("#I_eczh jgpq $2014 bornn_ pno_a_ mq azcdjdlg~ l_ pjmd cdq_jdh: o_")
         s = s & LD("#ki_, nmcngp{ g cdq_jg (nmcngpg kmelm mqij}vgq{ a mild). F_nm")
@@ -578,6 +581,8 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
         s = s & LD("#nm imlqror, nmamomqz nm 90$00B0")
     Case "nest_m_box"
         s = s & LD("#nm b_`_ogq_k $2014 `zpqodd")
+    Case "chk_nest_inside"
+        s = s & LD("#Cdq_jg alrqo{ corbgt (k_qo$0451wimh): a czoig `ria, o_kig")
     Case "lbl_nest_fill"
         s = s & LD("#F_nmjl~q{ jgpq:")
     Case "nest_fill_cols"
@@ -593,13 +598,13 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     Case "nest_hint"
         s = s & LD("#@dq_. Cjgl_ $2014 nm bmogfmlq_jg, wgogl_ $2014 nm adoqgi_jg; o_fkdo ")
         s = s & LD("#j}`mh: angwgqd pamh (pqmj j_fdo_, f_bmqmai_), ml nm~agqp~ a ")
-        s = s & LD("#bmqmazt. Nm imlqror $2014 njmqldd: cdq_jg atmc~q corb a corb_ g ")
-        s = s & LD("#a czoig `ria; nmamomq $2014 dpjg k_qdog_jr ap$0451 o_alm (`df qdipqr")
-        s = s & LD("#oz g l_no_ajdlg~). Nm b_`_ogq_k $2014 `zpqodd. Lg mcl_ cdq_j{ ld")
-        s = s & LD(" #`jged nmj~ i io_} g f_fmo_ i pmpdcldh; cj~ sodfz f_fmo $2014 ld")
-        s = s & LD(" #kdl{wd d$0451 cg_kdqo_. P b_jmvimh $00ABCjgl_ nm o_pij_cid$00BB jgpq m`")
-        s = s & LD("#odf_dqp~ nm cdq_j~k. Mcgl_imazd, pm`o_llzd a bornnz, o_pij_c")
-        s = s & LD("#za_}qp~ nmwqrvlm.")
+        s = s & LD("#bmqmazt. Nm imlqror $2014 njmqldd: cdq_jg atmc~q corb a corb_, $00AB")
+        s = s & LD("#k_qo$0451wimh$00BB $2014 dx$0451 g a czoig `ria g o_kig; nmamomq $2014 dpjg k_qd")
+        s = s & LD("#og_jr ap$0451 o_alm (`df qdipqroz g l_no_ajdlg~). Nm b_`_ogq_k $2014")
+        s = s & LD(" #`zpqodd. Lg mcl_ cdq_j{ ld `jged nmj~ i io_} g f_fmo_ i pmp")
+        s = s & LD("#dcldh; cj~ sodfz f_fmo $2014 ld kdl{wd d$0451 cg_kdqo_. P b_jmvimh $00AB")
+        s = s & LD("#Cjgl_ nm o_pij_cid$00BB jgpq m`odf_dqp~ nm cdq_j~k. Mcgl_imazd, ")
+        s = s & LD("#pm`o_llzd a bornnz, o_pij_cza_}qp~ nmwqrvlm.")
     Case "btn_nest"
         s = s & LD("#O_fjmegq{")
     Case "bad_nest"
@@ -1031,9 +1036,10 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
     Case "nest_beta"
         s = s & LD("$26A0 Nesting is a work in progress: by outline on a grid of abo")
         s = s & LD("ut 1 mm (coarser on large sheets); parts may go into letter ")
-        s = s & LD("holes and inside other parts. A part's outline must be close")
-        s = s & LD("d, otherwise another part may be placed inside it too. Check")
-        s = s & LD(" the layout before cutting.")
+        s = s & LD("holes and inside other parts (the $0022nested$0022 box in the window")
+        s = s & LD("). A part's outline must be closed, otherwise another part m")
+        s = s & LD("ay go inside it even without nesting. Check the layout befor")
+        s = s & LD("e cutting.")
     Case "nest_nosel"
         s = s & LD("Select the parts to nest.")
     Case "nest_layer"
@@ -1058,6 +1064,8 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("by outline, rotation in 90$00B0 steps")
     Case "nest_how_box"
         s = s & LD("by bounding boxes, no rotation")
+    Case "nest_how_noin"
+        s = s & LD(", not inside other parts")
     Case "nest_rep_sheet"
         s = s & LD("Sheet {0} $00D7 {1} mm (length $00D7 width). ")
     Case "nest_rep_auto"
@@ -1065,8 +1073,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("nded up to 10 mm). ")
     Case "nest_rep_color"
         s = s & LD("{0}: {1} sheets, {2} parts, {3}% filled")
-    Case "nest_rep_widths"
-        s = s & LD(" (length: {0})")
     Case Else
         LangEn_4 = False
     End Select
@@ -1076,6 +1082,8 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     LangEn_5 = True
     s = ""
     Select Case key
+    Case "nest_rep_widths"
+        s = s & LD(" (length: {0})")
     Case "nest_rep_tail"
         s = s & LD("Each sheet is a group to the right of the selection on the p")
         s = s & LD("arts' layer: frame, label and parts (labels can be turned of")
@@ -1116,6 +1124,8 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
         s = s & LD("by outline, rotate in 90$00B0 steps")
     Case "nest_m_box"
         s = s & LD("by bounding boxes $2014 faster")
+    Case "chk_nest_inside"
+        s = s & LD("Parts inside other parts (nested): letter holes, frames")
     Case "lbl_nest_fill"
         s = s & LD("Fill the sheet:")
     Case "nest_fill_cols"
@@ -1131,13 +1141,14 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     Case "nest_hint"
         s = s & LD("Beta. Length is horizontal, width is vertical; any size: typ")
         s = s & LD("e your own (laser bed, offcut) and it appears in the presets")
-        s = s & LD(". By outline is tighter: parts fit into each other and into ")
-        s = s & LD("letter holes; rotate only if the material allows it (no text")
-        s = s & LD("ure or grain). By bounding boxes is faster. No part is close")
-        s = s & LD("r than the margin to the edge or the gap to another part; fo")
-        s = s & LD("r a router, use a gap of at least the cutter diameter. With ")
-        s = s & LD("$0022Length to fit$0022 each sheet is trimmed to the parts. Grouped ")
-        s = s & LD("identical objects are nested one by one.")
+        s = s & LD(". By outline is tighter: parts fit into each other, and with")
+        s = s & LD(" $0022nested$0022 also into letter holes and frames; rotate only if ")
+        s = s & LD("the material allows it (no texture or grain). By bounding bo")
+        s = s & LD("xes is faster. No part is closer than the margin to the edge")
+        s = s & LD(" or the gap to another part; for a router, use a gap of at l")
+        s = s & LD("east the cutter diameter. With $0022Length to fit$0022 each sheet is")
+        s = s & LD(" trimmed to the parts. Grouped identical objects are nested ")
+        s = s & LD("one by one.")
     Case "btn_nest"
         s = s & LD("Nest")
     Case "bad_nest"

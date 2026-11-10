@@ -113,7 +113,7 @@ Private Const RN_CELLS As Double = 1000000
 Private Const RN_SQ As Double = 0.7072
 ' шаг, зазор, сетка листа (без транспонирования), направления и повороты
 Private RnR As Double, RnGap As Double, RnNxo As Long, RnNyo As Long, RnNT As Long, RnTrs(0 To 1) As Boolean
-Private RnNK As Long, RnKs(0 To 3) As Long
+Private RnNK As Long, RnKs(0 To 3) As Long, RnIn As Boolean
 ' детали: варианты (по направлению — первый), клеток, габарит; варианты: куски (первый, число),
 ' правый и нижний край, сдвиг габарита, габарит, поворот; куски строк; растр детали
 Private RpV0() As Long, RpCnt() As Long, RpW() As Double, RpH() As Double, NRp As Long
@@ -3413,7 +3413,7 @@ Public Sub NestSheets()
     Dim lay As Layer, fr As Shape, sh As Shape, sr As ShapeRange, g As Shape, allR As ShapeRange, vis As ShapeRange, lc As Color
     Dim nPlaced As Long, nUnfit As Long, nSheets As Long, colRep As String, wl As String, msg As String, wo As Object
     Dim fillMode As Long, labels As Boolean, lab As ShapeRange, whole As ShapeRange
-    Dim method As Long, rotM As Long, pa() As Double, how As String
+    Dim method As Long, rotM As Long, pa() As Double, how As String, inside As Boolean
     ttl = NeonL("nest_title")
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, ttl
@@ -3439,10 +3439,14 @@ Public Sub NestSheets()
     fillMode = CLng(NeonNestNum("Fill", 0))
     labels = NeonNestFlag("Labels", True)
     method = NeonNestMethod(): rotM = NeonNestRot()
+    inside = NeonNestFlag("Inside", True)
     If method = 1 Then
         how = NeonL("nest_how_box")
     Else
         how = NeonL("nest_how_c" & rotM)
+        If Not inside Then
+            how = how & NeonL("nest_how_noin")
+        End If
     End If
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
@@ -3526,7 +3530,7 @@ Public Sub NestSheets()
             NestPack sw, shh, mg, gp, autoW, wmin, fillMode
         Else
             ' по контуру: контур каждой детали — в растр, площадь — для заполнения
-            RnBegin sw, shh, mg, gp, fillMode, rotM
+            RnBegin sw, shh, mg, gp, fillMode, rotM, inside
             For j = 0 To NNt - 1
                 i = idx(j)
                 NtPartGeo col(i + 1), bw(i), bh(i)
@@ -4916,8 +4920,9 @@ End Function
 '  RnPack -> NtS/NtX/NtY (левый верхний угол габарита повёрнутой детали), NtRot, NtSheets, NtSW.
 ' ---------------------------------------------------------------------
 Public Sub RnBegin(ByVal sw As Double, ByVal sh As Double, ByVal margin As Double, ByVal gap As Double, _
-                   ByVal fillMode As Long, ByVal rotMode As Long)
+                   ByVal fillMode As Long, ByVal rotMode As Long, ByVal inside As Boolean)
     Dim a As Double
+    RnIn = inside
     a = (sw - 2 * margin + gap) * (sh - 2 * margin + gap)
     If a < 1 Then
         a = 1
@@ -4965,6 +4970,9 @@ Public Sub RnAddPart()
         ReDim Preserve RpV0(0 To 4 * NRp + 4)
     End If
     RnCells w, h, cols, rows, pad
+    If Not RnIn Then
+        RnFillHoles cols, rows
+    End If
     cnt = 0
     For i = 0 To cols * rows - 1
         If RgC(i) <> 0 Then
@@ -4980,6 +4988,58 @@ Public Sub RnAddPart()
         Next q
     Next t
     NRp = NRp + 1
+End Sub
+
+' без «матрёшки»: пустые клетки RgC, до которых не дойти от края растра по соседям (сверху, снизу, слева,
+' справа), — занятыми. Дырки букв и рамок закрываются, открытые выемки («П», «С») остаются
+Private Sub RnFillHoles(ByVal cols As Long, ByVal rows As Long)
+    Dim st() As Long, n As Long, c As Long, i As Long, j As Long, k As Long
+    ReDim st(0 To cols * rows)
+    For k = 0 To 2 * cols + 2 * rows - 1
+        If k < cols Then
+            c = k
+        ElseIf k < 2 * cols Then
+            c = (rows - 1) * cols + (k - cols)
+        ElseIf k < 2 * cols + rows Then
+            c = (k - 2 * cols) * cols
+        Else
+            c = (k - 2 * cols - rows) * cols + cols - 1
+        End If
+        If RgC(c) = 0 Then
+            RgC(c) = 2: st(n) = c: n = n + 1
+        End If
+    Next k
+    Do While n > 0
+        n = n - 1: c = st(n)
+        i = c Mod cols: j = c \ cols
+        If i > 0 Then
+            If RgC(c - 1) = 0 Then
+                RgC(c - 1) = 2: st(n) = c - 1: n = n + 1
+            End If
+        End If
+        If i < cols - 1 Then
+            If RgC(c + 1) = 0 Then
+                RgC(c + 1) = 2: st(n) = c + 1: n = n + 1
+            End If
+        End If
+        If j > 0 Then
+            If RgC(c - cols) = 0 Then
+                RgC(c - cols) = 2: st(n) = c - cols: n = n + 1
+            End If
+        End If
+        If j < rows - 1 Then
+            If RgC(c + cols) = 0 Then
+                RgC(c + cols) = 2: st(n) = c + cols: n = n + 1
+            End If
+        End If
+    Loop
+    For k = 0 To cols * rows - 1
+        If RgC(k) = 2 Then
+            RgC(k) = 0
+        Else
+            RgC(k) = 1
+        End If
+    Next k
 End Sub
 
 ' растр детали в RgC (cols × rows, y вниз): внутри — по пересечениям рёбер со строками, вдоль контура —

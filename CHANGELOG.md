@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1 — в работе
+
+RU
+- Раскладка на листы, по контуру: галочка «Детали внутрь других (матрёшкой)» — по умолчанию включена, как в 1.1.0. Без неё детали не встают в дырки букв и внутрь рамок (дырки деталей считаются занятыми), но по-прежнему входят друг в друга открытыми выемками («П», «Г», «С»). В отчёте — «не внутрь других деталей».
+
+EN
+- Nest on sheets, by outline: a "Parts inside other parts (nested)" box — on by default, as in 1.1.0. Without it parts do not go into letter holes or inside frames (the holes of parts count as taken), but still interlock through open recesses (П, Г, С shapes). The report says "not inside other parts".
+
 ## 1.1.0 — 2026-11-10
 
 RU

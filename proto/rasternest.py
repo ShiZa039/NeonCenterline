@@ -130,6 +130,24 @@ def part_cells(polys, w, h, r, gap):
     return cols, rows, g, pad
 
 
+def fill_holes(g, cols, rows):
+    """Без «матрёшки»: пустые клетки, до которых не дойти от края растра по соседям (сверху, снизу,
+    слева, справа), — занятыми. Дырки букв и рамок закрываются, открытые выемки («П», «С») остаются."""
+    g = bytearray(g)
+    st = []
+    for c in list(range(cols)) + [(rows - 1) * cols + i for i in range(cols)] + \
+             [j * cols for j in range(rows)] + [j * cols + cols - 1 for j in range(rows)]:
+        if g[c] == 0:
+            g[c] = 2; st.append(c)
+    while st:
+        c = st.pop()
+        i, j = c % cols, c // cols
+        for ok, n in ((i > 0, c - 1), (i < cols - 1, c + 1), (j > 0, c - cols), (j < rows - 1, c + cols)):
+            if ok and g[n] == 0:
+                g[n] = 2; st.append(n)
+    return bytearray(1 if v != 2 else 0 for v in g)
+
+
 def orient(cols, rows, g, pad, w, h, r, k, tr):
     """Поворот k (0 — нет, 1 — 90° по часовой на экране, 2 — 180°, 3 — 90° против) и транспонирование
     (tr — для поиска «столбцами»). -> куски строк [(j, i, длина)], правый край, нижний край, сдвиг
@@ -278,10 +296,11 @@ def pack_run(nx, ny, P, order, r, margin, gap, tr):
     return res, nsh
 
 
-def pack(sw, sh, margin, gap, parts, cols_first=True, auto=False, wmin=0.0, rots=(0,)):
+def pack(sw, sh, margin, gap, parts, cols_first=True, auto=False, wmin=0.0, rots=(0,), inside=True):
     """parts: [(polys, w, h)] -> (размещение [(лист, x, y, поворот)] — левый верхний угол габарита
     повёрнутой детали от угла листа, y вниз; лист -1 — не помещается), число листов, ширины листов, шаг.
-    cols_first: True — столбцами, False — рядами, None — оба (лучший)."""
+    cols_first: True — столбцами, False — рядами, None — оба (лучший). inside: False — не класть детали
+    внутрь других (дырки деталей закрыты)."""
     r = grid_step(sw, sh, margin, gap)
     trs = [True, False] if cols_first is None else [cols_first]
     nxo = int(math.floor((sw - 2 * margin + gap) / r))
@@ -290,6 +309,8 @@ def pack(sw, sh, margin, gap, parts, cols_first=True, auto=False, wmin=0.0, rots
     area = []
     for polys, w, h in parts:
         cols, rows, g, pad = part_cells(polys, w, h, r, gap)
+        if not inside:
+            g = fill_holes(g, cols, rows)
         area.append(sum(g))
         for tr in trs:
             vs = []
