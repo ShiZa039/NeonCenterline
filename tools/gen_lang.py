@@ -1,22 +1,70 @@
-"""src/NeonLang.bas из strings.py: строки как коды Unicode (не зависят от кодировки Windows)."""
+"""src/NeonLang.bas из strings.py: строки в коде только ASCII (не зависят от кодировки Windows).
+
+Сжатая запись (LD): «#» переключает русский режим — в нём знаки '?'..'~' это буквы А..я
+(U+0410..U+044F), пробел, цифры и знаки препинания — как есть; «$XXXX» — любой другой знак Unicode
+(и сами «#», «$», «"»). Русский текст выходит чуть длиннее исходного, а не вчетверо, как кодами
+(LibreOffice, на котором проверяется компиляция, не тянет больше ~64 КБ строк в модуле)."""
 import sys, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from strings import STRINGS
 
-def hexs(t):
-    return ' '.join('%X' % ord(c) for c in t)
+def enc(t):
+    """Строка -> сжатая ASCII-запись для LD (каждый кусок — с латинского режима)."""
+    out = []
+    cyr = False
+    for ch in t:
+        o = ord(ch)
+        if 0x410 <= o <= 0x44F:
+            if not cyr:
+                out.append('#'); cyr = True
+            out.append(chr(0x3F + o - 0x410))
+        elif 0x20 <= o <= 0x7E and ch not in '#$"':
+            if cyr and o >= 0x3F:
+                out.append('#'); cyr = False
+            out.append(ch)
+        else:
+            out.append('$%04X' % o)
+    return ''.join(out)
+
+
+def dec(s):
+    """Обратно (проверка)."""
+    r = []; cyr = False; i = 0
+    while i < len(s):
+        ch = s[i]
+        if ch == '#':
+            cyr = not cyr; i += 1
+        elif ch == '$':
+            r.append(chr(int(s[i + 1:i + 5], 16))); i += 5
+        else:
+            o = ord(ch)
+            r.append(chr(0x410 + o - 0x3F) if cyr and o >= 0x3F else ch); i += 1
+    return ''.join(r)
+
+LANG_CHUNK = 40  # строк в одной функции: VBA не компилирует процедуру больше 64 КБ («Procedure too large»)
+
 
 def emit_lang(idx, fname):
-    out = [f'Private Function {fname}(ByVal key As String) As String', '    Dim s As String', '    Select Case key']
-    for k, v in STRINGS.items():
-        t = v[idx]
-        out.append(f'    Case "{k}"')
-        # кусками по 60 символов — строки VBA не длиннее 1023 знаков
-        parts = [t[i:i+60] for i in range(0, len(t), 60)] or ['']
-        for p in parts:
-            out.append(f'        s = s & LU("{hexs(p)}")' if p else '        s = ""')
-    out += ['    Case Else', '        s = key', '    End Select', f'    {fname} = s', 'End Function', '']
+    """{fname}(key) — перебирает части {fname}_1.._n (по LANG_CHUNK строк в каждой); не нашлось — сам ключ."""
+    keys = list(STRINGS.keys())
+    chunks = [keys[i:i + LANG_CHUNK] for i in range(0, len(keys), LANG_CHUNK)]
+    out = [f'Private Function {fname}(ByVal key As String) As String', '    Dim s As String']
+    for n in range(len(chunks)):
+        out.append(f'    {"If" if n == 0 else "ElseIf"} {fname}_{n + 1}(key, s) Then')
+    out += ['    Else', '        s = key', '    End If', f'    {fname} = s', 'End Function', '']
+    for n, ch in enumerate(chunks):
+        out += [f'Private Function {fname}_{n + 1}(ByVal key As String, s As String) As Boolean', f'    {fname}_{n + 1} = True',
+                '    s = ""', '    Select Case key']
+        for k in ch:
+            tx = STRINGS[k][idx]
+            out.append(f'    Case "{k}"')
+            # кусками по 60 символов — строки VBA не длиннее 1023 знаков
+            parts = [tx[i:i+60] for i in range(0, len(tx), 60)] or ['']
+            for p in parts:
+                assert dec(enc(p)) == p
+                out.append(f'        s = s & LD("{enc(p)}")' if p else '        s = ""')
+        out += ['    Case Else', f'        {fname}_{n + 1} = False', '    End Select', 'End Function', '']
     return out
 
 L = ['Attribute VB_Name = "NeonLang"',
@@ -66,13 +114,28 @@ L = ['Attribute VB_Name = "NeonLang"',
      '    s = Replace(s, "{6}", CStr(a6)): s = Replace(s, "{7}", CStr(a7))',
      '    NeonLF = s',
      'End Function', '',
-     'Private Function LU(ByVal hx As String) As String',
-     '    Dim a As Variant, i As Long, r As String',
-     '    a = Split(hx, " ")',
-     '    For i = 0 To UBound(a)',
-     '        r = r & ChrW(CLng("&H" & a(i)))',
-     '    Next i',
-     '    LU = r',
+     "' сжатая запись строки: «#» — русский режим ('?'..'~' -> А..я), «$XXXX» — знак Unicode",
+     'Private Function LD(ByVal t As String) As String',
+     '    Dim i As Long, n As Long, c As Long, cyr As Boolean, r As String',
+     '    n = Len(t)',
+     '    i = 1',
+     '    Do While i <= n',
+     '        c = AscW(Mid$(t, i, 1))',
+     '        If c = 35 Then',
+     '            cyr = Not cyr',
+     '            i = i + 1',
+     '        ElseIf c = 36 Then',
+     '            r = r & ChrW(CLng("&H" & Mid$(t, i + 1, 4)))',
+     '            i = i + 5',
+     '        ElseIf cyr And c >= 63 Then',
+     '            r = r & ChrW(&H410 + c - 63)',
+     '            i = i + 1',
+     '        Else',
+     '            r = r & Mid$(t, i, 1)',
+     '            i = i + 1',
+     '        End If',
+     '    Loop',
+     '    LD = r',
      'End Function', '']
 # \n в строках: оставляем литералом "\n" (заменяется в NeonL)
 for k, v in STRINGS.items():

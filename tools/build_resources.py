@@ -37,7 +37,9 @@ ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
          ('nest', 'neon_nest', 113, 'Неон: раскладка на листы (бета)'),
          ('same', 'neon_same', 114, 'Неон: одинаковые — в группы'),
          # с [NeonToolbar 10]: разбить на буквы (группа «Контур»)
-         ('split', 'neon_split', 115, 'Неон: разбить на буквы')]
+         ('split', 'neon_split', 115, 'Неон: разбить на буквы'),
+         # с [NeonToolbar 11]: лапша (группа «Раскладка»)
+         ('noodle', 'neon_noodle', 116, 'Неон: лапша (полосы)')]
 
 def bmp_entry(im):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()

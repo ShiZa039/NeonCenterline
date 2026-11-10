@@ -10,7 +10,8 @@ Attribute VB_Name = "NeonTools"
 '    CleanContours   — очистить контур: убрать наложения и петли (каждый объект — одна кривая);
 '    GroupSame       — одинаковые объекты (форма и цвет) — в группы;
 '    NestSheets      — раскладка деталей на листы: по габаритам, без поворота, с полем и зазором;
-'    SplitLetters    — разбить на буквы: по объекту на букву, дырки остаются в своих буквах.
+'    SplitLetters    — разбить на буквы: по объекту на букву, дырки остаются в своих буквах;
+'    MakeNoodles     — лапша: полосы заданной длины и ширины, резы зигзагом, отрезы в конце списка.
 ' =====================================================================
 Option Explicit
 
@@ -95,6 +96,8 @@ Private Const MARK_SIZE2 As Double = 0.7
 Private Const MARK_X As Double = 0.25
 Private Const MARK_GAP As Double = 0.35
 Private LtNG As Long, LtG0() As Long, LtGn() As Long, LtIdx() As Long
+' лапша: отрезки (начало, конец) в порядке создания
+Private NdX1() As Double, NdY1() As Double, NdX2() As Double, NdY2() As Double, NNd As Long
 ' раскладка: детали (габарит без зазора), порядок, результат (лист, x, y от левого верхнего угла листа)
 Private NtW() As Double, NtH() As Double, NNt As Long, NtOrd() As Long
 Private NtS() As Long, NtX() As Double, NtY() As Double, NtSheets As Long, NtMode As Long, NtHeur As Long
@@ -3243,6 +3246,85 @@ Fail:
 End Sub
 
 ' ---------------------------------------------------------------------
+'  Кнопка «Лапша» (группа «Раскладка ▾»): полосы для плоттера, лазера, фрезера — резы зигзагом,
+'  вертикальные отрезы в конце списка; одной группой в центре страницы
+' ---------------------------------------------------------------------
+Public Sub MakeNoodles()
+    Dim oldUnit As cdrUnit, grp As Boolean, errText As String, ttl As String, msg As String
+    Dim l As Double, w As Double, n As Long, over As Double, cx As Double, cy As Double, i As Long
+    Dim lay As Layer, sr As ShapeRange, g As Shape, sh As Shape, pg As Object
+    ttl = NeonL("noodle_title")
+    If ActiveDocument Is Nothing Then
+        MsgBox NeonL("err_nodoc"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If Not AskNoodleParams() Then
+        Exit Sub
+    End If
+    l = NeonNoodleNum("Length", 300): w = NeonNoodleNum("Width", 12)
+    n = CLng(NeonNoodleNum("Count", 10)): over = NeonNoodleNum("Over", 10)
+    oldUnit = ActiveDocument.Unit
+    ActiveDocument.Unit = cdrMillimeter
+    ActiveDocument.BeginCommandGroup ttl
+    grp = True
+    On Error GoTo Fail
+    Set lay = ActiveDocument.ActiveLayer
+    ' центр страницы (у старых CorelDRAW без LeftX/TopY — от размера страницы)
+    Set pg = ActivePage
+    On Error Resume Next
+    cx = (pg.LeftX + pg.RightX) / 2
+    cy = (pg.TopY + pg.BottomY) / 2
+    If Err.Number <> 0 Then
+        Err.Clear
+        cx = pg.SizeWidth / 2
+        cy = pg.SizeHeight / 2
+    End If
+    On Error GoTo Fail
+    NoodleGeo cx, cy, l, w, n, over
+    Set sr = CreateShapeRange
+    For i = 0 To NNd - 1
+        Set sh = lay.CreateLineSegment(NdX1(i), NdY1(i), NdX2(i), NdY2(i))
+        sr.Add sh
+    Next i
+    Set g = NtGroup(sr)
+    If Not g Is Nothing Then
+        g.Name = NeonLF("noodle_group", n, NtMM(w), NtMM(l))
+        g.CreateSelection
+    Else
+        sr.CreateSelection
+    End If
+Fin:
+    On Error Resume Next
+    If grp Then
+        ActiveDocument.EndCommandGroup
+    End If
+    ActiveDocument.Unit = oldUnit
+    ActiveWindow.Refresh
+    On Error GoTo 0
+    If Len(errText) > 0 Then
+        MsgBox NeonLF("err_fail", errText), vbCritical, ttl
+        Exit Sub
+    End If
+    msg = NeonLF("noodle_report", n, NtMM(w), NtMM(l), n + 1, FmtNum(over), NtMM(l + 2 * over), NtMM(n * w + 2 * over))
+    MsgBox msg, vbInformation, ttl
+    NeonToolbarCheck
+    Exit Sub
+Fail:
+    errText = Err.Description
+    Resume Fin
+End Sub
+
+Public Function NeonNoodleNum(ByVal key As String, ByVal def As Double) As Double
+    Dim s As String
+    s = GetSetting("NeonCenterline", "Noodle", key, "")
+    If Len(Trim$(s)) = 0 Then
+        NeonNoodleNum = def
+    Else
+        NeonNoodleNum = ParseNum(s)
+    End If
+End Function
+
+' ---------------------------------------------------------------------
 '  Кнопка «Раскладка на листы»
 ' ---------------------------------------------------------------------
 Public Sub NestSheets()
@@ -4292,6 +4374,47 @@ Private Function LtInside(ByVal px As Double, ByVal py As Double, ByVal k As Lon
     LtInside = c
 End Function
 '@@LETTERSGEO_END
+
+'@@NOODLEGEO_BEGIN
+' ---------------------------------------------------------------------
+'  Лапша — нарезка полос (повторяет proto/noodles.py один в один).
+'  n полос длиной l и шириной w: n + 1 горизонтальных резов через w и два вертикальных отреза на
+'  концах; резы выходят за край на over. Порядок резки: горизонтальные сверху вниз зигзагом (первый —
+'  слева направо), затем отрезы по ходу: на той стороне, где кончился последний горизонтальный (снизу
+'  вверх), потом на другой (сверху вниз). Отрезки — в обратном порядке (в порядке создания): в
+'  диспетчере объектов сверху вниз и при экспорте задом наперёд — как у образца автора, вертикальные
+'  в конце списка. Центр блока — (cx, cy), y вверх.
+' ---------------------------------------------------------------------
+Public Sub NoodleGeo(ByVal cx As Double, ByVal cy As Double, ByVal l As Double, ByVal w As Double, _
+                     ByVal n As Long, ByVal over As Double)
+    Dim xl As Double, xr As Double, yt As Double, yb As Double, y As Double, k As Long, m As Long
+    Dim a1 As Double, a2 As Double
+    xl = cx - l / 2
+    xr = cx + l / 2
+    yt = cy + n * w / 2
+    yb = yt - n * w
+    NNd = n + 3
+    ReDim NdX1(0 To NNd): ReDim NdY1(0 To NNd): ReDim NdX2(0 To NNd): ReDim NdY2(0 To NNd)
+    ' m — место в порядке создания (с конца)
+    For k = 0 To n
+        y = yt - k * w
+        m = NNd - 1 - k
+        If k Mod 2 = 0 Then
+            NdX1(m) = xl - over: NdX2(m) = xr + over
+        Else
+            NdX1(m) = xr + over: NdX2(m) = xl - over
+        End If
+        NdY1(m) = y: NdY2(m) = y
+    Next k
+    If n Mod 2 = 0 Then
+        a1 = xr: a2 = xl
+    Else
+        a1 = xl: a2 = xr
+    End If
+    NdX1(1) = a1: NdY1(1) = yb - over: NdX2(1) = a1: NdY2(1) = yt + over
+    NdX1(0) = a2: NdY1(0) = yt + over: NdX2(0) = a2: NdY2(0) = yb - over
+End Sub
+'@@NOODLEGEO_END
 
 '@@NESTGEO_BEGIN
 ' ---------------------------------------------------------------------

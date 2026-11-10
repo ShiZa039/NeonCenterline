@@ -26,11 +26,11 @@ Public Const NEON_DONATE_URL As String = "https://github.com/ShiZa039/NeonCenter
 Private Const REG_APP As String = "NeonCenterline"
 ' результат окна перед расчётом (frmNeonRun): True — «Построить» / «Упростить»
 Public NeonRunConfirmed As Boolean
-' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура, 2 — люверсы, 3 — раскладка
+' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура, 2 — люверсы, 3 — раскладка, 4 — лапша
 Public NeonRunMode As Long
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
-Public Const NEON_TOOLBAR_VER As String = "10"
+Public Const NEON_TOOLBAR_VER As String = "11"
 ' файлы панели обновлены в этом сеансе (InstallToolbar): в памяти CorelDRAW ещё старый состав
 ' панели, сбрасывать её можно только после перезапуска
 Public NeonTbInstalled As Boolean
@@ -530,6 +530,40 @@ Public Function AskNestParams() As Boolean
     End If
     SaveSetting REG_APP, "Nest", "Size", FmtNum(w) & "x" & FmtNum(h)
     AskNestParams = True
+End Function
+
+' окно перед лапшой (frmNeonRun в режиме 4): длина, ширина, количество, выход реза. Без собранной формы —
+' стандартными окнами длина, ширина и количество, выход — как был. False — отмена
+Public Function AskNoodleParams() As Boolean
+    Dim f As Object, s As String, v As Double, i As Long, keys As Variant, lbl As Variant
+    NeonRunMode = 4
+    On Error Resume Next
+    Set f = VBA.UserForms.Add("frmNeonRun")
+    On Error GoTo 0
+    If Not f Is Nothing Then
+        NeonRunConfirmed = False
+        f.Show
+        AskNoodleParams = NeonRunConfirmed
+        Unload f
+        NeonRunMode = 0
+        Exit Function
+    End If
+    NeonRunMode = 0
+    keys = Array("Length", "Width", "Count")
+    lbl = Array("lbl_noodle_len", "lbl_noodle_wid", "lbl_noodle_cnt")
+    For i = 0 To 2
+        s = InputBox(NeonL(lbl(i)), NeonL("noodle_title"), FmtNum(NeonNoodleNum(keys(i), Choose(i + 1, 300, 12, 10))))
+        If Len(Trim$(s)) = 0 Then
+            Exit Function
+        End If
+        v = ParseNum(s)
+        If v <= 0 Or v > 100000 Or (i = 2 And (v <> Int(v) Or v > 1000)) Then
+            MsgBox NeonL("bad_noodle"), vbExclamation, NeonL("noodle_title")
+            Exit Function
+        End If
+        SaveSetting REG_APP, "Noodle", keys(i), FmtNum(v)
+    Next i
+    AskNoodleParams = True
 End Function
 
 ' окно перед упрощением контура (то же окно frmNeonRun в режиме 1): допуск, показывать ли окно;

@@ -7,6 +7,7 @@ Option Explicit
 ' диаметр и цвет точки, усиление углов (элементы те же, подписи и места — свои).
 ' NeonRunMode = 3 — перед раскладкой на листы: готовый размер, длина и ширина листа, поле, зазор,
 ' заполнение (столбцами / рядами / как плотнее), по цвету, длина по раскладке, подписи листов.
+' NeonRunMode = 4 — перед лапшой: длина, ширина, количество полос, выход реза за край.
 
 ' люверсы: свой цвет ("S:..."), последний выбранный цвет из списка, защита от повторного Change
 Private gCustom As String, gLastIdx As Long, gBusy As Boolean
@@ -24,6 +25,10 @@ Private Sub UserForm_Initialize()
     End If
     If NeonRunMode = 3 Then
         InitNest
+        Exit Sub
+    End If
+    If NeonRunMode = 4 Then
+        InitNoodle
         Exit Sub
     End If
     Me.Caption = NeonL("app_title")
@@ -313,6 +318,57 @@ Private Sub InitNest()
     gBusy = False
 End Sub
 
+' лапша: длина, ширина, количество полос, выход реза за край (поле выхода окно создаёт само)
+Private Sub InitNoodle()
+    Dim c As Object, v As Variant
+    For Each c In Me.Controls
+        c.Visible = False
+    Next c
+    Me.Caption = NeonL("noodle_title")
+    GromRow lblTool, cboTool, 14, NeonL("lbl_noodle_len")
+    cboTool.Clear
+    For Each v In Array("100", "200", "300", "500", "1000", "1250", "2440", "3000")
+        cboTool.AddItem v
+    Next v
+    cboTool.Text = FmtNum(NeonNoodleNum("Length", 300))
+    GromRow lblEnd, cboEnd, 40, NeonL("lbl_noodle_wid")
+    cboEnd.Clear
+    For Each v In Array("5", "8", "10", "12", "15", "20", "25", "30", "50")
+        cboEnd.AddItem v
+    Next v
+    cboEnd.Text = FmtNum(NeonNoodleNum("Width", 12))
+    GromRow lblCut, cboCut, 66, NeonL("lbl_noodle_cnt")
+    cboCut.Clear
+    For Each v In Array("1", "5", "10", "20", "30", "50", "100")
+        cboCut.AddItem v
+    Next v
+    cboCut.Text = FmtNum(NeonNoodleNum("Count", 10))
+    If gH Is Nothing Then
+        Set gHL = Me.Controls.Add("Forms.Label.1", "lblNestH", True)
+        Set gH = Me.Controls.Add("Forms.ComboBox.1", "cboNestH", True)
+        gH.Height = cboTool.Height
+    End If
+    GromRow gHL, gH, 92, NeonL("lbl_noodle_over")
+    gH.Clear
+    For Each v In Array("0", "2", "5", "10", "15")
+        gH.AddItem v
+    Next v
+    gH.Text = FmtNum(NeonNoodleNum("Over", 10))
+    lblHint.Left = 12: lblHint.Top = 122: lblHint.Width = 326
+    lblHint.WordWrap = True
+    lblHint.Height = 84
+    lblHint.Caption = NeonL("noodle_hint")
+    lblHint.Visible = True
+    btnOK.Top = lblHint.Top + lblHint.Height + 10
+    btnCancel.Top = btnOK.Top
+    btnOK.Caption = NeonL("btn_noodle")
+    btnCancel.Caption = NeonL("btn_cancel")
+    btnOK.Visible = True
+    btnCancel.Visible = True
+    Me.Height = btnOK.Top + btnOK.Height + 50
+    NeonRunConfirmed = False
+End Sub
+
 ' раскладка: «3050x2050» -> «3050 × 2050» для списка готовых размеров
 Private Function NestShow(ByVal s As String) As String
     NestShow = Replace(s, "x", " " & ChrW(&HD7) & " ")
@@ -389,6 +445,20 @@ End Sub
 
 Private Sub btnOK_Click()
     Dim t As Double, c As Double, st As Double, d As Double, w As Double, h As Double
+    If NeonRunMode = 4 Then
+        w = ParseNum(cboTool.Text): h = ParseNum(cboEnd.Text): c = ParseNum(cboCut.Text): d = ParseNum(gH.Text)
+        If w <= 0 Or w > 100000 Or h <= 0 Or h > 10000 Or c < 1 Or c > 1000 Or c <> Int(c) Or d < 0 Or d > 1000 Then
+            MsgBox NeonL("bad_noodle"), vbExclamation, NeonL("noodle_title")
+            Exit Sub
+        End If
+        SaveSetting "NeonCenterline", "Noodle", "Length", FmtNum(w)
+        SaveSetting "NeonCenterline", "Noodle", "Width", FmtNum(h)
+        SaveSetting "NeonCenterline", "Noodle", "Count", FmtNum(c)
+        SaveSetting "NeonCenterline", "Noodle", "Over", FmtNum(d)
+        NeonRunConfirmed = True
+        Me.Hide
+        Exit Sub
+    End If
     If NeonRunMode = 3 Then
         t = ParseNum(cboEnd.Text): c = ParseNum(cboCut.Text): d = ParseNum(cboTrim.Text)
         w = ParseNum(cboTool.Text): h = ParseNum(gH.Text)
