@@ -9165,7 +9165,7 @@ Public Function NeonScriptRun(ByVal tool As Double, nIn As Long, nOut As Long, t
     CoreSetParams tool, P_TOL
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
-    ActiveDocument.BeginCommandGroup UStr("41D 435 43E 43D 3A 20 446 435 43D 442 440 430 43B 44C 43D 430 44F 20 43B 438 43D 438 44F")
+    ActiveDocument.BeginCommandGroup UStr("426 435 43D 442 440 430 43B 44C 43D 430 44F 20 43B 438 43D 438 44F")
     grp = True
     Optimization = True
     EventsEnabled = False

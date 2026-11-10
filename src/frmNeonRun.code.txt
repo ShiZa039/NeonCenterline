@@ -33,7 +33,7 @@ Private Sub UserForm_Initialize()
         InitNoodle
         Exit Sub
     End If
-    Me.Caption = NeonL("app_title")
+    Me.Caption = NeonL("center_title")
     lblTool.Caption = NeonL("lbl_tool")
     cboTool.Clear
     cboTool.AddItem "6"

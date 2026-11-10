@@ -139,19 +139,19 @@ Private Sub RunMode(ByVal mode As Long)
     Case 0
         If mode = 1 Then
             MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & cutRep & _
-                   NeonL("script_beta"), vbExclamation, NeonL("app_title")
+                   NeonL("script_beta"), vbExclamation, NeonL("center_title")
         Else
             MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & cutRep, _
-                   vbInformation, NeonL("app_title")
+                   vbInformation, NeonL("center_title")
         End If
     Case 1
-        MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("app_title")
+        MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("center_title")
     Case 2
-        MsgBox NeonL("err_nosel"), vbExclamation, NeonL("app_title")
+        MsgBox NeonL("err_nosel"), vbExclamation, NeonL("center_title")
     Case 3
-        MsgBox NeonL("err_noclosed"), vbExclamation, NeonL("app_title")
+        MsgBox NeonL("err_noclosed"), vbExclamation, NeonL("center_title")
     Case Else
-        MsgBox NeonLF("err_fail", errText), vbCritical, NeonL("app_title")
+        MsgBox NeonLF("err_fail", errText), vbCritical, NeonL("center_title")
     End Select
 
     ' раз в день — тихая проверка обновлений (после расчёта, чтобы не задерживать работу)
@@ -175,13 +175,13 @@ Private Function AskRunParams() As Boolean
         Unload f
         Exit Function
     End If
-    s = InputBox(NeonL("prompt_tool"), NeonL("app_title"), FmtNum(NeonGetTool()))
+    s = InputBox(NeonL("prompt_tool"), NeonL("center_title"), FmtNum(NeonGetTool()))
     If Len(Trim$(s)) = 0 Then
         Exit Function
     End If
     tool = ParseNum(s)
     If tool <= 0 Or tool > 100 Then
-        MsgBox NeonL("bad_tool"), vbExclamation, NeonL("app_title")
+        MsgBox NeonL("bad_tool"), vbExclamation, NeonL("center_title")
         Exit Function
     End If
     SaveSetting REG_APP, "Params", "Tool", FmtNum(tool)
