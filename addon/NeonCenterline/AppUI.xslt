@@ -2,11 +2,11 @@
 <!--
   NeonCenterline — команды и панель инструментов (CorelDRAW Addons).
   Команды вызывают макросы проекта NeonCenterline.gms (пользовательская папка GMS).
-  Панель: Моно, Курсив | Упростить контур, Линии ▾, Раскладка ▾ | Настройки ▾. «▾» — кнопка-группа:
+  Панель: Моно, Курсив | Контур ▾, Линии ▾, Раскладка ▾ | Настройки ▾. «▾» — кнопка-группа:
   itemData type="flyout" с flyoutBarRef на commandBarData type="menu" flyout="true" (как кнопки
   со списком в самом CorelDRAW, DrawUI.items.xml; без type="flyout" CorelDRAW 2026 кнопку не рисует).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 7]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 8]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
@@ -82,6 +82,13 @@
                 userCaption="Неон: упростить контур"
                 userToolTip="Меньше узлов у выделенных кривых: отход от исходной не больше допуска (по умолчанию 0.1 мм), углы остаются углами. Отмена — Ctrl+Z"
                 enable="true"/>
+      <itemData guid="f694ba63-40ea-5adc-b912-0cea2e6c287a"
+                icon="guid://f694ba63-40ea-5adc-b912-0cea2e6c287a"
+                dynamicCommand="NeonCenterline.NeonTools.CleanContours"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Неон: очистить контур"
+                userToolTip="Убрать наложения и петли: перекрывающиеся части букв и фигур сливаются в один контур, внутренние линии уходят, дырки остаются. Текст переводится в кривые. Отмена — Ctrl+Z"
+                enable="true"/>
       <itemData guid="67333f2d-18b9-5925-b8bc-24d97a6dff93"
                 icon="guid://67333f2d-18b9-5925-b8bc-24d97a6dff93"
                 dynamicCommand="NeonCenterline.NeonTools.PlaceGrommets"
@@ -90,6 +97,14 @@
                 userToolTip="Точки под люверсы по краю выделенного баннера: в каждом углу и равномерно по сторонам, не реже заданного расстояния"
                 enable="true"/>
       <!-- кнопки-группы: открывают выпадающий список команд -->
+      <itemData guid="58b78302-39ef-5436-8097-5392406fe15a"
+                type="flyout"
+                arrowStyle="corner"
+                flyoutBarRef="5adecbd6-e92f-5962-9db2-01885295268a"
+                icon="guid://58b78302-39ef-5436-8097-5392406fe15a"
+                userCaption="Неон: контур"
+                userToolTip="Упростить контур, очистить наложения и петли"
+                enable="true"/>
       <itemData guid="d32b7178-2e37-5391-aca2-12628ac3838b"
                 type="flyout"
                 arrowStyle="corner"
@@ -128,7 +143,7 @@
           <item guidRef="4e6d43bf-0b2d-500c-b154-b553b6087991"/>
           <item guidRef="c68c5d4f-d668-5fb4-937e-adb7430cae58"/>
           <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
-          <item guidRef="18048cca-273b-50eb-9d03-54111cc920ce"/>
+          <item guidRef="58b78302-39ef-5436-8097-5392406fe15a"/>
           <item guidRef="305a1621-a721-5784-9de2-b2338e83336c"/>
           <item guidRef="d32b7178-2e37-5391-aca2-12628ac3838b"/>
           <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
@@ -136,6 +151,15 @@
         </toolbar>
       </commandBarData>
       <!-- выпадающие списки кнопок-групп -->
+      <commandBarData guid="5adecbd6-e92f-5962-9db2-01885295268a"
+                      type="menu"
+                      nonLocalizableName="NeonCenterline Outline"
+                      flyout="true">
+        <menu>
+          <item guidRef="18048cca-273b-50eb-9d03-54111cc920ce"/>
+          <item guidRef="f694ba63-40ea-5adc-b912-0cea2e6c287a"/>
+        </menu>
+      </commandBarData>
       <commandBarData guid="5731901c-4115-58a7-9466-9da0ca279658"
                       type="menu"
                       nonLocalizableName="NeonCenterline Layout"

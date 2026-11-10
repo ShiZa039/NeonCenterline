@@ -29,7 +29,10 @@ ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
          ('settings-menu', 'neon_settings', 103, 'Неон: настройки и помощь'),
          # с панели [NeonToolbar 5]: люверсы; с [NeonToolbar 6]: группа «Раскладка»
          ('grommets', 'neon_grommets', 111, 'Неон: люверсы'),
-         ('layout-menu', 'neon_grommets', 111, 'Неон: раскладка')]
+         ('layout-menu', 'neon_grommets', 111, 'Неон: раскладка'),
+         # с [NeonToolbar 8]: очистка контура и группа «Контур» (упростить + очистить)
+         ('clean', 'neon_clean', 112, 'Неон: очистить контур'),
+         ('outline-menu', 'neon_simplify', 107, 'Неон: контур')]
 
 def bmp_entry(im):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()

@@ -6,7 +6,8 @@ Attribute VB_Name = "NeonTools"
 '    SelectNeonLines — выделить все центральные линии, созданные плагином, на странице;
 '    NeonLineIds / NeonLinesNew — какие линии появились после расчёта (для подгонки под рез);
 '    SimplifyContours — упростить выделенные кривые (меньше узлов в пределах допуска);
-'    PlaceGrommets   — точки под люверсы по краю выделенных баннеров (подложек).
+'    PlaceGrommets   — точки под люверсы по краю выделенных баннеров (подложек);
+'    CleanContours   — очистить контур: убрать наложения и петли (каждый объект — одна кривая).
 ' =====================================================================
 Option Explicit
 
@@ -32,6 +33,33 @@ Private CosLocal As Double, CosChord As Double
 Private GPX() As Double, GPY() As Double, GPC() As Boolean, GN As Long
 Private GRX() As Double, GRY() As Double, GRN As Long
 '@@GROM_DECL_END
+
+' ---- очистка контура: вход, рабочие данные, выход (см. раздел «Очистка контура» ниже) ----
+'@@CLEAN_DECL_BEGIN
+Private Const CL_TOL As Double = 0.02
+Private Const CL_MIN_AREA As Double = 0.3
+Private Const CL_MIN_WIDTH As Double = 0.15
+' вход: сегменты (4 точки на сегмент, признак прямой), замкнутые подконтуры
+Private CSX() As Double, CSY() As Double, CSL() As Boolean, NCS As Long
+Private CPS0() As Long, CPN() As Long, NCP As Long
+' отрезки разбиения: подконтур, сегмент в нём, t0..t1, концы; ячейки сетки; первый отрезок подконтура
+Private ESp() As Long, EG() As Long, ET0() As Double, ET1() As Double, NE As Long
+Private EAX() As Double, EAY() As Double, EBX() As Double, EBY() As Double
+Private ECx0() As Long, ECx1() As Long, ECy0() As Long, ECy1() As Long, ES0() As Long, ENn() As Long
+' знак обмотки внутри подконтура (площадь со знаком)
+Private CLSig() As Long
+' разрезы (подконтур, параметр T = сегмент + t, точка), полосы для обмотки
+Private CuSp() As Long, CuT() As Double, CuX() As Double, CuY() As Double, NCu As Long
+Private CLCell As Double, CLY0 As Double, CLRowSt() As Long, CLRowL() As Long, CLNRow As Long
+' куски-границы: подконтур, T0..T1, ход, целый подконтур, начало/вторая/предпоследняя/конец, площадь, длина
+Private KSp() As Long, KT0() As Double, KT1() As Double, KFw() As Boolean, KWh() As Boolean, NK As Long
+Private KSx() As Double, KSy() As Double, K2x() As Double, K2y() As Double, KPx() As Double, KPy() As Double
+Private KEx() As Double, KEy() As Double, KAr() As Double, KLn() As Double
+Private WPx() As Double, WPy() As Double
+' выход: сегменты, подконтуры, число пересечений
+Private COX() As Double, COY() As Double, COL() As Boolean, NCO As Long
+Private COS0() As Long, CON() As Long, NCOP As Long, CLCuts As Long
+'@@CLEAN_DECL_END
 
 ' длина выделенного: контуры отдельно от центральных линий плагина
 Public Sub MeasureLength()
@@ -1812,3 +1840,1006 @@ End Function
 '@@GROMGEO_END
 '@@GROM_END
 
+'@@CLEAN_BEGIN
+' =====================================================================
+'  NeonCenterline — очистка контура (кнопка «Неон: очистить контур», группа «Контур ▾»).
+'
+'  Наложения и петли в контурах: буквы, собранные из перекрывающихся частей (стойка поверх дуг),
+'  налезающие друг на друга буквы, контур, перехлёстывающий сам себя (цифры, у которых дырка —
+'  петля одного контура), фигуры после «Обводка в объект». Каждый выделенный объект становится
+'  одной кривой (оригинал заменяется, одна операция — откат Ctrl+Z): внутренние линии наложений
+'  уходят, дырки остаются, мелкие петли и лоскуты (меньше 0.3 мм² или тоньше 0.15 мм) — убираются.
+'  Залитое — по правилу ненулевой обмотки (так CorelDRAW заливает текст в кривых). Текст и
+'  многоугольники переводятся в кривые; прямоугольники и эллипсы пропускаются (наложений в них
+'  не бывает); группы — по объектам. Отдельные объекты, которые надо слить, сначала объединить
+'  (Ctrl+L). Незамкнутые подпути кривой остаются как были.
+'
+'  Алгоритм — прототип proto/cleanup.py (раздел CLEANGEO повторяет его один в один):
+'    1. Сегменты разбиваются на отрезки (допуск 0.02 мм), у отрезка — сегмент и отрезок t.
+'    2. Пересечения отрезков (сетка) режут подконтуры на куски.
+'    3. Кусок остаётся, если залита ровно одна сторона (обмотка у середины слева и справа).
+'    4. Куски сшиваются в контуры (в точках касания — самый правый поворот), мелкие отбрасываются.
+'    5. Контур собирается из исходных сегментов, разрезанных точно в точках пересечения
+'       (де Кастельжо) — форма не меняется, без перетрассировки.
+' =====================================================================
+Public Sub CleanContours()
+    Dim col As Collection, oldUnit As cdrUnit, i As Long, nSkip As Long, grp As Boolean, errText As String, msg As String
+    Dim nObj As Long, nCuts As Long, nSp0 As Long, nSp1 As Long
+    If ActiveDocument Is Nothing Then
+        MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("app_title")
+        Exit Sub
+    End If
+    If ActiveSelectionRange.Count = 0 Then
+        MsgBox NeonL("err_nosel_any"), vbExclamation, NeonL("app_title")
+        Exit Sub
+    End If
+    oldUnit = ActiveDocument.Unit
+    ActiveDocument.Unit = cdrMillimeter
+    ActiveDocument.BeginCommandGroup NeonL("clean_title")
+    grp = True
+    Optimization = True
+    EventsEnabled = False
+    On Error GoTo Fail
+    Set col = New Collection
+    CollectClean ActiveSelectionRange, col, nSkip
+    For i = 1 To col.Count
+        CleanShape col(i), nObj, nCuts, nSp0, nSp1
+    Next i
+Fin:
+    On Error Resume Next
+    EventsEnabled = True
+    Optimization = False
+    If grp Then
+        ActiveDocument.EndCommandGroup
+    End If
+    ActiveDocument.Unit = oldUnit
+    ActiveWindow.Refresh
+    Application.Refresh
+    On Error GoTo 0
+    If Len(errText) > 0 Then
+        MsgBox NeonLF("err_fail", errText), vbCritical, NeonL("clean_title")
+        Exit Sub
+    End If
+    If col.Count = 0 Then
+        msg = NeonL("clean_none")
+    ElseIf nObj = 0 Then
+        msg = NeonL("clean_nochange")
+    Else
+        msg = NeonLF("clean_report", nObj, col.Count, nCuts, nSp0, nSp1)
+    End If
+    If nSkip > 0 Then
+        msg = msg & vbCrLf & vbCrLf & NeonLF("clean_skipped", nSkip)
+    End If
+    MsgBox msg, vbInformation, NeonL("clean_title")
+    NeonToolbarCheck
+    Exit Sub
+Fail:
+    errText = Err.Description
+    Resume Fin
+End Sub
+
+' кривые выделения; текст и многоугольники — в кривые (в той же операции отмены)
+Private Sub CollectClean(sr As ShapeRange, col As Collection, nSkip As Long)
+    Dim sh As Shape, tp As Long
+    For Each sh In sr
+        tp = sh.Type
+        If tp = cdrGroupShape Then
+            CollectClean sh.Shapes.All, col, nSkip
+        ElseIf tp = cdrCurveShape Then
+            col.Add sh
+        ElseIf tp = cdrRectangleShape Or tp = cdrEllipseShape Then
+            ' наложений не бывает — не трогать
+        ElseIf tp = cdrTextShape Or tp = cdrPolygonShape Then
+            On Error Resume Next
+            sh.ConvertToCurves
+            On Error GoTo 0
+            If sh.Type = cdrCurveShape Then
+                col.Add sh
+            ElseIf sh.Type = cdrGroupShape Then
+                CollectClean sh.Shapes.All, col, nSkip
+            Else
+                nSkip = nSkip + 1
+            End If
+        Else
+            nSkip = nSkip + 1
+        End If
+    Next sh
+End Sub
+
+' очистить кривую фигуры: замкнутые подпути — через CleanGeo, незамкнутые — как были
+Private Sub CleanShape(shp As Shape, nObj As Long, nCuts As Long, nSp0 As Long, nSp1 As Long)
+    Dim sp As SubPath, sg As Segment, crv As Curve, isClosed As Boolean, i As Long, s As Long, n0 As Long
+    Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, x2 As Double, y2 As Double, x3 As Double, y3 As Double
+    Dim ox() As Double, oy() As Double, ol() As Boolean, nos As Long, os0() As Long, on_() As Long, nop As Long
+    NCS = 0: NCP = 0: nos = 0: nop = 0
+    ReDim CSX(0 To 255): ReDim CSY(0 To 255): ReDim CSL(0 To 63): ReDim CPS0(0 To 15): ReDim CPN(0 To 15)
+    ReDim ox(0 To 63): ReDim oy(0 To 63): ReDim ol(0 To 15): ReDim os0(0 To 3): ReDim on_(0 To 3)
+    For Each sp In shp.Curve.SubPaths
+        isClosed = sp.Closed
+        If Not isClosed Then
+            On Error Resume Next
+            isClosed = (Abs(sp.StartNode.PositionX - sp.EndNode.PositionX) < 0.05 And _
+                        Abs(sp.StartNode.PositionY - sp.EndNode.PositionY) < 0.05 And sp.Segments.Count >= 2)
+            On Error GoTo 0
+        End If
+        n0 = NCS
+        For Each sg In sp.Segments
+            x0 = sg.StartNode.PositionX: y0 = sg.StartNode.PositionY
+            x3 = sg.EndNode.PositionX: y3 = sg.EndNode.PositionY
+            If sg.Type = cdrCurveSegment Then
+                sg.GetStartingControlPointPosition x1, y1
+                sg.GetEndingControlPointPosition x2, y2
+                AddCS x0, y0, x1, y1, x2, y2, x3, y3, False
+            Else
+                AddCS x0, y0, 0, 0, 0, 0, x3, y3, True
+            End If
+        Next sg
+        If NCS > n0 And isClosed Then
+            ' почти замкнутый — замкнуть отрезком
+            If CSX(4 * (NCS - 1) + 3) <> CSX(4 * n0) Or CSY(4 * (NCS - 1) + 3) <> CSY(4 * n0) Then
+                AddCS CSX(4 * (NCS - 1) + 3), CSY(4 * (NCS - 1) + 3), 0, 0, 0, 0, CSX(4 * n0), CSY(4 * n0), True
+            End If
+            If NCP > UBound(CPS0) Then
+                ReDim Preserve CPS0(0 To 2 * NCP): ReDim Preserve CPN(0 To 2 * NCP)
+            End If
+            CPS0(NCP) = n0: CPN(NCP) = NCS - n0: NCP = NCP + 1
+        ElseIf NCS > n0 Then
+            ' незамкнутый — отложить как есть
+            If nop > UBound(os0) Then
+                ReDim Preserve os0(0 To 2 * nop): ReDim Preserve on_(0 To 2 * nop)
+            End If
+            os0(nop) = nos: on_(nop) = NCS - n0: nop = nop + 1
+            For s = n0 To NCS - 1
+                If 4 * nos + 3 > UBound(ox) Then
+                    ReDim Preserve ox(0 To 8 * nos + 16): ReDim Preserve oy(0 To 8 * nos + 16)
+                End If
+                If nos > UBound(ol) Then
+                    ReDim Preserve ol(0 To 2 * nos + 4)
+                End If
+                For i = 0 To 3
+                    ox(4 * nos + i) = CSX(4 * s + i): oy(4 * nos + i) = CSY(4 * s + i)
+                Next i
+                ol(nos) = CSL(s): nos = nos + 1
+            Next s
+            NCS = n0
+        End If
+    Next sp
+    If NCP = 0 Then
+        Exit Sub
+    End If
+    CleanGeo CL_MIN_AREA, CL_MIN_WIDTH
+    ' ничего не пересекалось и ничего не выброшено — кривую не трогать; всё мелкое — тоже
+    If (CLCuts = 0 And NCOP = NCP) Or NCOP = 0 Then
+        Exit Sub
+    End If
+    Set crv = Application.CreateCurve(ActiveDocument)
+    For i = 0 To NCOP - 1
+        AppendSubCO crv, COX, COY, COL, COS0(i), CON(i), True
+    Next i
+    For i = 0 To nop - 1
+        AppendSubCO crv, ox, oy, ol, os0(i), on_(i), False
+    Next i
+    shp.Curve.CopyAssign crv
+    nObj = nObj + 1: nCuts = nCuts + CLCuts: nSp0 = nSp0 + NCP: nSp1 = nSp1 + NCOP
+End Sub
+
+Private Sub AddCS(ByVal x0 As Double, ByVal y0 As Double, ByVal x1 As Double, ByVal y1 As Double, _
+                  ByVal x2 As Double, ByVal y2 As Double, ByVal x3 As Double, ByVal y3 As Double, ByVal isL As Boolean)
+    If 4 * NCS + 3 > UBound(CSX) Then
+        ReDim Preserve CSX(0 To 8 * NCS + 16): ReDim Preserve CSY(0 To 8 * NCS + 16)
+    End If
+    If NCS > UBound(CSL) Then
+        ReDim Preserve CSL(0 To 2 * NCS + 4)
+    End If
+    If isL Then
+        x1 = x0 + (x3 - x0) / 3: y1 = y0 + (y3 - y0) / 3
+        x2 = x0 + 2 * (x3 - x0) / 3: y2 = y0 + 2 * (y3 - y0) / 3
+    End If
+    CSX(4 * NCS) = x0: CSY(4 * NCS) = y0: CSX(4 * NCS + 1) = x1: CSY(4 * NCS + 1) = y1
+    CSX(4 * NCS + 2) = x2: CSY(4 * NCS + 2) = y2: CSX(4 * NCS + 3) = x3: CSY(4 * NCS + 3) = y3
+    CSL(NCS) = isL
+    NCS = NCS + 1
+End Sub
+
+' подпуть в кривую: сегменты s0..s0+n-1 (4 точки на сегмент)
+Private Sub AppendSubCO(crv As Curve, bx() As Double, by() As Double, bl() As Boolean, ByVal s0 As Long, _
+                        ByVal n As Long, ByVal cl As Boolean)
+    Dim sp As SubPath, s As Long
+    If n <= 0 Then
+        Exit Sub
+    End If
+    Set sp = crv.CreateSubPath(bx(4 * s0), by(4 * s0))
+    For s = s0 To s0 + n - 1
+        If bl(s) Then
+            sp.AppendLineSegment bx(4 * s + 3), by(4 * s + 3)
+        Else
+            sp.AppendCurveSegment2 bx(4 * s + 3), by(4 * s + 3), bx(4 * s + 1), by(4 * s + 1), bx(4 * s + 2), by(4 * s + 2)
+        End If
+    Next s
+    If cl Then
+        On Error Resume Next
+        sp.Closed = True
+        On Error GoTo 0
+    End If
+End Sub
+
+'@@CLEANGEO_BEGIN
+' ---------------------------------------------------------------------
+'  Очистка контура: геометрия (повторяет proto/cleanup.py один в один).
+'  Вход: сегменты CSX/CSY (4 точки на сегмент), CSL (прямая), NCS; замкнутые подконтуры
+'  CPS0 (первый сегмент), CPN (сегментов), NCP. Выход: COX/COY/COL/NCO, подконтуры COS0/CON/NCOP;
+'  CLCuts — число пересечений.
+' ---------------------------------------------------------------------
+Public Sub CleanGeo(ByVal minArea As Double, ByVal minWidth As Double)
+    Dim sp As Long, s As Long, n As Long, k As Long, i As Long, j As Long, e As Long
+    Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, x2 As Double, y2 As Double, x3 As Double, y3 As Double
+    Dim dd As Double, d2 As Double, t As Double, mt As Double, px As Double, py As Double, qx As Double, qy As Double
+    Dim sumL As Double, cell As Double, mnX As Double, mnY As Double, mxX As Double, mxY As Double
+    Dim gx As Long, gy As Long, nx As Long, ny As Long, c As Long, gx0 As Long, gx1 As Long, gy0 As Long, gy1 As Long
+    Dim cnt() As Long, st() As Long, lst() As Long, a As Long, b As Long, ia As Long, ib As Long
+    Dim u As Double, v As Double, hx As Double, hy As Double, NN As Long, TT As Double
+    NCO = 0: NCOP = 0: CLCuts = 0
+    ReDim COX(0 To 63): ReDim COY(0 To 63): ReDim COL(0 To 15): ReDim COS0(0 To 15): ReDim CON(0 To 15)
+    If NCP = 0 Then
+        Exit Sub
+    End If
+    ' 1. разбиение на отрезки
+    NE = 0
+    ReDim ESp(0 To 1023): ReDim EG(0 To 1023): ReDim ET0(0 To 1023): ReDim ET1(0 To 1023)
+    ReDim EAX(0 To 1023): ReDim EAY(0 To 1023): ReDim EBX(0 To 1023): ReDim EBY(0 To 1023)
+    ReDim ES0(0 To NCP): ReDim ENn(0 To NCP)
+    For sp = 0 To NCP - 1
+        ES0(sp) = NE
+        For s = CPS0(sp) To CPS0(sp) + CPN(sp) - 1
+            x0 = CSX(4 * s): y0 = CSY(4 * s): x3 = CSX(4 * s + 3): y3 = CSY(4 * s + 3)
+            If CSL(s) Then
+                PushE sp, s - CPS0(sp), 0, 1, x0, y0, x3, y3
+            Else
+                x1 = CSX(4 * s + 1): y1 = CSY(4 * s + 1): x2 = CSX(4 * s + 2): y2 = CSY(4 * s + 2)
+                dd = Sqr((x0 - 2 * x1 + x2) ^ 2 + (y0 - 2 * y1 + y2) ^ 2)
+                d2 = Sqr((x1 - 2 * x2 + x3) ^ 2 + (y1 - 2 * y2 + y3) ^ 2)
+                If d2 > dd Then
+                    dd = d2
+                End If
+                n = -Int(-Sqr(0.75 * dd / CL_TOL))
+                If n < 2 Then
+                    n = 2
+                End If
+                If n > 256 Then
+                    n = 256
+                End If
+                px = x0: py = y0
+                For k = 1 To n
+                    If k = n Then
+                        qx = x3: qy = y3
+                    Else
+                        t = k / n: mt = 1 - t
+                        qx = mt * mt * mt * x0 + 3 * mt * mt * t * x1 + 3 * mt * t * t * x2 + t * t * t * x3
+                        qy = mt * mt * mt * y0 + 3 * mt * mt * t * y1 + 3 * mt * t * t * y2 + t * t * t * y3
+                    End If
+                    PushE sp, s - CPS0(sp), (k - 1) / n, k / n, px, py, qx, qy
+                    px = qx: py = qy
+                Next k
+            End If
+        Next s
+        ENn(sp) = NE - ES0(sp)
+    Next sp
+    If NE = 0 Then
+        Exit Sub
+    End If
+    ' знак обмотки внутри подконтура: площадь со знаком (у петляющего — по большей части)
+    ReDim CLSig(0 To NCP)
+    For sp = 0 To NCP - 1
+        dd = 0
+        For e = ES0(sp) To ES0(sp) + ENn(sp) - 1
+            If e = ES0(sp) Then
+                k = ES0(sp) + ENn(sp) - 1
+            Else
+                k = e - 1
+            End If
+            dd = dd + (EAX(k) * EAY(e) - EAX(e) * EAY(k))
+        Next e
+        If dd > 0 Then
+            CLSig(sp) = 1
+        Else
+            CLSig(sp) = -1
+        End If
+    Next sp
+    ' 2. сетка по габаритам отрезков (ячейка — 8 средних длин, не меньше 1 мм)
+    mnX = EAX(0): mnY = EAY(0): mxX = mnX: mxY = mnY
+    For e = 0 To NE - 1
+        sumL = sumL + Sqr((EBX(e) - EAX(e)) ^ 2 + (EBY(e) - EAY(e)) ^ 2)
+        MinMax4 EAX(e), EBX(e), mnX, mxX
+        MinMax4 EAY(e), EBY(e), mnY, mxY
+    Next e
+    cell = 8 * sumL / NE
+    If cell < 1 Then
+        cell = 1
+    End If
+    CLCell = cell: CLY0 = mnY
+    ' слишком мелкая сетка на большом объекте — крупнее (на результат не влияет)
+    Do While ((mxX - mnX) / cell + 1) * ((mxY - mnY) / cell + 1) > 4000000#
+        cell = cell * 2
+    Loop
+    nx = Int((mxX - mnX) / cell) + 1: ny = Int((mxY - mnY) / cell) + 1
+    ReDim cnt(0 To nx * ny): ReDim st(0 To nx * ny + 1)
+    ReDim ECx0(0 To NE): ReDim ECx1(0 To NE): ReDim ECy0(0 To NE): ReDim ECy1(0 To NE)
+    For e = 0 To NE - 1
+        CellRange e, mnX, mnY, cell, gx0, gx1, gy0, gy1
+        ECx0(e) = gx0: ECx1(e) = gx1: ECy0(e) = gy0: ECy1(e) = gy1
+        For gy = gy0 To gy1
+            For gx = gx0 To gx1
+                cnt(gy * nx + gx) = cnt(gy * nx + gx) + 1
+            Next gx
+        Next gy
+    Next e
+    For c = 0 To nx * ny - 1
+        st(c + 1) = st(c) + cnt(c)
+        cnt(c) = 0
+    Next c
+    ReDim lst(0 To st(nx * ny) + 1)
+    For e = 0 To NE - 1
+        For gy = ECy0(e) To ECy1(e)
+            For gx = ECx0(e) To ECx1(e)
+                c = gy * nx + gx
+                lst(st(c) + cnt(c)) = e: cnt(c) = cnt(c) + 1
+            Next gx
+        Next gy
+    Next e
+    ' 3. пересечения: каждая пара — один раз, в первой общей ячейке
+    NCu = 0
+    ReDim CuSp(0 To 255): ReDim CuT(0 To 255): ReDim CuX(0 To 255): ReDim CuY(0 To 255)
+    For c = 0 To nx * ny - 1
+        For i = st(c) To st(c + 1) - 1
+            a = lst(i)
+            For j = i + 1 To st(c + 1) - 1
+                b = lst(j)
+                If FirstCommonCell(a, b, nx) = c Then
+                    If Not (ESp(a) = ESp(b) And ((EBX(a) = EAX(b) And EBY(a) = EAY(b)) Or (EBX(b) = EAX(a) And EBY(b) = EAY(a)))) Then
+                        If SegCross(EAX(a), EAY(a), EBX(a), EBY(a), EAX(b), EAY(b), EBX(b), EBY(b), u, v) Then
+                            hx = EAX(a) + (EBX(a) - EAX(a)) * u: hy = EAY(a) + (EBY(a) - EAY(a)) * u
+                            NN = CPN(ESp(a))
+                            TT = EG(a) + ET0(a) + (ET1(a) - ET0(a)) * u
+                            PushCut ESp(a), FMod(TT, NN), hx, hy
+                            NN = CPN(ESp(b))
+                            TT = EG(b) + ET0(b) + (ET1(b) - ET0(b)) * v
+                            PushCut ESp(b), FMod(TT, NN), hx, hy
+                            CLCuts = CLCuts + 1
+                        End If
+                    End If
+                End If
+            Next j
+        Next i
+    Next c
+    SortCuts
+    ' 4. полосы по y для обмотки
+    Dim ry0 As Long, ry1 As Long, nrw As Long, rcnt() As Long, rst() As Long, rl() As Long, ylo As Double, yhi As Double
+    nrw = Int((mxY - mnY) / CLCell) + 1
+    ReDim rcnt(0 To nrw): ReDim rst(0 To nrw + 1)
+    For e = 0 To NE - 1
+        RowRange e, ry0, ry1
+        For k = ry0 To ry1
+            rcnt(k) = rcnt(k) + 1
+        Next k
+    Next e
+    For k = 0 To nrw - 1
+        rst(k + 1) = rst(k) + rcnt(k): rcnt(k) = 0
+    Next k
+    ReDim rl(0 To rst(nrw) + 1)
+    For e = 0 To NE - 1
+        RowRange e, ry0, ry1
+        For k = ry0 To ry1
+            rl(rst(k) + rcnt(k)) = e: rcnt(k) = rcnt(k) + 1
+        Next k
+    Next e
+    CLRowSt = rst: CLRowL = rl: CLNRow = nrw
+    ' 5. куски подконтуров между разрезами; остаются границы залитого и пустого
+    NK = 0
+    ReDim KSp(0 To 63): ReDim KT0(0 To 63): ReDim KT1(0 To 63): ReDim KFw(0 To 63): ReDim KWh(0 To 63)
+    ReDim KSx(0 To 63): ReDim KSy(0 To 63): ReDim K2x(0 To 63): ReDim K2y(0 To 63): ReDim KPx(0 To 63)
+    ReDim KPy(0 To 63): ReDim KEx(0 To 63): ReDim KEy(0 To 63): ReDim KAr(0 To 63): ReDim KLn(0 To 63)
+    ReDim WPx(0 To 15): ReDim WPy(0 To 15)
+    Dim c0 As Long, c1 As Long, nc As Long, T0 As Double, T1 As Double
+    c0 = 0
+    For sp = 0 To NCP - 1
+        c1 = c0
+        Do While c1 < NCu
+            If CuSp(c1) <> sp Then
+                Exit Do
+            End If
+            c1 = c1 + 1
+        Loop
+        nc = c1 - c0
+        NN = CPN(sp)
+        If nc = 0 Then
+            TestPiece sp, 0#, CDbl(NN), 0#, 0#, 0#, 0#, True
+        Else
+            For k = 0 To nc - 1
+                T0 = CuT(c0 + k)
+                If nc = 1 Then
+                    T1 = T0 + NN
+                Else
+                    T1 = CuT(c0 + (k + 1) Mod nc)
+                    If T1 <= T0 Then
+                        T1 = T1 + NN
+                    End If
+                End If
+                TestPiece sp, T0, T1, CuX(c0 + k), CuY(c0 + k), CuX(c0 + (k + 1) Mod nc), CuY(c0 + (k + 1) Mod nc), False
+            Next k
+        End If
+        c0 = c1
+    Next sp
+    ' 6. сшивка в контуры, отброс мелких, сборка из исходных сегментов
+    ChainPieces minArea, minWidth
+End Sub
+
+Private Sub PushE(ByVal sp As Long, ByVal g As Long, ByVal t0 As Double, ByVal t1 As Double, _
+                  ByVal ax As Double, ByVal ay As Double, ByVal bx As Double, ByVal by As Double)
+    If NE > UBound(ESp) Then
+        ReDim Preserve ESp(0 To 2 * NE): ReDim Preserve EG(0 To 2 * NE)
+        ReDim Preserve ET0(0 To 2 * NE): ReDim Preserve ET1(0 To 2 * NE)
+        ReDim Preserve EAX(0 To 2 * NE): ReDim Preserve EAY(0 To 2 * NE)
+        ReDim Preserve EBX(0 To 2 * NE): ReDim Preserve EBY(0 To 2 * NE)
+    End If
+    ESp(NE) = sp: EG(NE) = g: ET0(NE) = t0: ET1(NE) = t1
+    EAX(NE) = ax: EAY(NE) = ay: EBX(NE) = bx: EBY(NE) = by
+    NE = NE + 1
+End Sub
+
+Private Sub MinMax4(ByVal a As Double, ByVal b As Double, mn As Double, mx As Double)
+    If a < mn Then
+        mn = a
+    End If
+    If b < mn Then
+        mn = b
+    End If
+    If a > mx Then
+        mx = a
+    End If
+    If b > mx Then
+        mx = b
+    End If
+End Sub
+
+Private Sub CellRange(ByVal e As Long, ByVal mnX As Double, ByVal mnY As Double, ByVal cell As Double, _
+                      gx0 As Long, gx1 As Long, gy0 As Long, gy1 As Long)
+    Dim a As Double, b As Double
+    a = EAX(e): b = EBX(e)
+    If a > b Then
+        a = EBX(e): b = EAX(e)
+    End If
+    gx0 = Int((a - mnX) / cell): gx1 = Int((b - mnX) / cell)
+    a = EAY(e): b = EBY(e)
+    If a > b Then
+        a = EBY(e): b = EAY(e)
+    End If
+    gy0 = Int((a - mnY) / cell): gy1 = Int((b - mnY) / cell)
+End Sub
+
+' первая (нижняя левая) общая ячейка двух отрезков; -1 — общих нет
+Private Function FirstCommonCell(ByVal a As Long, ByVal b As Long, ByVal nx As Long) As Long
+    Dim x0 As Long, y0 As Long
+    If ECx1(a) < ECx0(b) Or ECx1(b) < ECx0(a) Or ECy1(a) < ECy0(b) Or ECy1(b) < ECy0(a) Then
+        FirstCommonCell = -1
+        Exit Function
+    End If
+    x0 = ECx0(a): y0 = ECy0(a)
+    If ECx0(b) > x0 Then
+        x0 = ECx0(b)
+    End If
+    If ECy0(b) > y0 Then
+        y0 = ECy0(b)
+    End If
+    FirstCommonCell = y0 * nx + x0
+End Function
+
+Private Sub RowRange(ByVal e As Long, r0 As Long, r1 As Long)
+    Dim a As Double, b As Double
+    a = EAY(e): b = EBY(e)
+    If a > b Then
+        a = EBY(e): b = EAY(e)
+    End If
+    r0 = Int((a - CLY0) / CLCell): r1 = Int((b - CLY0) / CLCell)
+End Sub
+
+' пересечение отрезков (доли u на первом, v на втором), концы включительно
+Private Function SegCross(ByVal ax As Double, ByVal ay As Double, ByVal bx As Double, ByVal by As Double, _
+                          ByVal cx As Double, ByVal cy As Double, ByVal dx As Double, ByVal dy As Double, _
+                          u As Double, v As Double) As Boolean
+    Dim ex As Double, ey As Double, fx As Double, fy As Double, den As Double
+    ex = bx - ax: ey = by - ay: fx = dx - cx: fy = dy - cy
+    den = ex * fy - ey * fx
+    If Abs(den) < 0.00000000000001 Then
+        Exit Function
+    End If
+    u = ((cx - ax) * fy - (cy - ay) * fx) / den
+    v = ((cx - ax) * ey - (cy - ay) * ex) / den
+    If u >= -0.000000000001 And u <= 1.000000000001 And v >= -0.000000000001 And v <= 1.000000000001 Then
+        SegCross = True
+    End If
+End Function
+
+Private Function FMod(ByVal x As Double, ByVal m As Double) As Double
+    FMod = x - m * Int(x / m)
+End Function
+
+Private Sub PushCut(ByVal sp As Long, ByVal T As Double, ByVal x As Double, ByVal y As Double)
+    If NCu > UBound(CuSp) Then
+        ReDim Preserve CuSp(0 To 2 * NCu): ReDim Preserve CuT(0 To 2 * NCu)
+        ReDim Preserve CuX(0 To 2 * NCu): ReDim Preserve CuY(0 To 2 * NCu)
+    End If
+    CuSp(NCu) = sp: CuT(NCu) = T: CuX(NCu) = x: CuY(NCu) = y
+    NCu = NCu + 1
+End Sub
+
+' разрезы по (подконтур, T); совпадающие (|dT| < 1e-9) — один
+Private Sub SortCuts()
+    Dim idx() As Long, i As Long, m As Long, ns() As Long, nt() As Double, nx() As Double, ny() As Double
+    If NCu = 0 Then
+        Exit Sub
+    End If
+    ReDim idx(0 To NCu - 1)
+    For i = 0 To NCu - 1
+        idx(i) = i
+    Next i
+    QSortCuts idx, 0, NCu - 1
+    ReDim ns(0 To NCu): ReDim nt(0 To NCu): ReDim nx(0 To NCu): ReDim ny(0 To NCu)
+    m = 0
+    For i = 0 To NCu - 1
+        If m > 0 Then
+            If ns(m - 1) = CuSp(idx(i)) And Abs(CuT(idx(i)) - nt(m - 1)) < 0.000000001 Then
+                GoTo NextCut
+            End If
+        End If
+        ns(m) = CuSp(idx(i)): nt(m) = CuT(idx(i)): nx(m) = CuX(idx(i)): ny(m) = CuY(idx(i))
+        m = m + 1
+NextCut:
+    Next i
+    CuSp = ns: CuT = nt: CuX = nx: CuY = ny: NCu = m
+End Sub
+
+Private Function CutLess(ByVal a As Long, ByVal b As Long) As Boolean
+    If CuSp(a) <> CuSp(b) Then
+        CutLess = (CuSp(a) < CuSp(b))
+    ElseIf CuT(a) <> CuT(b) Then
+        CutLess = (CuT(a) < CuT(b))
+    Else
+        CutLess = (a < b)
+    End If
+End Function
+
+Private Sub QSortCuts(idx() As Long, ByVal lo As Long, ByVal hi As Long)
+    Dim i As Long, j As Long, p As Long, tmp As Long
+    Do While lo < hi
+        i = lo: j = hi: p = idx((lo + hi) \ 2)
+        Do While i <= j
+            Do While CutLess(idx(i), p)
+                i = i + 1
+            Loop
+            Do While CutLess(p, idx(j))
+                j = j - 1
+            Loop
+            If i <= j Then
+                tmp = idx(i): idx(i) = idx(j): idx(j) = tmp
+                i = i + 1: j = j - 1
+            End If
+        Loop
+        If j - lo < hi - i Then
+            QSortCuts idx, lo, j
+            lo = i
+        Else
+            QSortCuts idx, i, hi
+            hi = j
+        End If
+    Loop
+End Sub
+
+' вершины подконтура sp на параметре (T0, T1) по порядку (T1 может быть > N — по кругу):
+' возвращает их число, точки — в WPx/WPy (с X0 в начале и X1 в конце)
+Private Function PieceLine(ByVal sp As Long, ByVal T0 As Double, ByVal T1 As Double, _
+                           ByVal x0 As Double, ByVal y0 As Double, ByVal x1 As Double, ByVal y1 As Double, _
+                           ByVal whole As Boolean) As Long
+    Dim e As Long, n As Long, Tv As Double, NN As Long, pass As Long
+    NN = CPN(sp)
+    If UBound(WPx) < ENn(sp) + 4 Then
+        ReDim WPx(0 To ENn(sp) + 4): ReDim WPy(0 To ENn(sp) + 4)
+    End If
+    If whole Then
+        For e = ES0(sp) To ES0(sp) + ENn(sp) - 1
+            WPx(n) = EAX(e): WPy(n) = EAY(e): n = n + 1
+        Next e
+        WPx(n) = EAX(ES0(sp)): WPy(n) = EAY(ES0(sp)): n = n + 1
+        PieceLine = n
+        Exit Function
+    End If
+    WPx(0) = x0: WPy(0) = y0: n = 1
+    If T1 > NN Then
+        ' по кругу: вершины после T0, затем с начала до T1 - N
+        For e = ES0(sp) To ES0(sp) + ENn(sp) - 1
+            Tv = FMod(EG(e) + ET0(e), NN)
+            If Tv > T0 Then
+                WPx(n) = EAX(e): WPy(n) = EAY(e): n = n + 1
+            End If
+        Next e
+        For e = ES0(sp) To ES0(sp) + ENn(sp) - 1
+            Tv = FMod(EG(e) + ET0(e), NN)
+            If Tv + NN < T1 Then
+                WPx(n) = EAX(e): WPy(n) = EAY(e): n = n + 1
+            End If
+        Next e
+    Else
+        For e = ES0(sp) To ES0(sp) + ENn(sp) - 1
+            Tv = FMod(EG(e) + ET0(e), NN)
+            If T0 < Tv And Tv < T1 Then
+                WPx(n) = EAX(e): WPy(n) = EAY(e): n = n + 1
+            End If
+        Next e
+    End If
+    WPx(n) = x1: WPy(n) = y1: n = n + 1
+    PieceLine = n
+End Function
+
+' кусок: обмотка слева и справа от середины; граница залитого и пустого — в список (залитое справа)
+Private Sub TestPiece(ByVal sp As Long, ByVal T0 As Double, ByVal T1 As Double, _
+                      ByVal x0 As Double, ByVal y0 As Double, ByVal x1 As Double, ByVal y1 As Double, _
+                      ByVal whole As Boolean)
+    Dim n As Long, i As Long, tot As Double, d As Double, mx As Double, my As Double, im As Long, dm As Double
+    Dim tx As Double, ty As Double, wl As Long, wr As Long, fw As Boolean, ar As Double
+    Dim ol As Long, orr As Long, wf As Long, wo As Long
+    n = PieceLine(sp, T0, T1, x0, y0, x1, y1, whole)
+    ' проба — у середины самого длинного звена (не в вершине: у острого зубца точки по обе стороны
+    ' от вершины обе оказались бы снаружи)
+    im = -1: dm = -1
+    For i = 0 To n - 2
+        d = Sqr((WPx(i + 1) - WPx(i)) ^ 2 + (WPy(i + 1) - WPy(i)) ^ 2)
+        tot = tot + d
+        If d > dm Then
+            dm = d: im = i
+        End If
+    Next i
+    If tot < 0.000000001 Or dm < 0.000000000001 Then
+        Exit Sub
+    End If
+    mx = (WPx(im) + WPx(im + 1)) / 2: my = (WPy(im) + WPy(im + 1)) / 2
+    tx = (WPx(im + 1) - WPx(im)) / dm: ty = (WPy(im + 1) - WPy(im)) / dm
+    wl = Winding(mx - ty * 0.0001, my + tx * 0.0001, sp, ol)
+    wr = Winding(mx + ty * 0.0001, my - tx * 0.0001, sp, orr)
+    If (wl <> 0) = (wr <> 0) Then
+        Exit Sub
+    End If
+    fw = (wr <> 0)
+    If fw Then
+        wf = wr: wo = orr
+    Else
+        wf = wl: wo = ol
+    End If
+    ' вывернутая петля (ласточкин хвост сдвинутого контура, «ушко» обводки): залитое здесь — только
+    ' от самого подконтура и против его хода; у дырки залитое — от внешнего контура
+    If wf = wo Then
+        If (wf > 0 And CLSig(sp) < 0) Or (wf < 0 And CLSig(sp) > 0) Then
+            Exit Sub
+        End If
+    End If
+    For i = 0 To n - 2
+        ar = ar + (WPx(i) * WPy(i + 1) - WPx(i + 1) * WPy(i))
+    Next i
+    If NK > UBound(KSp) Then
+        ReDim Preserve KSp(0 To 2 * NK): ReDim Preserve KT0(0 To 2 * NK): ReDim Preserve KT1(0 To 2 * NK)
+        ReDim Preserve KFw(0 To 2 * NK): ReDim Preserve KWh(0 To 2 * NK)
+        ReDim Preserve KSx(0 To 2 * NK): ReDim Preserve KSy(0 To 2 * NK): ReDim Preserve K2x(0 To 2 * NK): ReDim Preserve K2y(0 To 2 * NK)
+        ReDim Preserve KPx(0 To 2 * NK): ReDim Preserve KPy(0 To 2 * NK): ReDim Preserve KEx(0 To 2 * NK): ReDim Preserve KEy(0 To 2 * NK)
+        ReDim Preserve KAr(0 To 2 * NK): ReDim Preserve KLn(0 To 2 * NK)
+    End If
+    KSp(NK) = sp: KT0(NK) = T0: KT1(NK) = T1: KFw(NK) = fw: KWh(NK) = whole: KLn(NK) = tot
+    If fw Then
+        KSx(NK) = WPx(0): KSy(NK) = WPy(0): K2x(NK) = WPx(1): K2y(NK) = WPy(1)
+        KPx(NK) = WPx(n - 2): KPy(NK) = WPy(n - 2): KEx(NK) = WPx(n - 1): KEy(NK) = WPy(n - 1)
+        KAr(NK) = ar
+    Else
+        KSx(NK) = WPx(n - 1): KSy(NK) = WPy(n - 1): K2x(NK) = WPx(n - 2): K2y(NK) = WPy(n - 2)
+        KPx(NK) = WPx(1): KPy(NK) = WPy(1): KEx(NK) = WPx(0): KEy(NK) = WPy(0)
+        KAr(NK) = -ar
+    End If
+    NK = NK + 1
+End Sub
+
+' обмотка точки: луч вправо, отрезки из полосы; wo — вклад подконтура sp
+Private Function Winding(ByVal px As Double, ByVal py As Double, ByVal sp As Long, wo As Long) As Long
+    Dim r As Long, k As Long, e As Long, w As Long, x As Double, d As Long
+    wo = 0
+    r = Int((py - CLY0) / CLCell)
+    If r < 0 Or r >= CLNRow Then
+        Exit Function
+    End If
+    For k = CLRowSt(r) To CLRowSt(r + 1) - 1
+        e = CLRowL(k)
+        If (EAY(e) <= py And py < EBY(e)) Or (EBY(e) <= py And py < EAY(e)) Then
+            x = EAX(e) + (py - EAY(e)) * (EBX(e) - EAX(e)) / (EBY(e) - EAY(e))
+            If x > px Then
+                If EBY(e) > EAY(e) Then
+                    d = 1
+                Else
+                    d = -1
+                End If
+                w = w + d
+                If ESp(e) = sp Then
+                    wo = wo + d
+                End If
+            End If
+        End If
+    Next k
+    Winding = w
+End Function
+
+Private Function RKey(ByVal a As Double, ByVal b As Double) As Boolean
+    RKey = (Round(a, 5) = Round(b, 5))
+End Function
+
+Private Function Atan2C(ByVal y As Double, ByVal x As Double) As Double
+    Const PI_ As Double = 3.14159265358979
+    If x > 0 Then
+        Atan2C = Atn(y / x)
+    ElseIf x < 0 Then
+        If y >= 0 Then
+            Atan2C = Atn(y / x) + PI_
+        Else
+            Atan2C = Atn(y / x) - PI_
+        End If
+    ElseIf y > 0 Then
+        Atan2C = PI_ / 2
+    ElseIf y < 0 Then
+        Atan2C = -PI_ / 2
+    End If
+End Function
+
+Private Sub ChainPieces(ByVal minArea As Double, ByVal minWidth As Double)
+    Const PI_ As Double = 3.14159265358979
+    Dim used() As Boolean, lp() As Long, nl As Long, n As Long, cur As Long, c As Long, best As Long
+    Dim din As Double, dout As Double, tr As Double, bestTr As Double
+    If NK = 0 Then
+        Exit Sub
+    End If
+    ReDim used(0 To NK): ReDim lp(0 To NK)
+    ' целые подконтуры — каждый сам по себе
+    For n = 0 To NK - 1
+        If KWh(n) Then
+            lp(0) = n: nl = 1
+            EmitLoop lp, nl, minArea, minWidth
+        End If
+    Next n
+    For n = 0 To NK - 1
+        If Not KWh(n) And Not used(n) Then
+            nl = 0: cur = n
+            Do While cur >= 0
+                If used(cur) Then
+                    Exit Do
+                End If
+                used(cur) = True: lp(nl) = cur: nl = nl + 1
+                best = -1
+                For c = 0 To NK - 1
+                    If Not KWh(c) And Not used(c) Then
+                        If RKey(KSx(c), KEx(cur)) And RKey(KSy(c), KEy(cur)) Then
+                            ' касание: самый правый поворот (залитое справа — обход вплотную)
+                            din = Atan2C(KEy(cur) - KPy(cur), KEx(cur) - KPx(cur))
+                            dout = Atan2C(K2y(c) - KEy(cur), K2x(c) - KEx(cur))
+                            tr = dout - din + PI_
+                            tr = tr - 2 * PI_ * Int(tr / (2 * PI_)) - PI_
+                            If best < 0 Then
+                                best = c: bestTr = tr
+                            ElseIf tr < bestTr Then
+                                best = c: bestTr = tr
+                            End If
+                        End If
+                    End If
+                Next c
+                cur = best
+            Loop
+            EmitLoop lp, nl, minArea, minWidth
+        End If
+    Next n
+End Sub
+
+' контур из кусков: мелкий (площадь, толщина) — пропустить; иначе — сегменты исходных кривых
+Private Sub EmitLoop(lp() As Long, ByVal nl As Long, ByVal minArea As Double, ByVal minWidth As Double)
+    Dim i As Long, A As Double, per As Double, s0 As Long
+    For i = 0 To nl - 1
+        A = A + KAr(lp(i)): per = per + KLn(lp(i))
+    Next i
+    A = A + (KEx(lp(nl - 1)) * KSy(lp(0)) - KSx(lp(0)) * KEy(lp(nl - 1)))
+    per = per + Sqr((KSx(lp(0)) - KEx(lp(nl - 1))) ^ 2 + (KSy(lp(0)) - KEy(lp(nl - 1))) ^ 2)
+    A = Abs(A / 2)
+    If A < minArea Then
+        Exit Sub
+    End If
+    If per > 0 Then
+        If 2 * A / per < minWidth Then
+            Exit Sub
+        End If
+    End If
+    s0 = NCO
+    For i = 0 To nl - 1
+        EmitPiece lp(i)
+    Next i
+    If NCO > s0 Then
+        SnapLoop s0, NCO - s0
+        If NCOP > UBound(COS0) Then
+            ReDim Preserve COS0(0 To 2 * NCOP): ReDim Preserve CON(0 To 2 * NCOP)
+        End If
+        COS0(NCOP) = s0: CON(NCOP) = NCO - s0: NCOP = NCOP + 1
+    End If
+End Sub
+
+' сегменты подконтура на отрезке параметра куска (в обратную сторону — с конца, развёрнутые)
+Private Sub EmitPiece(ByVal k As Long)
+    Dim sp As Long, NN As Long, T0 As Double, T1 As Double, g As Long, a As Double, b As Double, s0 As Long, n As Long
+    Dim i As Long, j As Long, m As Long, tx As Double, ty As Double, tl As Boolean
+    sp = KSp(k): NN = CPN(sp): T0 = KT0(k): T1 = KT1(k)
+    If T1 <= T0 Then
+        T1 = T1 + NN
+    End If
+    s0 = NCO
+    g = Int(T0)
+    Do While g < T1 - 0.000000000001
+        a = T0 - g
+        If a < 0 Then
+            a = 0
+        End If
+        b = T1 - g
+        If b > 1 Then
+            b = 1
+        End If
+        If b - a > 0.000000000001 Then
+            SplitSeg CPS0(sp) + (g Mod NN), a, b
+        End If
+        g = g + 1
+    Loop
+    If Not KFw(k) Then
+        ' обратный ход: порядок сегментов и каждый сегмент — наоборот
+        n = NCO - s0
+        For i = 0 To n \ 2 - 1
+            For m = 0 To 3
+                tx = COX(4 * (s0 + i) + m): ty = COY(4 * (s0 + i) + m)
+                COX(4 * (s0 + i) + m) = COX(4 * (s0 + n - 1 - i) + m): COY(4 * (s0 + i) + m) = COY(4 * (s0 + n - 1 - i) + m)
+                COX(4 * (s0 + n - 1 - i) + m) = tx: COY(4 * (s0 + n - 1 - i) + m) = ty
+            Next m
+            tl = COL(s0 + i): COL(s0 + i) = COL(s0 + n - 1 - i): COL(s0 + n - 1 - i) = tl
+        Next i
+        For i = s0 To NCO - 1
+            For m = 0 To 1
+                j = 3 - m
+                tx = COX(4 * i + m): ty = COY(4 * i + m)
+                COX(4 * i + m) = COX(4 * i + j): COY(4 * i + m) = COY(4 * i + j)
+                COX(4 * i + j) = tx: COY(4 * i + j) = ty
+            Next m
+        Next i
+    End If
+End Sub
+
+' часть сегмента s от a до b (0 <= a < b <= 1) — в выход (де Кастельжо; прямая — по точкам)
+Private Sub SplitSeg(ByVal s As Long, ByVal a As Double, ByVal b As Double)
+    Dim p0x As Double, p0y As Double, c1x As Double, c1y As Double, c2x As Double, c2y As Double, p3x As Double, p3y As Double
+    Dim tt As Double
+    p0x = CSX(4 * s): p0y = CSY(4 * s): c1x = CSX(4 * s + 1): c1y = CSY(4 * s + 1)
+    c2x = CSX(4 * s + 2): c2y = CSY(4 * s + 2): p3x = CSX(4 * s + 3): p3y = CSY(4 * s + 3)
+    If CSL(s) Then
+        PushO p0x + (p3x - p0x) * a, p0y + (p3y - p0y) * a, 0, 0, 0, 0, p0x + (p3x - p0x) * b, p0y + (p3y - p0y) * b, True
+        Exit Sub
+    End If
+    If a > 0 Then
+        CutAfter p0x, p0y, c1x, c1y, c2x, c2y, p3x, p3y, a
+    End If
+    If b < 1 Then
+        If a < 1 Then
+            tt = (b - a) / (1 - a)
+        Else
+            tt = 1
+        End If
+        CutBefore p0x, p0y, c1x, c1y, c2x, c2y, p3x, p3y, tt
+    End If
+    PushO p0x, p0y, c1x, c1y, c2x, c2y, p3x, p3y, False
+End Sub
+
+' кривая -> её часть [t, 1]
+Private Sub CutAfter(p0x As Double, p0y As Double, c1x As Double, c1y As Double, c2x As Double, c2y As Double, _
+                     p3x As Double, p3y As Double, ByVal t As Double)
+    Dim ax As Double, ay As Double, bx As Double, by As Double, cx As Double, cy As Double
+    Dim dx As Double, dy As Double, ex As Double, ey As Double, fx As Double, fy As Double
+    ax = p0x + (c1x - p0x) * t: ay = p0y + (c1y - p0y) * t
+    bx = c1x + (c2x - c1x) * t: by = c1y + (c2y - c1y) * t
+    cx = c2x + (p3x - c2x) * t: cy = c2y + (p3y - c2y) * t
+    dx = ax + (bx - ax) * t: dy = ay + (by - ay) * t
+    ex = bx + (cx - bx) * t: ey = by + (cy - by) * t
+    fx = dx + (ex - dx) * t: fy = dy + (ey - dy) * t
+    p0x = fx: p0y = fy: c1x = ex: c1y = ey: c2x = cx: c2y = cy
+End Sub
+
+' кривая -> её часть [0, t]
+Private Sub CutBefore(p0x As Double, p0y As Double, c1x As Double, c1y As Double, c2x As Double, c2y As Double, _
+                      p3x As Double, p3y As Double, ByVal t As Double)
+    Dim ax As Double, ay As Double, bx As Double, by As Double, cx As Double, cy As Double
+    Dim dx As Double, dy As Double, ex As Double, ey As Double, fx As Double, fy As Double
+    ax = p0x + (c1x - p0x) * t: ay = p0y + (c1y - p0y) * t
+    bx = c1x + (c2x - c1x) * t: by = c1y + (c2y - c1y) * t
+    cx = c2x + (p3x - c2x) * t: cy = c2y + (p3y - c2y) * t
+    dx = ax + (bx - ax) * t: dy = ay + (by - ay) * t
+    ex = bx + (cx - bx) * t: ey = by + (cy - by) * t
+    fx = dx + (ex - dx) * t: fy = dy + (ey - dy) * t
+    c1x = ax: c1y = ay: c2x = dx: c2y = dy: p3x = fx: p3y = fy
+End Sub
+
+Private Sub PushO(ByVal p0x As Double, ByVal p0y As Double, ByVal c1x As Double, ByVal c1y As Double, _
+                  ByVal c2x As Double, ByVal c2y As Double, ByVal p3x As Double, ByVal p3y As Double, ByVal isL As Boolean)
+    If 4 * NCO + 3 > UBound(COX) Then
+        ReDim Preserve COX(0 To 8 * NCO + 16): ReDim Preserve COY(0 To 8 * NCO + 16)
+    End If
+    If NCO > UBound(COL) Then
+        ReDim Preserve COL(0 To 2 * NCO + 4)
+    End If
+    If isL Then
+        c1x = p0x + (p3x - p0x) / 3: c1y = p0y + (p3y - p0y) / 3
+        c2x = p0x + 2 * (p3x - p0x) / 3: c2y = p0y + 2 * (p3y - p0y) / 3
+    End If
+    COX(4 * NCO) = p0x: COY(4 * NCO) = p0y: COX(4 * NCO + 1) = c1x: COY(4 * NCO + 1) = c1y
+    COX(4 * NCO + 2) = c2x: COY(4 * NCO + 2) = c2y: COX(4 * NCO + 3) = p3x: COY(4 * NCO + 3) = p3y
+    COL(NCO) = isL
+    NCO = NCO + 1
+End Sub
+
+' стыки кусков: концы расходятся до допуска разбиения — оба в середину (с ручками)
+Private Sub SnapLoop(ByVal s0 As Long, ByVal n As Long)
+    Dim i As Long, a As Long, b As Long, mx As Double, my As Double, dax As Double, day As Double, dbx As Double, dby As Double
+    For i = 0 To n - 1
+        b = s0 + i
+        If i = 0 Then
+            a = s0 + n - 1
+        Else
+            a = b - 1
+        End If
+        If COX(4 * a + 3) <> COX(4 * b) Or COY(4 * a + 3) <> COY(4 * b) Then
+            mx = (COX(4 * a + 3) + COX(4 * b)) / 2: my = (COY(4 * a + 3) + COY(4 * b)) / 2
+            dax = mx - COX(4 * a + 3): day = my - COY(4 * a + 3)
+            dbx = mx - COX(4 * b): dby = my - COY(4 * b)
+            If COL(a) Then
+                COX(4 * a + 3) = mx: COY(4 * a + 3) = my
+                COX(4 * a + 1) = COX(4 * a) + (mx - COX(4 * a)) / 3: COY(4 * a + 1) = COY(4 * a) + (my - COY(4 * a)) / 3
+                COX(4 * a + 2) = COX(4 * a) + 2 * (mx - COX(4 * a)) / 3: COY(4 * a + 2) = COY(4 * a) + 2 * (my - COY(4 * a)) / 3
+            Else
+                COX(4 * a + 2) = COX(4 * a + 2) + dax: COY(4 * a + 2) = COY(4 * a + 2) + day
+                COX(4 * a + 3) = mx: COY(4 * a + 3) = my
+            End If
+            If COL(b) Then
+                COX(4 * b) = mx: COY(4 * b) = my
+                COX(4 * b + 1) = mx + (COX(4 * b + 3) - mx) / 3: COY(4 * b + 1) = my + (COY(4 * b + 3) - my) / 3
+                COX(4 * b + 2) = mx + 2 * (COX(4 * b + 3) - mx) / 3: COY(4 * b + 2) = my + 2 * (COY(4 * b + 3) - my) / 3
+            Else
+                COX(4 * b) = mx: COY(4 * b) = my
+                COX(4 * b + 1) = COX(4 * b + 1) + dbx: COY(4 * b + 1) = COY(4 * b + 1) + dby
+            End If
+        End If
+    Next i
+End Sub
+'@@CLEANGEO_END
+
+'@@CLEANTEST_BEGIN
+' стенд: очистка по сегментам (тесты сверяют с proto/cleanup.py)
+Public Function CleanTest(inX() As Double, inY() As Double, inL() As Boolean, ByVal nSeg As Long, _
+                          spS0() As Long, spN() As Long, ByVal nSp As Long, ByVal minArea As Double, ByVal minWidth As Double) As Long
+    Dim s As Long, k As Long
+    ReDim CSX(0 To 4 * nSeg + 4): ReDim CSY(0 To 4 * nSeg + 4): ReDim CSL(0 To nSeg + 1)
+    For s = 0 To nSeg - 1
+        For k = 0 To 3
+            CSX(4 * s + k) = inX(4 * s + k): CSY(4 * s + k) = inY(4 * s + k)
+        Next k
+        CSL(s) = inL(s)
+    Next s
+    NCS = nSeg
+    ReDim CPS0(0 To nSp + 1): ReDim CPN(0 To nSp + 1)
+    For s = 0 To nSp - 1
+        CPS0(s) = spS0(s): CPN(s) = spN(s)
+    Next s
+    NCP = nSp
+    CleanGeo minArea, minWidth
+    CleanTest = NCOP
+End Function
+'@@CLEANTEST_END
+'@@CLEAN_END
