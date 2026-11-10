@@ -66,6 +66,8 @@ Private COS0() As Long, CON() As Long, NCOP As Long, CLCuts As Long
 ' ---- одинаковые формы и раскладка на листы (см. раздел «Раскладка» ниже) ----
 '@@NEST_DECL_BEGIN
 Private Const NT_EPS As Double = 0.000001
+' листов раскладки в ряд
+Private Const NT_ROW As Long = 5
 Private Const SAME_TOL As Double = 0.1
 ' объекты: цвет (ключ, название), подпути, узлы, сегменты, габарит; точки: первая, число (сначала узлы, потом управляющие)
 Private SmCk() As String, SmCn() As String, SmSub() As Long, SmNn() As Long, SmNs() As Long, SmW() As Double, SmH() As Double
@@ -2878,7 +2880,6 @@ End Function
 '  элементы); одна выделенная группа — тоже (импорт SVG/DXF приходит одной группой).
 '  Цвет детали — цвет заливки, без заливки — цвет обводки.
 ' =====================================================================
-Private Const NT_ROW As Long = 5
 
 ' ---------------------------------------------------------------------
 '  Настройки раскладки (окно — frmNeonRun в режиме 3, NeonUI.AskNestParams)
@@ -3346,7 +3347,7 @@ Fin:
     If nUnfit > 0 Then
         msg = msg & vbCrLf & NeonLF("nest_unfit", nUnfit) & vbCrLf
     End If
-    msg = msg & vbCrLf & NeonLF("nest_rep_tail", NeonL("nest_layer"))
+    msg = msg & vbCrLf & NeonLF("nest_rep_tail", NeonL("nest_layer")) & vbCrLf & vbCrLf & NeonL("nest_beta")
     If MsgBox(msg & vbCrLf & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, ttl) = vbYes Then
         CopyText msg
     End If

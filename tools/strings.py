@@ -195,7 +195,9 @@ STRINGS = {
     'same_group':    ('Одинаковые: {0} шт · {1} × {2} мм', 'Identical: {0} pcs · {1} × {2} mm'),
     'same_failed':   ('Не удалось сгруппировать наборов: {0} (объекты на разных слоях?).', 'Could not group {0} sets (objects on different layers?).'),
     'no_color':      ('без цвета', 'no colour'),
-    'nest_title':    ('Неон: раскладка на листы', 'Neon: nest on sheets'),
+    'nest_title':    ('Неон: раскладка на листы (бета)', 'Neon: nest on sheets (beta)'),
+    'nest_beta':     ('⚠ Раскладка в разработке: пока только по габаритам деталей и без поворота — детали «в обнимку» (Г, Л, Т) и повёрнутые не ставятся. Проверяйте раскладку перед резкой.',
+                      '⚠ Nesting is a work in progress: bounding boxes only, no rotation — interlocking (L, T shapes) and rotated placement are not done yet. Check the layout before cutting.'),
     'nest_nosel':    ('Выделите детали для раскладки.', 'Select the parts to nest.'),
     'nest_layer':    ('Раскладка', 'Nesting'),
     'nest_frame':    ('Раскладка: рамка листа {0}', 'Nesting: sheet frame {0}'),
@@ -221,10 +223,10 @@ STRINGS = {
     'lbl_nest_gap':  ('Зазор между деталями, мм:', 'Gap between parts, mm:'),
     'chk_nest_color':('Каждый цвет — на свои листы', 'Each colour on its own sheets'),
     'chk_nest_auto': ('Ширина по раскладке, не меньше, мм:', 'Width to fit the parts, at least, mm:'),
-    'nest_hint':     ('Раскладка по габаритам, без поворота: ни одна деталь не ближе поля к краю и зазора к соседней. '
+    'nest_hint':     ('Бета. Раскладка по габаритам, без поворота: ни одна деталь не ближе поля к краю и зазора к соседней. '
                       'Для фрезы зазор — не меньше её диаметра. С галочкой «Ширина по раскладке» ширина из первого поля — наибольшая, '
                       'лист обрезается по деталям. Одинаковые, собранные в группы, раскладываются поштучно.',
-                      'Nesting by bounding boxes, no rotation: no part is closer than the margin to the edge or the gap to another part. '
+                      'Beta. Nesting by bounding boxes, no rotation: no part is closer than the margin to the edge or the gap to another part. '
                       'For a router, use a gap of at least the cutter diameter. With "Width to fit" the width in the first field is the maximum '
                       'and each sheet is trimmed to the parts. Grouped identical objects are nested one by one.'),
     'btn_nest':      ('Разложить', 'Nest'),

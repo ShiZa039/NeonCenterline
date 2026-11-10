@@ -1,5 +1,6 @@
 """VBA: локальная переменная/параметр с именем процедуры (регистр не важен), которую эта же
-процедура вызывает, — в VBA ломает вызов («Expected array»). Плюс дубли Public-имён между модулями."""
+процедура вызывает, — в VBA ломает вызов («Expected array»). Плюс дубли Public-имён между модулями
+и объявления уровня модуля после первой процедуры (VBA: «Variable not defined»; LibreOffice такое пропускает)."""
 import re, glob, sys, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 files = sys.argv[1:] or glob.glob(os.path.join(ROOT, 'src', '*.bas')) + glob.glob(os.path.join(ROOT, 'src', '*.txt')) + [os.path.join(ROOT, 'build', 'NeonBuild.bas')]
@@ -24,4 +25,12 @@ for f in files:
         for l in locs:
             if l in procs and re.search(r'\b' + l + r'\s*\(', body, re.I):
                 print('SHADOW', f.split('/')[-1], name, l); bad += 1
+for f in files:
+    seen = False
+    for n, l in enumerate(open(f, encoding='utf-8').read().splitlines(), 1):
+        if re.match(r'\s*(Public |Private |Friend )?(Static )?(Sub|Function|Property) ', l):
+            seen = True
+        elif seen and re.match(r'(Public|Private|Global|Dim|Const)\b', l) and not re.match(r'(Public|Private)\s+(Static\s+)?(Sub|Function|Property)\b', l):
+            print('declaration after procedures:', f.split('/')[-1], n, l.strip())
+            bad += 1
 print('issues', bad)
