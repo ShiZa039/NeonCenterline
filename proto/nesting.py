@@ -223,11 +223,12 @@ def used_widths(res, PW, nsh):
     return u
 
 
-def pack(W, H, margin, gap, sizes, auto=False, wmin=0.0):
+def pack(W, H, margin, gap, sizes, auto=False, wmin=0.0, fill=2):
     """sizes: [(w, h)] деталей -> (размещение [(лист, x, y)] от левого верхнего угла листа, число листов,
     порядок, эвристика, ширина каждого листа). auto: ширина листа — по раскладке, от wmin до W
     (вверх до 10 мм); тогда ещё эвристика «по столбцам», а при равном числе листов лучше меньшая
-    общая ширина."""
+    общая ширина. fill: 0 — столбцами (сверху вниз, затем вправо), 1 — рядами (слева направо, затем
+    вниз), 2 — как плотнее (все эвристики)."""
     PW = [w + gap for w, h in sizes]
     PH = [h + gap for w, h in sizes]
     BW = W - 2 * margin + gap
@@ -235,7 +236,8 @@ def pack(W, H, margin, gap, sizes, auto=False, wmin=0.0):
     best = None
     for mode in range(4):
         order = _order(PW, PH, mode)
-        for heur in range(4 if auto else 3):
+        heurs = [3] if fill == 0 else [1] if fill == 1 else list(range(4 if auto else 3))
+        for heur in heurs:
             res, nsh = pack_run(PW, PH, BW, BH, order, heur)
             la = sum(used_widths(res, PW, nsh)) if auto else last_area(res, PW, PH, nsh)
             if best is None or nsh < best[1] or (nsh == best[1] and la < best[2] - EPS):

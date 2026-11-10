@@ -201,6 +201,7 @@ STRINGS = {
     'nest_nosel':    ('Выделите детали для раскладки.', 'Select the parts to nest.'),
     'nest_layer':    ('Раскладка', 'Nesting'),
     'nest_frame':    ('Раскладка: рамка листа {0}', 'Nesting: sheet frame {0}'),
+    'nest_labname':  ('Раскладка: подпись листа {0}', 'Nesting: sheet label {0}'),
     'nest_group':    ('Раскладка: лист {0} из {1} · {2}', 'Nesting: sheet {0} of {1} · {2}'),
     'nest_label':    ('Лист {0} из {1} · {2} × {3} мм · {4} · деталей {5} · заполнение {6}%',
                       'Sheet {0} of {1} · {2} × {3} mm · {4} · {5} parts · {6}% filled'),
@@ -211,9 +212,9 @@ STRINGS = {
                       'Sheet width {0} mm, length to fit the parts ({1}–{2} mm, rounded up to 10 mm). '),
     'nest_rep_color':('{0}: листов {1}, деталей {2}, заполнение {3}%', '{0}: {1} sheets, {2} parts, {3}% filled'),
     'nest_rep_widths':(' (длина: {0})', ' (length: {0})'),
-    'nest_rep_tail': ('Каждый лист — группа на своём месте справа от выделения, рамки и подписи — на слое «{0}» (не печатается). '
+    'nest_rep_tail': ('Каждый лист — группа справа от выделения на слое деталей: рамка, подпись и детали (подписи можно отключить в окне). '
                       'Заполнение — по габаритам деталей. Отменить — Ctrl+Z.',
-                      'Each sheet is a group to the right of the selection; frames and labels are on the "{0}" layer (not printed). '
+                      'Each sheet is a group to the right of the selection on the parts\' layer: frame, label and parts (labels can be turned off in the window). '
                       'Fill is by part bounding boxes. Undo: Ctrl+Z.'),
     'nest_unfit':    ('Больше рабочего поля листа, оставлены на месте: {0}.', 'Larger than the sheet working area, left in place: {0}.'),
     'nest_none':     ('Ни одна деталь не помещается на лист с такими полями.', 'No part fits on the sheet with these margins.'),
@@ -225,6 +226,11 @@ STRINGS = {
     'lbl_nest_margin': ('Поле от края листа, мм:', 'Margin from the sheet edge, mm:'),
     'lbl_nest_gap':  ('Зазор между деталями, мм:', 'Gap between parts, mm:'),
     'chk_nest_color':('Каждый цвет — на свои листы', 'Each colour on its own sheets'),
+    'lbl_nest_fill': ('Заполнять лист:', 'Fill the sheet:'),
+    'nest_fill_cols':('столбцами — сверху вниз', 'in columns — top to bottom'),
+    'nest_fill_rows':('рядами — слева направо', 'in rows — left to right'),
+    'nest_fill_auto':('как плотнее (авто)', 'as tight as possible (auto)'),
+    'chk_nest_labels':('Подписи листов (над рамкой, в группе листа)', 'Sheet labels (above the frame, in the sheet group)'),
     'chk_nest_auto': ('Длина по раскладке, не меньше, мм:', 'Length to fit the parts, at least, mm:'),
     'nest_hint':     ('Бета. Длина — по горизонтали, ширина — по вертикали; размер любой: впишите свой (стол лазера, заготовка), он появится в готовых. '
                       'Раскладка по габаритам, без поворота: ни одна деталь не ближе поля к краю и зазора к соседней; для фрезы зазор — не меньше её диаметра. '

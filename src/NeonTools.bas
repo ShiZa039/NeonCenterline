@@ -3152,6 +3152,7 @@ Public Sub NestSheets()
     Dim sp As Double, lh As Double, area As Double, kArea As Double, kSheet As Double, cnt As Long, kCnt As Long
     Dim lay As Layer, fr As Shape, sh As Shape, sr As ShapeRange, g As Shape, allR As ShapeRange, vis As ShapeRange, lc As Color
     Dim nPlaced As Long, nUnfit As Long, nSheets As Long, colRep As String, wl As String, msg As String, wo As Object
+    Dim fillMode As Long, labels As Boolean, lab As ShapeRange, whole As ShapeRange
     ttl = NeonL("nest_title")
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, ttl
@@ -3174,6 +3175,8 @@ Public Sub NestSheets()
     If wmin > sw Then
         wmin = sw
     End If
+    fillMode = CLng(NeonNestNum("Fill", 0))
+    labels = NeonNestFlag("Labels", True)
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
     ActiveDocument.BeginCommandGroup ttl
@@ -3228,7 +3231,7 @@ Public Sub NestSheets()
             nKey = nKey + 1
         End If
     Next i
-    Set lay = NtLayer()
+    Set lay = NtLayer(col(1))
     sp = 50
     If shh * 0.05 > sp Then
         sp = Int(shh * 0.05)
@@ -3250,7 +3253,7 @@ Public Sub NestSheets()
                 NNt = NNt + 1
             End If
         Next i
-        NestPack sw, shh, mg, gp, autoW, wmin
+        NestPack sw, shh, mg, gp, autoW, wmin, fillMode
         Set lc = Nothing
         If byColor Then
             Set lc = NtColorOf(col(krep(k) + 1))
@@ -3264,6 +3267,7 @@ Public Sub NestSheets()
             Set fr = lay.CreateRectangle2(cx, cy - shh, NtSW(s), shh)
             NtFrameStyle fr
             fr.Name = NeonLF("nest_frame", s + 1)
+            NtTag fr, "frame"
             vis.Add fr
             Set sr = CreateShapeRange
             cnt = 0: area = 0
@@ -3276,11 +3280,23 @@ Public Sub NestSheets()
                     cnt = cnt + 1: area = area + bw(i) * bh(i)
                 End If
             Next j
-            NtLabel lay, vis, cx, cy + lh * 0.5, lh, NeonLF("nest_label", s + 1, NtSheets, NtMM(NtSW(s)), NtMM(shh), knm(k), cnt, _
-                    CLng(100 * area / (NtSW(s) * shh))), lc
+            Set lab = CreateShapeRange
+            If labels Then
+                NtLabel lay, lab, cx, cy + lh * 0.5, lh, NeonLF("nest_label", s + 1, NtSheets, NtMM(NtSW(s)), NtMM(shh), knm(k), cnt, _
+                        CLng(100 * area / (NtSW(s) * shh))), lc, NeonLF("nest_labname", s + 1)
+                vis.AddRange lab
+            End If
+            ' лист — одной группой: рамка, подпись, детали; не вышло (детали на другом слое) — только детали
             Set g = Nothing
-            If sr.Count > 1 Then
-                Set g = NtGroup(sr)
+            If sr.Count > 0 Then
+                Set whole = CreateShapeRange
+                whole.AddRange sr
+                whole.Add fr
+                whole.AddRange lab
+                Set g = NtGroup(whole)
+                If g Is Nothing And sr.Count > 1 Then
+                    Set g = NtGroup(sr)
+                End If
             End If
             If g Is Nothing Then
                 allR.AddRange sr
@@ -3347,7 +3363,7 @@ Fin:
     If nUnfit > 0 Then
         msg = msg & vbCrLf & NeonLF("nest_unfit", nUnfit) & vbCrLf
     End If
-    msg = msg & vbCrLf & NeonLF("nest_rep_tail", NeonL("nest_layer")) & vbCrLf & vbCrLf & NeonL("nest_beta")
+    msg = msg & vbCrLf & NeonL("nest_rep_tail") & vbCrLf & vbCrLf & NeonL("nest_beta")
     If MsgBox(msg & vbCrLf & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, ttl) = vbYes Then
         CopyText msg
     End If
@@ -3366,9 +3382,9 @@ Private Sub NtFrameStyle(fr As Shape)
     fr.Outline.Color.RGBAssign 128, 128, 128
 End Sub
 
-' подпись листа над рамкой: образец цвета (если есть) и текст высотой ~lh мм
+' подпись листа над рамкой: образец цвета (если есть) и текст высотой ~lh мм — в vis
 Private Sub NtLabel(lay As Layer, vis As ShapeRange, ByVal x As Double, ByVal y As Double, ByVal lh As Double, _
-                    ByVal txt As String, c As Color)
+                    ByVal txt As String, c As Color, ByVal nm As String)
     Dim t As Shape, r As Shape, pt As Double
     On Error Resume Next
     If Not c Is Nothing Then
@@ -3376,7 +3392,8 @@ Private Sub NtLabel(lay As Layer, vis As ShapeRange, ByVal x As Double, ByVal y 
         r.Fill.ApplyUniformFill c
         r.Outline.Width = 0.2
         r.Outline.Color.RGBAssign 128, 128, 128
-        r.Name = txt
+        r.Name = nm
+        NtTag r, "label"
         vis.Add r
         x = x + lh * 1.5
     End If
@@ -3391,6 +3408,8 @@ Private Sub NtLabel(lay As Layer, vis As ShapeRange, ByVal x As Double, ByVal y 
     Set t = lay.CreateArtisticText(x, y, txt, , , , pt)
     If Not t Is Nothing Then
         t.Fill.UniformColor.RGBAssign 90, 90, 90
+        t.Name = nm
+        NtTag t, "label"
         vis.Add t
     End If
 End Sub
@@ -3449,8 +3468,8 @@ Private Function NtGroup(sr As ShapeRange) As Shape
     Err.Clear
 End Function
 
-' метка группы плагина: "same" — одинаковые, "sheet" — лист раскладки. Без свойств (старый
-' CorelDRAW) — по началу имени
+' метка объекта плагина: "same" — группа одинаковых, "sheet" — лист раскладки, "frame" — рамка листа,
+' "label" — подпись листа. Без свойств (старый CorelDRAW) — по началу имени
 Private Sub NtTag(sh As Shape, ByVal tg As String)
     Dim o As Object
     On Error Resume Next
@@ -3475,6 +3494,10 @@ Private Function NtTagOf(sh As Shape) As String
             NtTagOf = "same"
         ElseIf NtStarts(nm, "nest_group") Then
             NtTagOf = "sheet"
+        ElseIf NtStarts(nm, "nest_frame") Then
+            NtTagOf = "frame"
+        ElseIf NtStarts(nm, "nest_labname") Then
+            NtTagOf = "label"
         End If
     End If
 End Function
@@ -3490,25 +3513,26 @@ Private Function NtStarts(ByVal nm As String, ByVal key As String) As Boolean
     End If
 End Function
 
-' объект на слое раскладки (рамка или подпись прежнего расчёта)
+' рамка или подпись прежней раскладки (или объект со слоя «Раскладка» первых сборок)
 Private Function NtIsLayout(sh As Shape) As Boolean
+    Dim tg As String
+    tg = NtTagOf(sh)
+    If tg = "frame" Or tg = "label" Then
+        NtIsLayout = True
+        Exit Function
+    End If
     On Error Resume Next
     NtIsLayout = (sh.Layer.Name = NeonL("nest_layer"))
 End Function
 
-' слой «Раскладка» на текущей странице (не печатается)
-Private Function NtLayer() As Layer
-    Dim ly As Layer, nm As String
-    nm = NeonL("nest_layer")
-    For Each ly In ActivePage.Layers
-        If ly.Name = nm Then
-            Set NtLayer = ly
-            Exit Function
-        End If
-    Next ly
-    Set ly = ActivePage.CreateLayer(nm)
+' слой для рамок и подписей: слой деталей (обычно — текущий), иначе текущий слой документа
+Private Function NtLayer(part As Shape) As Layer
+    Dim ly As Layer
     On Error Resume Next
-    ly.Printable = False
+    Set ly = part.Layer
+    If ly Is Nothing Then
+        Set ly = ActiveDocument.ActiveLayer
+    End If
     Set NtLayer = ly
 End Function
 
@@ -3548,7 +3572,7 @@ Private Function NtColorKey(sh As Shape, nm As String) As String
 End Function
 
 Private Function NtColorName(c As Color) As String
-    Dim s As String, nm As String
+    Dim s As String
     On Error Resume Next
     Select Case c.Type
     Case cdrColorRGB
@@ -3556,14 +3580,12 @@ Private Function NtColorName(c As Color) As String
     Case cdrColorCMYK
         s = "C" & c.CMYKCyan & " M" & c.CMYKMagenta & " Y" & c.CMYKYellow & " K" & c.CMYKBlack
     End Select
-    nm = c.Name
+    ' у CMYK и RGB — только компоненты (имя у своих цветов — «цвет без названия»), у прочих — имя
     If Len(s) = 0 Then
-        s = nm
+        s = c.Name
         If Len(s) = 0 Then
             s = c.ToString
         End If
-    ElseIf Len(nm) > 0 And nm <> s Then
-        s = nm & " (" & s & ")"
     End If
     NtColorName = s
 End Function
@@ -3765,13 +3787,14 @@ End Function
 '  эвристики, лучший результат: меньше листов, затем меньше занятый габарит последнего листа.
 '  autoW: длина листа (по горизонтали, sw) — по раскладке (поле + детали + поле, вверх до 10 мм, от wmin до sw);
 '  тогда ещё эвристика «по столбцам», а при равном числе листов лучше меньшая общая ширина.
+'  fillMode: 0 — только «по столбцам» (сверху вниз, затем вправо), 1 — только «по рядам», 2 — все.
 '  Выход: NtS (лист с 0, -1 — не помещается), NtX/NtY (от левого верхнего угла листа, y вниз),
 '  NtSheets, ширина каждого листа NtSW.
 ' ---------------------------------------------------------------------
 Public Sub NestPack(ByVal sw As Double, ByVal sh As Double, ByVal margin As Double, ByVal gap As Double, _
-                    ByVal autoW As Boolean, ByVal wmin As Double)
-    Dim bw As Double, bh As Double, mode As Long, heur As Long, nsh As Long, la As Double, nh As Long
-    Dim bestN As Long, bestA As Double, has As Boolean, i As Long, s As Long, w As Double
+                    ByVal autoW As Boolean, ByVal wmin As Double, ByVal fillMode As Long)
+    Dim bw As Double, bh As Double, mode As Long, heur As Long, nsh As Long, la As Double, q As Long
+    Dim bestN As Long, bestA As Double, has As Boolean, i As Long, s As Long, w As Double, hs As Variant
     ReDim NtPW(0 To NNt): ReDim NtPH(0 To NNt)
     ReDim NtS(0 To NNt): ReDim NtX(0 To NNt): ReDim NtY(0 To NNt)
     ReDim RnS(0 To NNt): ReDim RnX(0 To NNt): ReDim RnY(0 To NNt)
@@ -3782,13 +3805,20 @@ Public Sub NestPack(ByVal sw As Double, ByVal sh As Double, ByVal margin As Doub
     bw = sw - 2 * margin + gap
     bh = sh - 2 * margin + gap
     NtSheets = 0: NtMode = 0: NtHeur = 0
-    nh = 2
-    If autoW Then
-        nh = 3
+    ' заполнение: 0 — столбцами (левее, затем выше), 1 — рядами (выше, затем левее), 2 — как плотнее
+    If fillMode = 0 Then
+        hs = Array(3)
+    ElseIf fillMode = 1 Then
+        hs = Array(1)
+    ElseIf autoW Then
+        hs = Array(0, 1, 2, 3)
+    Else
+        hs = Array(0, 1, 2)
     End If
     For mode = 0 To 3
         NtOrder mode
-        For heur = 0 To nh
+        For q = 0 To UBound(hs)
+            heur = hs(q)
             nsh = NtRun(bw, bh, heur)
             If autoW Then
                 NtUsedW nsh
@@ -3812,7 +3842,7 @@ Public Sub NestPack(ByVal sw As Double, ByVal sh As Double, ByVal margin As Doub
                     End If
                 Next i
             End If
-        Next heur
+        Next q
     Next mode
     NtSheets = bestN
     ' ширина листов: у лучшего прохода

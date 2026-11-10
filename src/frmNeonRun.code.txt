@@ -5,13 +5,13 @@ Option Explicit
 ' элементы скрываются, окно становится короче — сборщик менять не нужно).
 ' NeonRunMode = 2 — перед расстановкой люверсов: отступ от края, расстояние между люверсами,
 ' диаметр и цвет точки, усиление углов (элементы те же, подписи и места — свои).
-' NeonRunMode = 3 — перед раскладкой на листы: готовый размер, длина и ширина листа, поле, зазор, по цвету,
-' длина по раскладке.
+' NeonRunMode = 3 — перед раскладкой на листы: готовый размер, длина и ширина листа, поле, зазор,
+' заполнение (столбцами / рядами / как плотнее), по цвету, длина по раскладке, подписи листов.
 
 ' люверсы: свой цвет ("S:..."), последний выбранный цвет из списка, защита от повторного Change
 Private gCustom As String, gLastIdx As Long, gBusy As Boolean
-' раскладка: поле ширины листа и его подпись (создаются при открытии окна)
-Private gH As Object, gHL As Object
+' раскладка: поле ширины листа и его подпись, галочка подписей листов (создаются при открытии окна)
+Private gH As Object, gHL As Object, gLab As Object
 
 Private Sub UserForm_Initialize()
     If NeonRunMode = 1 Then
@@ -246,11 +246,26 @@ Private Sub InitNest()
         cboCut.AddItem v
     Next v
     cboCut.Text = FmtNum(NeonNestNum("Gap", 10))
-    chkFit.Left = 12: chkFit.Top = 146: chkFit.Width = 326
+    ' заполнение листа: столбцами, рядами, как плотнее
+    lblRef.Left = 12: lblRef.Top = 148: lblRef.Width = 120
+    lblRef.Caption = NeonL("lbl_nest_fill")
+    lblRef.Visible = True
+    cboRef.Left = 140: cboRef.Top = 144: cboRef.Width = 198
+    cboRef.Clear
+    cboRef.AddItem NeonL("nest_fill_cols")
+    cboRef.AddItem NeonL("nest_fill_rows")
+    cboRef.AddItem NeonL("nest_fill_auto")
+    i = CLng(NeonNestNum("Fill", 0))
+    If i < 0 Or i > 2 Then
+        i = 0
+    End If
+    cboRef.ListIndex = i
+    cboRef.Visible = True
+    chkFit.Left = 12: chkFit.Top = 172: chkFit.Width = 326
     chkFit.Caption = NeonL("chk_nest_color")
     chkFit.Value = NeonNestFlag("ByColor", True)
     chkFit.Visible = True
-    chkAsk.Left = 12: chkAsk.Top = 172: chkAsk.Width = 232
+    chkAsk.Left = 12: chkAsk.Top = 196: chkAsk.Width = 232
     chkAsk.Caption = NeonL("chk_nest_auto")
     chkAsk.Value = NeonNestFlag("AutoW", False)
     chkAsk.Visible = True
@@ -258,7 +273,7 @@ Private Sub InitNest()
     On Error Resume Next
     cboTrim.Style = 0
     On Error GoTo 0
-    cboTrim.Left = 250: cboTrim.Top = 170: cboTrim.Width = 88
+    cboTrim.Left = 250: cboTrim.Top = 194: cboTrim.Width = 88
     cboTrim.Clear
     For Each v In Array("0", "300", "500", "1000", "1500", "2000")
         cboTrim.AddItem v
@@ -275,7 +290,14 @@ Private Sub InitNest()
     On Error GoTo 0
     cboTrim.Enabled = chkAsk.Value
     cboTrim.Visible = True
-    lblHint.Left = 12: lblHint.Top = 200: lblHint.Width = 326
+    If gLab Is Nothing Then
+        Set gLab = Me.Controls.Add("Forms.CheckBox.1", "chkNestLab", True)
+    End If
+    gLab.Left = 12: gLab.Top = 220: gLab.Width = 326: gLab.Height = chkFit.Height
+    gLab.Caption = NeonL("chk_nest_labels")
+    gLab.Value = NeonNestFlag("Labels", True)
+    gLab.Visible = True
+    lblHint.Left = 12: lblHint.Top = 248: lblHint.Width = 326
     lblHint.WordWrap = True
     lblHint.Height = 108
     lblHint.Caption = NeonL("nest_hint")
@@ -385,6 +407,8 @@ Private Sub btnOK_Click()
         SaveSetting "NeonCenterline", "Nest", "ByColor", IIf(chkFit.Value, "1", "0")
         SaveSetting "NeonCenterline", "Nest", "AutoW", IIf(chkAsk.Value, "1", "0")
         SaveSetting "NeonCenterline", "Nest", "WMin", FmtNum(d)
+        SaveSetting "NeonCenterline", "Nest", "Fill", CStr(cboRef.ListIndex)
+        SaveSetting "NeonCenterline", "Nest", "Labels", IIf(gLab.Value, "1", "0")
         NeonRunConfirmed = True
         Me.Hide
         Exit Sub
