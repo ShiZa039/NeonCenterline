@@ -1,11 +1,11 @@
 """Прототип: одинаковые формы и раскладка на листы (src/NeonTools.bas, разделы @@SAMEGEO, @@NESTGEO).
 
 Одинаковые формы
-    Объект — набор точек кривой: узлы и управляющие точки, относительно самого левого-нижнего узла
-    (минимум x и минимум y по узлам), отсортированные по x, затем y. Два объекта одинаковые, если у
-    них один цвет, одинаковое число подпутей, узлов и сегментов, габариты отличаются не больше чем
-    на tol и каждой точке одного найдётся своя точка другого не дальше tol по x и по y. Порядок
-    узлов, начальная точка и направление обхода значения не имеют, поворот и зеркало — имеют.
+    Сравнивается сам контур, а не узлы: точки по контуру через 0.5 мм, сдвинутые к левому нижнему
+    углу габарита. Два объекта одинаковые, если у них один цвет, габариты и длины контура почти
+    равны и каждая точка одного контура — не дальше tol (0.1 мм) от другого, в обе стороны. Число
+    узлов, их расстановка, начальная точка и направление обхода значения не имеют (одна и та же
+    цифра из разных переводов текста в кривые); поворот и зеркало — имеют.
 
 Раскладка
     MaxRects без поворота. Деталь — габарит + зазор, лист — без полей + зазор: так между деталями
@@ -23,50 +23,138 @@ EPS = 1e-6
 
 
 # ---------------------------------------------------------------- одинаковые формы
-def norm_points(anchors, ctrls):
-    """Точки объекта относительно минимума узлов, по x, затем y."""
-    mx = min(p[0] for p in anchors)
-    my = min(p[1] for p in anchors)
-    P = [(x - mx, y - my) for x, y in list(anchors) + list(ctrls)]
-    P.sort()
-    return P
+SAME_STEP = 0.5      # шаг точек по контуру, мм
+SAME_MAXPTS = 3000   # точек на объект не больше: у больших объектов шаг крупнее
 
 
-def pts_match(A, B, tol):
-    n = len(A)
-    if n != len(B):
+def _d(ax, ay, bx, by):
+    return math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay))
+
+
+def _bez(p0, p1, p2, p3, t):
+    mt = 1 - t
+    a = mt * mt * mt
+    b = 3 * mt * mt * t
+    c = 3 * mt * t * t
+    d = t * t * t
+    return (a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1])
+
+
+def shape(subs, ck='0'):
+    """Объект для same_classes из подпутей [(сегменты, замкнут)]; сегмент — ('L', p0, p3) или
+    ('C', p0, p1, p2, p3). Контур — точки через шаг (у кривой — равные доли параметра), сдвинутые к
+    левому нижнему углу габарита точек."""
+    lc = 0.0
+    for segs, cl in subs:
+        for sg in segs:
+            if sg[0] == 'L':
+                lc += _d(*sg[1], *sg[2])
+            else:
+                lc += _d(*sg[1], *sg[2]) + _d(*sg[2], *sg[3]) + _d(*sg[3], *sg[4])
+    step = max(SAME_STEP, lc / SAME_MAXPTS)
+    polys = []
+    for segs, cl in subs:
+        P = []
+        for sg in segs:
+            if sg[0] == 'L':
+                a, b = sg[1], sg[2]
+                n = max(1, math.ceil(_d(*a, *b) / step))
+                for i in range(n):
+                    P.append((a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n))
+            else:
+                L = _d(*sg[1], *sg[2]) + _d(*sg[2], *sg[3]) + _d(*sg[3], *sg[4])
+                n = max(2, math.ceil(L / step))
+                for i in range(n):
+                    P.append(_bez(*sg[1:], i / n))
+        if not cl:
+            P.append(segs[-1][-1])
+        polys.append([P, cl])
+    mx = min(x for P, cl in polys for x, y in P)
+    my = min(y for P, cl in polys for x, y in P)
+    w = h = ln = 0.0
+    for q in polys:
+        q[0] = [(x - mx, y - my) for x, y in q[0]]
+        for x, y in q[0]:
+            w = max(w, x); h = max(h, y)
+        P = q[0]
+        for i in range(len(P) - 1):
+            ln += _d(*P[i], *P[i + 1])
+        if q[1] and len(P) > 1:
+            ln += _d(*P[-1], *P[0])
+    return dict(ck=ck, w=w, h=h, len=ln, polys=polys)
+
+
+def _near(A, B, tol):
+    """Каждая точка контура A — не дальше tol от контура B (сетка по отрезкам B)."""
+    segs = []
+    for P, cl in B['polys']:
+        for i in range(len(P) - 1):
+            segs.append((P[i], P[i + 1]))
+        if cl and len(P) > 1:
+            segs.append((P[-1], P[0]))
+    if not segs:
         return False
-    used = [False] * n
-    lo = 0
-    for ax, ay in A:
-        while lo < n and B[lo][0] < ax - tol:
-            lo += 1
-        k = lo
-        found = False
-        while k < n and B[k][0] <= ax + tol:
-            if not used[k] and abs(B[k][1] - ay) <= tol:
-                used[k] = True
-                found = True
-                break
-            k += 1
-        if not found:
-            return False
+    cs = max(4 * tol, math.sqrt((B['w'] + 2 * tol) * (B['h'] + 2 * tol) / len(segs)))
+    nx = int((B['w'] + 2 * tol) / cs) + 1
+    ny = int((B['h'] + 2 * tol) / cs) + 1
+    cells = [[] for _ in range(nx * ny)]
+    for k, (p, q) in enumerate(segs):
+        # сетка от (-tol, -tol): отрезок с запасом tol — в ячейки своего габарита
+        ix0 = max(0, math.floor(min(p[0], q[0]) / cs))
+        ix1 = min(nx - 1, math.floor((max(p[0], q[0]) + 2 * tol) / cs))
+        iy0 = max(0, math.floor(min(p[1], q[1]) / cs))
+        iy1 = min(ny - 1, math.floor((max(p[1], q[1]) + 2 * tol) / cs))
+        for iy in range(iy0, iy1 + 1):
+            for ix in range(ix0, ix1 + 1):
+                cells[iy * nx + ix].append(k)
+    t2 = tol * tol
+    for P, cl in A['polys']:
+        for px, py in P:
+            ix = math.floor((px + tol) / cs)
+            iy = math.floor((py + tol) / cs)
+            if ix < 0 or ix >= nx or iy < 0 or iy >= ny:
+                return False
+            ok = False
+            for k in cells[iy * nx + ix]:
+                (ax, ay), (bx, by) = segs[k]
+                dx = bx - ax; dy = by - ay
+                L = dx * dx + dy * dy
+                t = 0.0
+                if L > 0:
+                    t = ((px - ax) * dx + (py - ay) * dy) / L
+                    if t < 0:
+                        t = 0.0
+                    elif t > 1:
+                        t = 1.0
+                ex = ax + t * dx - px
+                ey = ay + t * dy - py
+                if ex * ex + ey * ey <= t2:
+                    ok = True
+                    break
+            if not ok:
+                return False
     return True
 
 
-def cheap_eq(a, b, tol):
-    return (a['ck'] == b['ck'] and a['nsub'] == b['nsub'] and a['nn'] == b['nn'] and a['ns'] == b['ns']
-            and abs(a['w'] - b['w']) <= tol and abs(a['h'] - b['h']) <= tol)
+def same_eq(a, b, tol):
+    """Одинаковые: цвет, габарит (±tol), длина контура (±1% + 2tol), и каждая точка одного контура —
+    не дальше tol от другого, в обе стороны. Узлы и их число значения не имеют."""
+    if a['ck'] != b['ck'] or abs(a['w'] - b['w']) > tol or abs(a['h'] - b['h']) > tol:
+        return False
+    if abs(a['len'] - b['len']) > 0.01 * max(a['len'], b['len']) + 2 * tol:
+        return False
+    return _near(a, b, tol) and _near(b, a, tol)
 
 
 def same_classes(objs, tol=0.1):
-    """objs: dict(ck, nsub, nn, ns, w, h, pts) -> номер класса каждого объекта (по порядку появления)."""
+    """Номер класса каждого объекта (по порядку появления): объект сравнивается с первым объектом
+    каждого класса."""
     reps = []
     cls = []
     for i, o in enumerate(objs):
         c = -1
         for k, r in enumerate(reps):
-            if cheap_eq(objs[r], o, tol) and pts_match(objs[r]['pts'], o['pts'], tol):
+            if same_eq(objs[r], o, tol):
                 c = k
                 break
         if c < 0:
@@ -76,33 +164,13 @@ def same_classes(objs, tol=0.1):
     return cls
 
 
-def obj_from_subs(subs, ck='0'):
-    """Объект из подпутей в формате proto/cleanup.py: ('L', p0, p3) / ('C', p0, p1, p2, p3)."""
-    from cleanup import _bez
-    an, ct = [], []
-    ns = 0
-    xs, ys = [], []
+def subs_closed(subs, eps=1e-6):
+    """Подпути формата proto/cleanup.py -> [(сегменты, замкнут)]."""
+    out = []
     for s in subs:
-        # узлы: начала сегментов; у незамкнутого подпути ещё конец последнего
-        for sg in s:
-            an.append(sg[1])
-            if sg[0] == 'C':
-                ct += [sg[2], sg[3]]
-            ns += 1
         a, b = s[0][1], s[-1][-1]
-        if abs(a[0] - b[0]) > 1e-6 or abs(a[1] - b[1]) > 1e-6:
-            an.append(s[-1][-1])
-    nn = len(an)
-    for s in subs:
-        for sg in s:
-            if sg[0] == 'L':
-                xs += [sg[1][0], sg[2][0]]; ys += [sg[1][1], sg[2][1]]
-            else:
-                for i in range(17):
-                    p = _bez(*sg[1:], i / 16)
-                    xs.append(p[0]); ys.append(p[1])
-    return dict(ck=ck, nsub=len(subs), nn=nn, ns=ns, w=max(xs) - min(xs), h=max(ys) - min(ys),
-                pts=norm_points(an, ct))
+        out.append((s, abs(a[0] - b[0]) <= eps and abs(a[1] - b[1]) <= eps))
+    return out
 
 
 # ---------------------------------------------------------------- раскладка

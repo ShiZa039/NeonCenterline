@@ -68,13 +68,21 @@ Private COS0() As Long, CON() As Long, NCOP As Long, CLCuts As Long
 Private Const NT_EPS As Double = 0.000001
 ' листов раскладки в ряд
 Private Const NT_ROW As Long = 5
+' одинаковые: допуск, шаг точек по контуру, точек на объект не больше (у больших шаг крупнее)
 Private Const SAME_TOL As Double = 0.1
-' объекты: цвет (ключ, название), подпути, узлы, сегменты, габарит; точки: первая, число (сначала узлы, потом управляющие)
-Private SmCk() As String, SmCn() As String, SmSub() As Long, SmNn() As Long, SmNs() As Long, SmW() As Double, SmH() As Double
-Private SmP0() As Long, SmPn() As Long, NSm As Long
-Private SmX() As Double, SmY() As Double, NSmP As Long
-' результат: класс каждого объекта, число классов; рабочий массив сравнения
-Private SmCls() As Long, NSmCls As Long, SmUsed() As Boolean
+Private Const SAME_STEP As Double = 0.5
+Private Const SAME_MAXPTS As Double = 3000
+' объекты: цвет (ключ, название), габарит по CorelDRAW, подпути (первый, число; 0 — контур не читался)
+Private SmCk() As String, SmCn() As String, SmW() As Double, SmH() As Double, SmQ0() As Long, SmQn() As Long, NSm As Long
+' подпути: первый сегмент, число, замкнут; сегменты: 4 точки, прямая
+Private SqS0() As Long, SqN() As Long, SqC() As Boolean, NSq As Long
+Private SgX() As Double, SgY() As Double, SgL() As Boolean, NSg As Long
+' точки контура (у подпути — первая и число), габарит и длина контура по ним
+Private SmX() As Double, SmY() As Double, NSmP As Long, QP0() As Long, QPn() As Long
+Private SmSW() As Double, SmSH() As Double, SmLen() As Double
+' результат: класс каждого объекта, число классов; сетка сравнения (отрезки, ячейки)
+Private SmCls() As Long, NSmCls As Long
+Private GrA() As Long, GrB() As Long, NGr As Long, GrCnt() As Long, GrSt() As Long, GrIdx() As Long
 ' раскладка: детали (габарит без зазора), порядок, результат (лист, x, y от левого верхнего угла листа)
 Private NtW() As Double, NtH() As Double, NNt As Long, NtOrd() As Long
 Private NtS() As Long, NtX() As Double, NtY() As Double, NtSheets As Long, NtMode As Long, NtHeur As Long
@@ -2872,8 +2880,8 @@ End Function
 '@@NEST_BEGIN
 ' =====================================================================
 '  NeonCenterline — раскладка (группа «Раскладка ▾»):
-'    GroupSame  — одинаковые объекты (одна форма с точностью SAME_TOL, без поворота и зеркала,
-'                 и один цвет) — в группы «Одинаковые: N шт · Ш × В мм», ведомость форм;
+'    GroupSame  — одинаковые объекты (один контур с точностью SAME_TOL — как бы ни стояли узлы, без
+'                 поворота и зеркала, и один цвет) — в группы «Одинаковые: N шт · Ш × В мм», ведомость форм;
 '    NestSheets — детали на листы: по габаритам, без поворота, с полем от края и зазором,
 '                 каждый цвет — на свои листы; длина листа (по горизонтали) — заданная или по раскладке.
 '  Деталь — выделенный объект. Группа одинаковых и лист прежней раскладки — поштучно (их
@@ -3055,88 +3063,80 @@ Fail:
     Resume Fin
 End Sub
 
-' объекты для сравнения: счётчики, габарит, цвет; точки — только у тех, у кого есть похожий
+' объекты для сравнения: цвет, габарит; контур — только у тех, у кого есть похожий по цвету и габариту
 Private Sub SmLoad(col As Collection)
     Dim i As Long, sh As Shape, x As Double, y As Double, w As Double, h As Double
-    NSm = col.Count: NSmP = 0
-    ReDim SmCk(0 To NSm): ReDim SmCn(0 To NSm): ReDim SmSub(0 To NSm): ReDim SmNn(0 To NSm): ReDim SmNs(0 To NSm)
-    ReDim SmW(0 To NSm): ReDim SmH(0 To NSm): ReDim SmP0(0 To NSm): ReDim SmPn(0 To NSm)
-    ReDim SmX(0 To 1023): ReDim SmY(0 To 1023)
+    NSm = col.Count: NSq = 0: NSg = 0
+    ReDim SmCk(0 To NSm): ReDim SmCn(0 To NSm): ReDim SmW(0 To NSm): ReDim SmH(0 To NSm)
+    ReDim SmQ0(0 To NSm): ReDim SmQn(0 To NSm)
+    ReDim SqS0(0 To 63): ReDim SqN(0 To 63): ReDim SqC(0 To 63)
+    ReDim SgX(0 To 1023): ReDim SgY(0 To 1023): ReDim SgL(0 To 255)
     For i = 0 To NSm - 1
         Set sh = col(i + 1)
         sh.GetBoundingBox x, y, w, h
         SmW(i) = w: SmH(i) = h
         SmCk(i) = NtColorKey(sh, SmCn(i))
-        SmCount sh, SmSub(i), SmNn(i), SmNs(i)
     Next i
     For i = 0 To NSm - 1
-        SmP0(i) = NSmP
+        SmQ0(i) = NSq
         If SmHasTwin(i, SAME_TOL) Then
-            ' сначала все узлы, потом управляющие точки (SameGeo сдвигает к минимуму узлов)
-            SmReadPts col(i + 1), 0
-            SmReadPts col(i + 1), 1
+            SmReadGeo col(i + 1)
         End If
-        SmPn(i) = NSmP - SmP0(i)
+        SmQn(i) = NSq - SmQ0(i)
     Next i
 End Sub
 
-' подпути, узлы, сегменты объекта (у группы — всех элементов)
-Private Sub SmCount(sh As Shape, nSub As Long, nn As Long, ns As Long)
-    Dim s As Shape, crv As Curve, tmp As Shape
+' подпути объекта (у группы — всех элементов) в SqS0/SqN/SqC и SgX/SgY/SgL
+Private Sub SmReadGeo(sh As Shape)
+    Dim s As Shape, crv As Curve, tmp As Shape, sp As SubPath, sg As Segment, s0 As Long
+    Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, x2 As Double, y2 As Double, x3 As Double, y3 As Double
     If sh.Type = cdrGroupShape Then
         For Each s In sh.Shapes
-            SmCount s, nSub, nn, ns
+            SmReadGeo s
         Next s
         Exit Sub
     End If
     Set crv = NtCurve(sh, tmp)
     If Not crv Is Nothing Then
-        nSub = nSub + crv.SubPaths.Count
-        nn = nn + crv.Nodes.Count
-        ns = ns + crv.Segments.Count
-    End If
-    If Not tmp Is Nothing Then
-        tmp.Delete
-    End If
-End Sub
-
-' точки объекта в SmX/SmY: pass 0 — узлы, 1 — управляющие точки кривых сегментов
-Private Sub SmReadPts(sh As Shape, ByVal pass As Long)
-    Dim s As Shape, crv As Curve, tmp As Shape, nd As Node, sg As Segment, x As Double, y As Double
-    If sh.Type = cdrGroupShape Then
-        For Each s In sh.Shapes
-            SmReadPts s, pass
-        Next s
-        Exit Sub
-    End If
-    Set crv = NtCurve(sh, tmp)
-    If Not crv Is Nothing Then
-        If pass = 0 Then
-            For Each nd In crv.Nodes
-                SmAddPt nd.PositionX, nd.PositionY
-            Next nd
-        Else
-            For Each sg In crv.Segments
+        For Each sp In crv.SubPaths
+            s0 = NSg
+            For Each sg In sp.Segments
+                x0 = sg.StartNode.PositionX: y0 = sg.StartNode.PositionY
+                x3 = sg.EndNode.PositionX: y3 = sg.EndNode.PositionY
                 If sg.Type = cdrCurveSegment Then
-                    sg.GetStartingControlPointPosition x, y
-                    SmAddPt x, y
-                    sg.GetEndingControlPointPosition x, y
-                    SmAddPt x, y
+                    sg.GetStartingControlPointPosition x1, y1
+                    sg.GetEndingControlPointPosition x2, y2
+                    SmAddSg x0, y0, x1, y1, x2, y2, x3, y3, False
+                Else
+                    SmAddSg x0, y0, x0, y0, x3, y3, x3, y3, True
                 End If
             Next sg
-        End If
+            If NSg > s0 Then
+                If NSq > UBound(SqS0) Then
+                    ReDim Preserve SqS0(0 To 2 * NSq): ReDim Preserve SqN(0 To 2 * NSq): ReDim Preserve SqC(0 To 2 * NSq)
+                End If
+                SqS0(NSq) = s0: SqN(NSq) = NSg - s0: SqC(NSq) = sp.Closed
+                NSq = NSq + 1
+            End If
+        Next sp
     End If
     If Not tmp Is Nothing Then
         tmp.Delete
     End If
 End Sub
 
-Private Sub SmAddPt(ByVal x As Double, ByVal y As Double)
-    If NSmP > UBound(SmX) Then
-        ReDim Preserve SmX(0 To 2 * NSmP): ReDim Preserve SmY(0 To 2 * NSmP)
+Private Sub SmAddSg(ByVal x0 As Double, ByVal y0 As Double, ByVal x1 As Double, ByVal y1 As Double, _
+                    ByVal x2 As Double, ByVal y2 As Double, ByVal x3 As Double, ByVal y3 As Double, ByVal isL As Boolean)
+    If 4 * NSg + 3 > UBound(SgX) Then
+        ReDim Preserve SgX(0 To 8 * NSg + 16): ReDim Preserve SgY(0 To 8 * NSg + 16)
     End If
-    SmX(NSmP) = x: SmY(NSmP) = y
-    NSmP = NSmP + 1
+    If NSg > UBound(SgL) Then
+        ReDim Preserve SgL(0 To 2 * NSg + 4)
+    End If
+    SgX(4 * NSg) = x0: SgY(4 * NSg) = y0: SgX(4 * NSg + 1) = x1: SgY(4 * NSg + 1) = y1
+    SgX(4 * NSg + 2) = x2: SgY(4 * NSg + 2) = y2: SgX(4 * NSg + 3) = x3: SgY(4 * NSg + 3) = y3
+    SgL(NSg) = isL
+    NSg = NSg + 1
 End Sub
 
 ' ---------------------------------------------------------------------
@@ -3623,14 +3623,22 @@ End Function
 '@@SAMEGEO_BEGIN
 ' ---------------------------------------------------------------------
 '  Одинаковые формы: геометрия (повторяет proto/nesting.py один в один).
-'  Вход: объекты SmCk/SmSub/SmNn/SmNs/SmW/SmH, точки SmX/SmY (у объекта — с SmP0, SmPn штук:
-'  сначала SmNn узлов, потом управляющие; SmPn = 0 — точки не нужны: похожих объектов нет).
-'  Выход: SmCls (класс по порядку появления), NSmCls. Точки сдвигаются к минимуму узлов и сортируются.
+'  Сравнивается сам контур, а не узлы: точки по контуру через SAME_STEP (у кривой — равные доли
+'  параметра), сдвинутые к левому нижнему углу габарита точек. Одинаковые: один цвет, габарит и
+'  длина контура почти равны, каждая точка одного контура — не дальше tol от другого (в обе
+'  стороны). Число узлов, их расстановка, начало и направление обхода значения не имеют.
+'  Вход: объекты SmCk, подпути SmQ0/SmQn (SmQn = 0 — контур не читался: похожих объектов нет),
+'  подпути SqS0/SqN/SqC, сегменты SgX/SgY (4 точки на сегмент), SgL (прямая).
+'  Выход: SmCls (класс по порядку появления), NSmCls.
 ' ---------------------------------------------------------------------
 Public Sub SameGeo(ByVal tol As Double)
     Dim i As Long, k As Long, c As Long, reps() As Long
+    NSmP = 0
+    ReDim SmX(0 To 1023): ReDim SmY(0 To 1023)
+    ReDim QP0(0 To NSq): ReDim QPn(0 To NSq)
+    ReDim SmSW(0 To NSm): ReDim SmSH(0 To NSm): ReDim SmLen(0 To NSm)
     For i = 0 To NSm - 1
-        SmNormPts i
+        SmSample i
     Next i
     ReDim SmCls(0 To NSm): ReDim reps(0 To NSm)
     NSmCls = 0
@@ -3651,124 +3659,267 @@ Public Sub SameGeo(ByVal tol As Double)
     Next i
 End Sub
 
-' точки объекта: относительно минимума узлов, по x, затем y
-Private Sub SmNormPts(ByVal o As Long)
-    Dim p0 As Long, n As Long, j As Long, mx As Double, my As Double
-    p0 = SmP0(o): n = SmPn(o)
-    If n <= 0 Or SmNn(o) <= 0 Then
+Private Function SmDist(ByVal ax As Double, ByVal ay As Double, ByVal bx As Double, ByVal by As Double) As Double
+    SmDist = Sqr((bx - ax) * (bx - ax) + (by - ay) * (by - ay))
+End Function
+
+' точки контура объекта o, габарит и длина по ним
+Private Sub SmSample(ByVal o As Long)
+    Dim q As Long, s As Long, i As Long, n As Long, lc As Double, stp As Double, ln As Double, p0 As Long
+    Dim t As Double, mt As Double, a As Double, b As Double, c As Double, d As Double, mx As Double, my As Double
+    If SmQn(o) <= 0 Then
+        Exit Sub
+    End If
+    lc = 0
+    For q = SmQ0(o) To SmQ0(o) + SmQn(o) - 1
+        For s = SqS0(q) To SqS0(q) + SqN(q) - 1
+            If SgL(s) Then
+                lc = lc + SmDist(SgX(4 * s), SgY(4 * s), SgX(4 * s + 3), SgY(4 * s + 3))
+            Else
+                lc = lc + SmDist(SgX(4 * s), SgY(4 * s), SgX(4 * s + 1), SgY(4 * s + 1)) + _
+                     SmDist(SgX(4 * s + 1), SgY(4 * s + 1), SgX(4 * s + 2), SgY(4 * s + 2)) + _
+                     SmDist(SgX(4 * s + 2), SgY(4 * s + 2), SgX(4 * s + 3), SgY(4 * s + 3))
+            End If
+        Next s
+    Next q
+    stp = SAME_STEP
+    If lc / SAME_MAXPTS > stp Then
+        stp = lc / SAME_MAXPTS
+    End If
+    p0 = NSmP
+    For q = SmQ0(o) To SmQ0(o) + SmQn(o) - 1
+        QP0(q) = NSmP
+        For s = SqS0(q) To SqS0(q) + SqN(q) - 1
+            If SgL(s) Then
+                n = -Int(-(SmDist(SgX(4 * s), SgY(4 * s), SgX(4 * s + 3), SgY(4 * s + 3)) / stp))
+                If n < 1 Then
+                    n = 1
+                End If
+                For i = 0 To n - 1
+                    SmAddPt SgX(4 * s) + (SgX(4 * s + 3) - SgX(4 * s)) * i / n, SgY(4 * s) + (SgY(4 * s + 3) - SgY(4 * s)) * i / n
+                Next i
+            Else
+                ln = SmDist(SgX(4 * s), SgY(4 * s), SgX(4 * s + 1), SgY(4 * s + 1)) + _
+                     SmDist(SgX(4 * s + 1), SgY(4 * s + 1), SgX(4 * s + 2), SgY(4 * s + 2)) + _
+                     SmDist(SgX(4 * s + 2), SgY(4 * s + 2), SgX(4 * s + 3), SgY(4 * s + 3))
+                n = -Int(-(ln / stp))
+                If n < 2 Then
+                    n = 2
+                End If
+                For i = 0 To n - 1
+                    t = i / n
+                    mt = 1 - t
+                    a = mt * mt * mt
+                    b = 3 * mt * mt * t
+                    c = 3 * mt * t * t
+                    d = t * t * t
+                    SmAddPt a * SgX(4 * s) + b * SgX(4 * s + 1) + c * SgX(4 * s + 2) + d * SgX(4 * s + 3), _
+                            a * SgY(4 * s) + b * SgY(4 * s + 1) + c * SgY(4 * s + 2) + d * SgY(4 * s + 3)
+                Next i
+            End If
+        Next s
+        If Not SqC(q) And SqN(q) > 0 Then
+            s = SqS0(q) + SqN(q) - 1
+            SmAddPt SgX(4 * s + 3), SgY(4 * s + 3)
+        End If
+        QPn(q) = NSmP - QP0(q)
+    Next q
+    If NSmP = p0 Then
         Exit Sub
     End If
     mx = SmX(p0): my = SmY(p0)
-    For j = 1 To SmNn(o) - 1
-        If SmX(p0 + j) < mx Then
-            mx = SmX(p0 + j)
+    For i = p0 + 1 To NSmP - 1
+        If SmX(i) < mx Then
+            mx = SmX(i)
         End If
-        If SmY(p0 + j) < my Then
-            my = SmY(p0 + j)
+        If SmY(i) < my Then
+            my = SmY(i)
         End If
-    Next j
-    For j = 0 To n - 1
-        SmX(p0 + j) = SmX(p0 + j) - mx
-        SmY(p0 + j) = SmY(p0 + j) - my
-    Next j
-    SmQSort p0, p0 + n - 1
+    Next i
+    For i = p0 To NSmP - 1
+        SmX(i) = SmX(i) - mx
+        SmY(i) = SmY(i) - my
+        If SmX(i) > SmSW(o) Then
+            SmSW(o) = SmX(i)
+        End If
+        If SmY(i) > SmSH(o) Then
+            SmSH(o) = SmY(i)
+        End If
+    Next i
+    ln = 0
+    For q = SmQ0(o) To SmQ0(o) + SmQn(o) - 1
+        For i = QP0(q) To QP0(q) + QPn(q) - 2
+            ln = ln + SmDist(SmX(i), SmY(i), SmX(i + 1), SmY(i + 1))
+        Next i
+        If SqC(q) And QPn(q) > 1 Then
+            ln = ln + SmDist(SmX(QP0(q) + QPn(q) - 1), SmY(QP0(q) + QPn(q) - 1), SmX(QP0(q)), SmY(QP0(q)))
+        End If
+    Next q
+    SmLen(o) = ln
 End Sub
 
-Private Sub SmQSort(ByVal lo As Long, ByVal hi As Long)
-    Dim i As Long, j As Long, qx As Double, qy As Double, t As Double
-    Do While lo < hi
-        qx = SmX((lo + hi) \ 2): qy = SmY((lo + hi) \ 2)
-        i = lo: j = hi
-        Do While i <= j
-            Do While SmPtLess(SmX(i), SmY(i), qx, qy)
-                i = i + 1
-            Loop
-            Do While SmPtLess(qx, qy, SmX(j), SmY(j))
-                j = j - 1
-            Loop
-            If i <= j Then
-                t = SmX(i): SmX(i) = SmX(j): SmX(j) = t
-                t = SmY(i): SmY(i) = SmY(j): SmY(j) = t
-                i = i + 1: j = j - 1
-            End If
-        Loop
-        ' меньшую часть — рекурсией, большую — циклом
-        If j - lo < hi - i Then
-            If lo < j Then
-                SmQSort lo, j
-            End If
-            lo = i
-        Else
-            If i < hi Then
-                SmQSort i, hi
-            End If
-            hi = j
-        End If
-    Loop
-End Sub
-
-Private Function SmPtLess(ByVal ax As Double, ByVal ay As Double, ByVal bx As Double, ByVal by As Double) As Boolean
-    If ax < bx Then
-        SmPtLess = True
-    ElseIf ax = bx Then
-        SmPtLess = (ay < by)
+Private Sub SmAddPt(ByVal x As Double, ByVal y As Double)
+    If NSmP > UBound(SmX) Then
+        ReDim Preserve SmX(0 To 2 * NSmP): ReDim Preserve SmY(0 To 2 * NSmP)
     End If
-End Function
+    SmX(NSmP) = x: SmY(NSmP) = y
+    NSmP = NSmP + 1
+End Sub
 
-' объекты a и b одинаковые: цвет, счётчики, габарит, и каждой точке a — своя точка b не дальше tol
+' объекты a и b одинаковые
 Private Function SmEq(ByVal a As Long, ByVal b As Long, ByVal tol As Double) As Boolean
-    Dim n As Long, lo As Long, k As Long, j As Long, pa As Long, pb As Long, ax As Double, ay As Double
-    Dim found As Boolean
-    If SmCk(a) <> SmCk(b) Or SmSub(a) <> SmSub(b) Or SmNn(a) <> SmNn(b) Or SmNs(a) <> SmNs(b) Then
+    Dim m As Double
+    If SmQn(a) <= 0 Or SmQn(b) <= 0 Then
         Exit Function
     End If
-    If Abs(SmW(a) - SmW(b)) > tol Or Abs(SmH(a) - SmH(b)) > tol Then
+    If SmCk(a) <> SmCk(b) Or Abs(SmSW(a) - SmSW(b)) > tol Or Abs(SmSH(a) - SmSH(b)) > tol Then
         Exit Function
     End If
-    n = SmPn(a)
-    If n <> SmPn(b) Then
+    m = SmLen(a)
+    If SmLen(b) > m Then
+        m = SmLen(b)
+    End If
+    If Abs(SmLen(a) - SmLen(b)) > 0.01 * m + 2 * tol Then
         Exit Function
     End If
-    pa = SmP0(a): pb = SmP0(b)
-    ReDim SmUsed(0 To n)
-    lo = 0
-    For j = 0 To n - 1
-        ax = SmX(pa + j): ay = SmY(pa + j)
-        Do While lo < n
-            If SmX(pb + lo) >= ax - tol Then
-                Exit Do
-            End If
-            lo = lo + 1
-        Loop
-        k = lo
-        found = False
-        Do While k < n
-            If SmX(pb + k) > ax + tol Then
-                Exit Do
-            End If
-            If Not SmUsed(k) Then
-                If Abs(SmY(pb + k) - ay) <= tol Then
-                    SmUsed(k) = True
-                    found = True
-                    Exit Do
-                End If
-            End If
-            k = k + 1
-        Loop
-        If Not found Then
-            Exit Function
-        End If
-    Next j
-    SmEq = True
+    If Not SmNear(a, b, tol) Then
+        Exit Function
+    End If
+    SmEq = SmNear(b, a, tol)
 End Function
 
-' похожие по счётчикам и габариту (без точек): есть ли у объекта o пара
+' каждая точка контура a — не дальше tol от контура b (сетка по отрезкам b)
+Private Function SmNear(ByVal a As Long, ByVal b As Long, ByVal tol As Double) As Boolean
+    Dim q As Long, i As Long, k As Long, m As Long, nx As Long, ny As Long, nc As Long, ix As Long, iy As Long
+    Dim ix0 As Long, ix1 As Long, iy0 As Long, iy1 As Long, cs As Double, v As Double, t2 As Double
+    Dim ax As Double, ay As Double, bx As Double, by As Double, px As Double, py As Double
+    Dim dx As Double, dy As Double, l2 As Double, t As Double, ex As Double, ey As Double, ok As Boolean
+    Dim pos() As Long
+    NGr = 0
+    ReDim GrA(0 To 255): ReDim GrB(0 To 255)
+    For q = SmQ0(b) To SmQ0(b) + SmQn(b) - 1
+        For i = QP0(q) To QP0(q) + QPn(q) - 2
+            SmAddGr i, i + 1
+        Next i
+        If SqC(q) And QPn(q) > 1 Then
+            SmAddGr QP0(q) + QPn(q) - 1, QP0(q)
+        End If
+    Next q
+    If NGr = 0 Then
+        Exit Function
+    End If
+    cs = 4 * tol
+    v = Sqr((SmSW(b) + 2 * tol) * (SmSH(b) + 2 * tol) / NGr)
+    If v > cs Then
+        cs = v
+    End If
+    nx = Int((SmSW(b) + 2 * tol) / cs) + 1
+    ny = Int((SmSH(b) + 2 * tol) / cs) + 1
+    nc = nx * ny
+    ' сетка от (-tol, -tol): отрезок с запасом tol — в ячейки своего габарита (подсчёт, затем раскладка)
+    ReDim GrCnt(0 To nc): ReDim GrSt(0 To nc + 1)
+    For m = 0 To 1
+        For k = 0 To NGr - 1
+            ax = SmX(GrA(k)): ay = SmY(GrA(k)): bx = SmX(GrB(k)): by = SmY(GrB(k))
+            If ax < bx Then
+                ix0 = Int(ax / cs): ix1 = Int((bx + 2 * tol) / cs)
+            Else
+                ix0 = Int(bx / cs): ix1 = Int((ax + 2 * tol) / cs)
+            End If
+            If ay < by Then
+                iy0 = Int(ay / cs): iy1 = Int((by + 2 * tol) / cs)
+            Else
+                iy0 = Int(by / cs): iy1 = Int((ay + 2 * tol) / cs)
+            End If
+            If ix0 < 0 Then
+                ix0 = 0
+            End If
+            If iy0 < 0 Then
+                iy0 = 0
+            End If
+            If ix1 > nx - 1 Then
+                ix1 = nx - 1
+            End If
+            If iy1 > ny - 1 Then
+                iy1 = ny - 1
+            End If
+            For iy = iy0 To iy1
+                For ix = ix0 To ix1
+                    If m = 0 Then
+                        GrCnt(iy * nx + ix) = GrCnt(iy * nx + ix) + 1
+                    Else
+                        GrIdx(pos(iy * nx + ix)) = k
+                        pos(iy * nx + ix) = pos(iy * nx + ix) + 1
+                    End If
+                Next ix
+            Next iy
+        Next k
+        If m = 0 Then
+            GrSt(0) = 0
+            For i = 0 To nc - 1
+                GrSt(i + 1) = GrSt(i) + GrCnt(i)
+            Next i
+            ReDim GrIdx(0 To GrSt(nc) + 1)
+            ReDim pos(0 To nc)
+            For i = 0 To nc - 1
+                pos(i) = GrSt(i)
+            Next i
+        End If
+    Next m
+    t2 = tol * tol
+    For q = SmQ0(a) To SmQ0(a) + SmQn(a) - 1
+        For i = QP0(q) To QP0(q) + QPn(q) - 1
+            px = SmX(i): py = SmY(i)
+            ix = Int((px + tol) / cs)
+            iy = Int((py + tol) / cs)
+            If ix < 0 Or ix >= nx Or iy < 0 Or iy >= ny Then
+                Exit Function
+            End If
+            ok = False
+            For m = GrSt(iy * nx + ix) To GrSt(iy * nx + ix + 1) - 1
+                k = GrIdx(m)
+                ax = SmX(GrA(k)): ay = SmY(GrA(k)): bx = SmX(GrB(k)): by = SmY(GrB(k))
+                dx = bx - ax: dy = by - ay
+                l2 = dx * dx + dy * dy
+                t = 0
+                If l2 > 0 Then
+                    t = ((px - ax) * dx + (py - ay) * dy) / l2
+                    If t < 0 Then
+                        t = 0
+                    ElseIf t > 1 Then
+                        t = 1
+                    End If
+                End If
+                ex = ax + t * dx - px
+                ey = ay + t * dy - py
+                If ex * ex + ey * ey <= t2 Then
+                    ok = True
+                    Exit For
+                End If
+            Next m
+            If Not ok Then
+                Exit Function
+            End If
+        Next i
+    Next q
+    SmNear = True
+End Function
+
+Private Sub SmAddGr(ByVal i As Long, ByVal j As Long)
+    If NGr > UBound(GrA) Then
+        ReDim Preserve GrA(0 To 2 * NGr): ReDim Preserve GrB(0 To 2 * NGr)
+    End If
+    GrA(NGr) = i: GrB(NGr) = j
+    NGr = NGr + 1
+End Sub
+
+' похожие по цвету и габариту CorelDRAW (без контура): есть ли у объекта o пара
 Public Function SmHasTwin(ByVal o As Long, ByVal tol As Double) As Boolean
     Dim j As Long
     For j = 0 To NSm - 1
         If j <> o Then
-            If SmCk(j) = SmCk(o) And SmSub(j) = SmSub(o) And SmNn(j) = SmNn(o) And SmNs(j) = SmNs(o) Then
-                If Abs(SmW(j) - SmW(o)) <= tol And Abs(SmH(j) - SmH(o)) <= tol Then
+            If SmCk(j) = SmCk(o) Then
+                If Abs(SmW(j) - SmW(o)) <= 2 * tol And Abs(SmH(j) - SmH(o)) <= 2 * tol Then
                     SmHasTwin = True
                     Exit Function
                 End If
