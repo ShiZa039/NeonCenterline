@@ -15,31 +15,31 @@ for old in glob.glob(os.path.join(A, 'Resources*.dll')):
     if os.path.basename(old) != DLL:
         os.remove(old)
 G = lambda k: str(uuid.uuid5(uuid.NAMESPACE_URL, 'sabcore/neoncenterline/' + k))
-ITEMS = [('mono', 'neon_mono', 101, 'Неон: Моно'),
-         ('script', 'neon_script', 102, 'Неон: Курсив (бета)'),
-         ('settings', 'neon_settings', 103, 'Неон: настройки'),
-         ('length', 'neon_length', 104, 'Неон: длина контуров и линий'),
-         ('select', 'neon_select', 105, 'Неон: выделить центральные линии'),
-         ('cut', 'neon_cut', 106, 'Неон: подогнать под кратность реза'),
-         ('update', 'neon_update', 109, 'Неон: проверить обновления'),
-         ('about', 'neon_about', 110, 'Неон: о программе'),
-         ('simplify', 'neon_simplify', 107, 'Неон: упростить контур'),
+ITEMS = [('mono', 'neon_mono', 101, 'Моно'),
+         ('script', 'neon_script', 102, 'Курсив (бета)'),
+         ('settings', 'neon_settings', 103, 'Настройки'),
+         ('length', 'neon_length', 104, 'Длина контуров и линий'),
+         ('select', 'neon_select', 105, 'Выделить центральные линии'),
+         ('cut', 'neon_cut', 106, 'Подогнать под кратность реза'),
+         ('update', 'neon_update', 109, 'Проверить обновления'),
+         ('about', 'neon_about', 110, 'О программе'),
+         ('simplify', 'neon_simplify', 107, 'Упростить контур'),
          # кнопки-группы панели (выпадающие списки), с панели [NeonToolbar 3]
-         ('lines-menu', 'neon_lines', 108, 'Неон: линии'),
-         ('settings-menu', 'neon_settings', 103, 'Неон: настройки и помощь'),
+         ('lines-menu', 'neon_lines', 108, 'Линии'),
+         ('settings-menu', 'neon_settings', 103, 'Настройки и помощь'),
          # с панели [NeonToolbar 5]: люверсы; с [NeonToolbar 6]: группа «Раскладка» (значок — с [NeonToolbar 9])
-         ('grommets', 'neon_grommets', 111, 'Неон: люверсы'),
-         ('layout-menu', 'neon_nest', 113, 'Неон: раскладка'),
+         ('grommets', 'neon_grommets', 111, 'Люверсы'),
+         ('layout-menu', 'neon_nest', 113, 'Раскладка'),
          # с [NeonToolbar 8]: очистка контура и группа «Контур» (упростить + очистить)
-         ('clean', 'neon_clean', 112, 'Неон: очистить контур'),
-         ('outline-menu', 'neon_simplify', 107, 'Неон: контур'),
+         ('clean', 'neon_clean', 112, 'Очистить контур'),
+         ('outline-menu', 'neon_simplify', 107, 'Контур'),
          # с [NeonToolbar 9]: раскладка на листы и одинаковые — в группы (группа «Раскладка»)
-         ('nest', 'neon_nest', 113, 'Неон: раскладка на листы (бета)'),
-         ('same', 'neon_same', 114, 'Неон: одинаковые — в группы'),
+         ('nest', 'neon_nest', 113, 'Раскладка на листы (бета)'),
+         ('same', 'neon_same', 114, 'Одинаковые — в группы'),
          # с [NeonToolbar 10]: разбить на буквы (группа «Контур»)
-         ('split', 'neon_split', 115, 'Неон: разбить на буквы'),
-         # с [NeonToolbar 11]: лапша (группа «Раскладка»)
-         ('noodle', 'neon_noodle', 116, 'Неон: лапша (полосы)')]
+         ('split', 'neon_split', 115, 'Разбить на буквы'),
+         # с [NeonToolbar 11]: лапша (группа «Раскладка»); с [NeonToolbar 12] подписи без «Неон: »
+         ('noodle', 'neon_noodle', 116, 'Лапша (полосы)')]
 
 def bmp_entry(im):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()
