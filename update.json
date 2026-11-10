@@ -1,8 +1,8 @@
 {
-    "version":  "1.0.1",
-    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.0.1/NeonCenterline.gms",
-    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.0.1/dist/NeonCenterline.gms",
-    "sha256":  "f638f361ef866eb14d0e955ee1ad2a82ac53fe4f3c14d53a62213a234cea7eb0",
-    "notes_ru":  "Проверка обновлений через curl, README.txt",
-    "notes_en":  "Update check via curl, README.txt"
+    "version":  "1.1.0",
+    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.1.0/NeonCenterline.gms",
+    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.1.0/dist/NeonCenterline.gms",
+    "sha256":  "0d7e4490b886ece29781a9c01461012a14fe177a299efd1717c524b962b209b5",
+    "notes_ru":  "Новые кнопки: очистить контур, упростить контур, разбить на буквы, раскладка на листы (бета, по контуру — детали входят друг в друга), одинаковые — в группы, лапша, люверсы. «Курсив» — шрифт как образец и десятки правок стыков. Панель «Неон» собрана по группам и обновится сама: после обновления ответьте «Да» на вопрос про панель и перезапустите CorelDRAW.",
+    "notes_en":  "New buttons: clean outline, simplify outline, split into letters, nest on sheets (beta, by outline: parts fit into each other), group identical, strips, grommets. Script follows the font as a reference, with dozens of joint fixes. The toolbar is grouped and updates itself: after the update answer \"Yes\" to the toolbar question and restart CorelDRAW."
 }
