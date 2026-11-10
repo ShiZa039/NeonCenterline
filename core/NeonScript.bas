@@ -2322,6 +2322,12 @@ Private Sub PairByFit(ByVal i As Long, nb() As Long, ByVal d As Long, ByVal w As
                     End If
                 End If
             End If
+            If has And dot2 < 0 Then
+                ' дальние участки на одной волне, но у самой развилки ветки расходятся круче 90 град
+                ' (соединение «ш» к стойке и низ стойки к следующему соединению): линия сделала бы
+                ' горбик — пара слабее
+                score = score - 0.1
+            End If
             If has Then
                 cd(nc) = score: ca(nc) = a: cb(nc) = b: nc = nc + 1
             End If

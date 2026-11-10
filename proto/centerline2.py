@@ -940,6 +940,11 @@ def _pair_by_fit(adj, xy, i, nb, w, pr):
                         # пятка «Д» — не целятся ни одной)
                         if score is None or dot2 - 0.15 > score:
                             score = dot2 - 0.15
+            if score is not None and dotn < 0.0:
+                # дальние участки на одной волне, но у самой развилки ветки расходятся круче 90
+                # град (соединение «ш» к стойке и низ стойки к следующему соединению): линия
+                # сделала бы горбик — пара слабее
+                score -= 0.1
             if score is not None:
                 cand.append((score, nb[a], nb[b], dot))
     cand.sort(reverse=True)
