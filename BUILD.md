@@ -33,7 +33,7 @@
 3. PowerShell в корне репозитория:
    `.\tools\make_release.ps1 -Version 1.1.0 -Owner ShiZa039 -NotesRu "..." -NotesEn "..."`
    — копирует `.gms` в `release\` и `dist\` (запасной адрес через CDN jsDelivr, если GitHub у пользователя недоступен), считает SHA-256, пишет `update.json`.
-4. GitHub → Releases → новый релиз с тегом `1.1.0` (без буквы v — так в update.json), приложить `release\NeonCenterline.gms` (и zip для новых пользователей).
+4. GitHub → Releases → новый релиз с тегом `1.1.0` (без буквы v — так в update.json), описание — из `docs/releases/<версия>.md` (там же значок скачиваний этого выпуска), приложить `release\NeonCenterline.gms` (и zip для новых пользователей). Счётчик скачиваний — значки в начале README.md (shields.io по данным GitHub: файлы выпусков, в том числе скачанные плагином при обновлении; запасной адрес jsDelivr считается отдельно).
 5. Закоммитить и запушить `update.json` и `dist\NeonCenterline.gms` в `main` (тег `<версия>`, без v, создаётся вместе с релизом). С этого момента плагины предложат обновление.
 
 ## Build & release (English)

@@ -3,6 +3,7 @@ import os, re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 s = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
 s = re.sub(r'<a name="[^"]*"></a>\n?', '', s)
+s = re.sub(r'^\[!\[.*$\n?', '', s, flags=re.M)               # значки (версия, скачивания) — только на GitHub
 s = re.sub(r'\[([^\]]+)\]\(#[^)]*\)', r'\1', s)            # внутренние ссылки
 s = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\1 (\2)', s)      # внешние ссылки -> текст (адрес)
 s = re.sub(r'^#{1,6} *(.+)$', lambda m: m.group(1).upper() if m.group(0).startswith('# ') else m.group(1) + '\n' + '-' * len(m.group(1)), s, flags=re.M)
