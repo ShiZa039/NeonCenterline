@@ -44,4 +44,4 @@ Copy-Item "icons\*.ico" "$pkg\icons"
 Compress-Archive -Path "$pkg\*" -DestinationPath "release\NeonCenterline-$Version.zip" -Force
 Write-Host "release\NeonCenterline-$Version.zip  (for users)"
 Write-Host "release\NeonCenterline.gms  sha256=$hash"
-Write-Host "update.json written. Commit update.json and dist\NeonCenterline.gms, create tag/release $Version (tag without "v") and upload NeonCenterline.gms + NeonCenterline-$Version.zip."
+Write-Host "update.json written. Next: 1) commit and push ONLY dist\NeonCenterline.gms; 2) create release $Version on main (tag without v), attach release\NeonCenterline.gms + release\NeonCenterline-$Version.zip; 3) then commit and push update.json."
