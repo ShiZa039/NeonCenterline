@@ -44,6 +44,10 @@
 
 После инструментов, которые меняют документ (очистить, упростить, разбить, раскладка, одинаковые, лапша, люверсы, кратность реза), показывается отчёт с кнопками **ОК** — оставить и **Отмена** — отменить всё сделанное одним шагом (как Ctrl+Z; Esc и крестик — тоже отмена). Если ничего не поменялось — только ОК.
 
+Пока идут долгие инструменты (центральные линии, раскладка, очистить, упростить, разбить, одинаковые), открыто **окно хода работы**: этап, полоса, сколько из скольких и сколько секунд прошло — видно, что плагин работает, а не CorelDRAW завис. Пока оно открыто, документ трогать нельзя; закроется само.
+
+**Оставить оригинал**: у раскладки — галочка в её окне (на листы встают копии деталей, детали остаются на месте); у упрощения — в его окне; у очистки, разбивки и упрощения — в настройках плагина («Оставлять оригинал: очистка, разбивка, упрощение»). Результат — копией поверх оригинала; объекты, которые не поменялись, копий не получают.
+
 **Длина** (в «Линии ▾») — считает длину выделенного. Контуры (длина под резку) и центральные линии плагина (длина неона, число кусков, самый длинный кусок) — отдельно.
 **Выделить линии** (в «Линии ▾») — выделяет все центральные линии плагина на странице (например, чтобы сразу посчитать длину неона или убрать их).
 **Упростить контур** (в «Контур ▾», `NeonCenterline.NeonTools.SimplifyContours`) — меньше узлов у выделенных кривых: кривая не отходит от исходной больше допуска (окно перед запуском, как у центральных линий, и Настройки; по умолчанию 0.1 мм), острые углы остаются углами, гладкие места — гладкими. Кривые меняются на месте, отмена — Ctrl+Z. Полезно для трассированных логотипов и контуров из DXF/CAM (тысячи узлов → десятки), шрифты обычно сокращаются на треть. Текст и фигуры сначала переведите в кривые (Ctrl+Q).
@@ -115,6 +119,10 @@ Select outlines (curves, text, groups) and press **Mono** or **Script**.
 The "Неон" toolbar: **Mono**, **Script** | **Outline ▾**, **Lines ▾**, **Layout ▾** | **Settings ▾**. Buttons with an arrow open a list: **Outline** — simplify outline, clean outline, split into letters; **Layout** — nest on sheets, group identical, strips, grommets; **Lines** — length, select lines, fit to cut; **Settings** — settings, check for updates, about.
 
 After the tools that change the document (clean, simplify, split, nest, group identical, strips, grommets, cut step), a report window shows **OK** to keep the result and **Cancel** to undo all of it in one step (like Ctrl+Z; Esc and the close button also cancel). If nothing changed, there is only OK.
+
+While the long tools run (centerlines, nesting, clean, simplify, split, group identical), a **progress window** shows the stage, a bar, how many of how many and the seconds elapsed — you can see the plugin is working and CorelDRAW has not hung. The document cannot be touched while it is open; it closes by itself.
+
+**Keep the original**: for nesting — a box in its window (copies of the parts go onto the sheets, the parts stay in place); for simplify — in its window; for clean, split and simplify — in the plugin settings ("Keep the original: clean, split, simplify"). The result is a copy on top of the original; objects that did not change get no copy.
 
 **Length** (in Lines ▾) — measures the selection. Outlines (cutting length) and plugin centerlines (neon length, number of pieces, longest piece) are reported separately.
 **Select lines** (in Lines ▾) — selects all plugin centerlines on the page (e.g. to measure the neon or remove them).

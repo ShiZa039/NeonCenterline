@@ -9,6 +9,8 @@ Option Explicit
 ' способ (по контуру, по контуру с поворотами, по габариту), детали внутрь других («матрёшкой»),
 ' заполнение (столбцами / рядами / как плотнее), по цвету, длина по раскладке, подписи листов.
 ' NeonRunMode = 4 — перед лапшой: длина, ширина, количество полос, хвосты горизонтальных и вертикальных резов.
+' NeonRunMode = 5 — окно хода работы: этап, полоса, время; сама работа запускается из Activate (NeonJobGo),
+' закрыть окно, пока она идёт, нельзя.
 
 ' люверсы: свой цвет ("S:..."), последний выбранный цвет из списка, защита от повторного Change
 Private gCustom As String, gLastIdx As Long, gBusy As Boolean
@@ -16,9 +18,15 @@ Private gCustom As String, gLastIdx As Long, gBusy As Boolean
 ' галочка «матрёшкой» (создаются при открытии окна); лапша: gH — хвосты горизонтальных резов, gV — хвосты
 ' вертикальных отрезов
 Private gH As Object, gHL As Object, gLab As Object, gV As Object, gVL As Object, gM As Object, gML As Object
-Private gIn As Object
+Private gIn As Object, gKeep As Object
+' окно хода работы: рамка и заливка полосы, строка времени; работа уже запущена
+Private gPB As Object, gPF As Object, gPT As Object, gJobStarted As Boolean
 
 Private Sub UserForm_Initialize()
+    If NeonRunMode = 5 Then
+        InitProgress
+        Exit Sub
+    End If
     If NeonRunMode = 1 Then
         InitSimplify
         Exit Sub
@@ -103,7 +111,12 @@ Private Sub InitSimplify()
     lblHint.Height = 42
     lblHint.Caption = NeonL("simp_hint")
     lblHint.Visible = True
-    chkAsk.Top = lblHint.Top + lblHint.Height + 8
+    chkFit.Left = chkAsk.Left: chkFit.Width = chkAsk.Width
+    chkFit.Top = lblHint.Top + lblHint.Height + 8
+    chkFit.Caption = NeonL("chk_keep")
+    chkFit.Value = (GetSetting("NeonCenterline", "Simplify", "Keep", "0") = "1")
+    chkFit.Visible = True
+    chkAsk.Top = chkFit.Top + chkFit.Height + 4
     chkAsk.Caption = NeonL("chk_simp_ask")
     chkAsk.Value = True
     chkAsk.Visible = True
@@ -338,7 +351,15 @@ Private Sub InitNest()
     gLab.Caption = NeonL("chk_nest_labels")
     gLab.Value = NeonNestFlag("Labels", True)
     gLab.Visible = True
-    lblHint.Left = 12: lblHint.Top = 298: lblHint.Width = 326
+    ' оставить оригинал: на листы — копии
+    If gKeep Is Nothing Then
+        Set gKeep = Me.Controls.Add("Forms.CheckBox.1", "chkNestKeep", True)
+    End If
+    gKeep.Left = 12: gKeep.Top = 294: gKeep.Width = 326: gKeep.Height = chkFit.Height
+    gKeep.Caption = NeonL("chk_nest_keep")
+    gKeep.Value = NeonNestFlag("Keep", False)
+    gKeep.Visible = True
+    lblHint.Left = 12: lblHint.Top = 322: lblHint.Width = 326
     lblHint.WordWrap = True
     lblHint.Height = 132
     lblHint.Caption = NeonL("nest_hint")
@@ -556,6 +577,7 @@ Private Sub btnOK_Click()
         SaveSetting "NeonCenterline", "Nest", "Fill", CStr(cboRef.ListIndex)
         SaveSetting "NeonCenterline", "Nest", "Labels", IIf(gLab.Value, "1", "0")
         SaveSetting "NeonCenterline", "Nest", "Inside", IIf(gIn.Value, "1", "0")
+        SaveSetting "NeonCenterline", "Nest", "Keep", IIf(gKeep.Value, "1", "0")
         If gM.ListIndex = 3 Then
             SaveSetting "NeonCenterline", "Nest", "Method", "box"
         ElseIf gM.ListIndex >= 0 Then
@@ -598,6 +620,7 @@ Private Sub btnOK_Click()
         End If
         SaveSetting "NeonCenterline", "Simplify", "Tol", FmtNum(t)
         SaveSetting "NeonCenterline", "Simplify", "Ask", IIf(chkAsk.Value, "1", "0")
+        SaveSetting "NeonCenterline", "Simplify", "Keep", IIf(chkFit.Value, "1", "0")
         NeonRunConfirmed = True
         Me.Hide
         Exit Sub
@@ -646,10 +669,77 @@ Private Sub NestRemember(ByVal s As String)
 End Sub
 
 Private Sub btnCancel_Click()
+    If NeonRunMode = 5 Then
+        Exit Sub
+    End If
     NeonRunConfirmed = False
     Me.Hide
 End Sub
 
 Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+    ' окно хода работы крестиком не закрывается (CloseMode 0 — пользователь)
+    If NeonRunMode = 5 And CloseMode = 0 Then
+        Cancel = 1
+        Exit Sub
+    End If
     NeonRunConfirmed = False
+End Sub
+
+' ---- окно хода работы ----
+Private Sub InitProgress()
+    Dim c As Object
+    For Each c In Me.Controls
+        c.Visible = False
+    Next c
+    Me.Caption = NeonJobTitle()
+    lblHint.Left = 12: lblHint.Top = 12: lblHint.Width = 326: lblHint.Height = 30
+    lblHint.WordWrap = True
+    lblHint.Caption = NeonL("prog_start")
+    lblHint.Visible = True
+    Set gPB = Me.Controls.Add("Forms.Label.1", "lblProgB", True)
+    gPB.Left = 12: gPB.Top = 46: gPB.Width = 326: gPB.Height = 14
+    gPB.Caption = ""
+    gPB.BackStyle = 1
+    gPB.BackColor = RGB(255, 255, 255)
+    gPB.BorderStyle = 1
+    Set gPF = Me.Controls.Add("Forms.Label.1", "lblProgF", True)
+    gPF.Left = 13: gPF.Top = 47: gPF.Width = 1: gPF.Height = 12
+    gPF.Caption = ""
+    gPF.BackStyle = 1
+    gPF.BackColor = RGB(214, 51, 132)
+    gPF.Visible = False
+    Set gPT = Me.Controls.Add("Forms.Label.1", "lblProgT", True)
+    gPT.Left = 12: gPT.Top = 66: gPT.Width = 326: gPT.Height = 14
+    gPT.Caption = ""
+    Me.Height = gPT.Top + gPT.Height + 40
+End Sub
+
+' показать этап (txt), долю сделанного (fr от 0 до 1; меньше нуля — без полосы) и время (tm)
+Public Sub ProgShow(ByVal txt As String, ByVal fr As Double, ByVal tm As String)
+    If gPB Is Nothing Then
+        Exit Sub
+    End If
+    lblHint.Caption = txt
+    gPT.Caption = tm
+    If fr > 1 Then
+        fr = 1
+    End If
+    If fr * (gPB.Width - 2) >= 1 Then
+        gPF.Width = fr * (gPB.Width - 2)
+        gPF.Visible = True
+    Else
+        gPF.Visible = False
+    End If
+    Me.Repaint
+End Sub
+
+Private Sub UserForm_Activate()
+    If NeonRunMode <> 5 Or gJobStarted Then
+        Exit Sub
+    End If
+    gJobStarted = True
+    Me.Repaint
+    DoEvents
+    NeonJobGo
+    Me.Hide
 End Sub

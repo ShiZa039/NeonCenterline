@@ -26,7 +26,8 @@ Public Const NEON_DONATE_URL As String = "https://github.com/ShiZa039/NeonCenter
 Private Const REG_APP As String = "NeonCenterline"
 ' результат окна перед расчётом (frmNeonRun): True — «Построить» / «Упростить»
 Public NeonRunConfirmed As Boolean
-' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура, 2 — люверсы, 3 — раскладка, 4 — лапша
+' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура, 2 — люверсы, 3 — раскладка, 4 — лапша,
+' 5 — окно хода работы
 Public NeonRunMode As Long
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
@@ -36,6 +37,9 @@ Public Const NEON_TOOLBAR_VER As String = "12"
 Public NeonTbInstalled As Boolean
 ' событиям окон (ThisMacroStorage) в этом сеансе панель больше проверять не нужно
 Private NeonTbQuiet As Boolean
+' окно хода работы: задание, идёт ли оно, окно, начало, последнее обновление, этап, число шагов, заголовок
+Private gJob As String, gJobOn As Boolean, gProg As Object, gProgT0 As Single, gProgLast As Single
+Private gProgText As String, gProgTotal As Long, gProgTitle As String
 
 ' ---------------------------------------------------------------------
 '  Кнопки
@@ -86,10 +90,15 @@ Private Sub RunMode(ByVal mode As Long)
     Dim tAll As Double, tCore As Double, errText As String, mname As String
     Dim before As Collection, cutRep As String, newCol As Collection, eo As String
 
-    If GetSetting(REG_APP, "UI", "AskTool", "1") = "1" Then
-        If Not AskRunParams() Then
-            Exit Sub
+    ' сначала окно параметров, потом сам расчёт — при окне хода работы (RunMono / RunScript ещё раз)
+    If Not NeonInJob(IIf(mode = 0, "mono", "script")) Then
+        If GetSetting(REG_APP, "UI", "AskTool", "1") = "1" Then
+            If Not AskRunParams() Then
+                Exit Sub
+            End If
         End If
+        NeonJobRun IIf(mode = 0, "mono", "script"), NeonL("center_title")
+        Exit Sub
     End If
     tool = NeonGetTool()
 
@@ -135,6 +144,7 @@ Private Sub RunMode(ByVal mode As Long)
         On Error GoTo 0
     End If
 
+    NeonProgEnd
     Select Case rc
     Case 0
         If mode = 1 Then
@@ -657,10 +667,127 @@ Public Function ParseNum(ByVal s As String) As Double
     End If
 End Function
 
+' ---------------------------------------------------------------------
+'  Окно хода работы: долгие инструменты идут при открытом окне с этапом, полосой и временем —
+'  видно, что плагин работает, а не CorelDRAW завис. Окно модальное (пока идёт работа, документ
+'  не трогают); работа запускается из его Activate: команда -> NeonJobRun -> окно -> NeonJobGo ->
+'  та же команда ещё раз, уже с NeonInJob = True (окно параметров второй раз не показывается).
+'  Без собранной формы — сразу, без окна.
+' ---------------------------------------------------------------------
+Public Sub NeonJobRun(ByVal job As String, ByVal ttl As String)
+    Dim f As Object
+    gJob = job: gProgTitle = ttl: gJobOn = False
+    NeonRunMode = 5
+    On Error Resume Next
+    Set f = VBA.UserForms.Add("frmNeonRun")
+    On Error GoTo 0
+    If f Is Nothing Then
+        NeonRunMode = 0
+        NeonJobGo
+    Else
+        Set gProg = f
+        f.Show
+        Set gProg = Nothing
+        NeonRunMode = 0
+        On Error Resume Next
+        Unload f
+        On Error GoTo 0
+    End If
+    gJob = "": gJobOn = False
+End Sub
+
+' из окна хода работы (его Activate) или сразу: команда задания — уже внутри задания
+Public Sub NeonJobGo()
+    If gJobOn Then
+        Exit Sub
+    End If
+    gJobOn = True
+    gProgT0 = Timer: gProgLast = -1: gProgText = "": gProgTotal = 0
+    Select Case gJob
+    Case "mono"
+        RunMono
+    Case "script"
+        RunScript
+    Case "nest"
+        NestSheets
+    Case "split"
+        SplitLetters
+    Case "simp"
+        SimplifyContours
+    Case "clean"
+        CleanContours
+    Case "same"
+        GroupSame
+    End Select
+    gJobOn = False
+    NeonProgEnd
+End Sub
+
+' идёт ли сейчас задание job (команда вызвана из окна хода работы)
+Public Function NeonInJob(ByVal job As String) As Boolean
+    If gJobOn Then
+        NeonInJob = (gJob = job)
+    End If
+End Function
+
+Public Function NeonJobTitle() As String
+    NeonJobTitle = gProgTitle
+End Function
+
+' новый этап: подпись и число шагов (0 — без счёта)
+Public Sub NeonProgPhase(ByVal txt As String, ByVal total As Long)
+    gProgText = txt: gProgTotal = total: gProgLast = -1
+    NeonProgStep 0
+End Sub
+
+' шаг i этапа: окно обновляется не чаще 5 раз в секунду, тогда же DoEvents — окно не «зависает»
+Public Sub NeonProgStep(ByVal i As Long)
+    Dim t As Single, s As String, fr As Double
+    If gProg Is Nothing Then
+        Exit Sub
+    End If
+    t = Timer
+    If gProgLast >= 0 And t >= gProgLast Then
+        If t - gProgLast < 0.2 Then
+            Exit Sub
+        End If
+    End If
+    gProgLast = t
+    fr = -1
+    s = gProgText
+    If gProgTotal > 0 Then
+        If i > gProgTotal Then
+            i = gProgTotal
+        End If
+        fr = i / gProgTotal
+        s = NeonLF("prog_step", gProgText, i, gProgTotal)
+    End If
+    t = t - gProgT0
+    If t < 0 Then
+        t = t + 86400
+    End If
+    On Error Resume Next
+    gProg.ProgShow s, fr, NeonLF("prog_time", Format$(t, "0"))
+    DoEvents
+    On Error GoTo 0
+End Sub
+
+' работа кончилась (дальше — отчёт или ошибка): окно хода работы убрать
+Public Sub NeonProgEnd()
+    If gProg Is Nothing Then
+        Exit Sub
+    End If
+    On Error Resume Next
+    gProg.Hide
+    On Error GoTo 0
+    Set gProg = Nothing
+End Sub
+
 ' окно после действия: ОК — оставить, Отмена (и Esc, крестик) — отменить действие целиком, как Ctrl+Z
 ' (действие — одна группа отмены). canUndo = False — ничего не поменялось: только ОК
 Public Sub NeonReport(ByVal msg As String, ByVal ttl As String, ByVal canUndo As Boolean)
     Dim d As Object
+    NeonProgEnd
     If Not canUndo Then
         MsgBox msg, vbInformation, ttl
         Exit Sub

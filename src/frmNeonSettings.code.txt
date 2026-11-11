@@ -1,9 +1,10 @@
 Option Explicit
 ' Окно настроек NeonCenterline. Элементы окна создаёт NeonBuild (сборщик), этот код
-' вставляется в форму при сборке. Строка «Упрощение контура» добавляется при открытии окна
-' (AddSimpRow) — сборщик менять не нужно.
+' вставляется в форму при сборке. Строки «Упрощение контура» и «Оставлять оригинал» добавляются при
+' открытии окна (AddSimpRow) — сборщик менять не нужно.
 
 Private lblSimp As Object, cboSimp As Object, chkSimpAsk As Object
+Private lblKeep As Object, chkKeepC As Object, chkKeepS As Object, chkKeepP As Object
 
 Private Sub UserForm_Initialize()
     Dim lg As String
@@ -18,6 +19,15 @@ Private Sub UserForm_Initialize()
         cboSimp.Text = FmtNum(NeonSimplifyTol())
         chkSimpAsk.Caption = NeonL("chk_simp_ask")
         chkSimpAsk.Value = (GetSetting("NeonCenterline", "Simplify", "Ask", "1") = "1")
+    End If
+    If Not chkKeepC Is Nothing Then
+        lblKeep.Caption = NeonL("lbl_keep_orig")
+        chkKeepC.Caption = NeonL("chk_keep_clean")
+        chkKeepC.Value = (GetSetting("NeonCenterline", "Clean", "Keep", "0") = "1")
+        chkKeepS.Caption = NeonL("chk_keep_split")
+        chkKeepS.Value = (GetSetting("NeonCenterline", "Split", "Keep", "0") = "1")
+        chkKeepP.Caption = NeonL("chk_keep_simp")
+        chkKeepP.Value = (GetSetting("NeonCenterline", "Simplify", "Keep", "0") = "1")
     End If
     lblTool.Caption = NeonL("lbl_tool")
     cboTool.Clear
@@ -114,6 +124,11 @@ Private Sub btnOK_Click()
         SaveSetting "NeonCenterline", "Simplify", "Tol", FmtNum(sm)
         SaveSetting "NeonCenterline", "Simplify", "Ask", IIf(chkSimpAsk.Value, "1", "0")
     End If
+    If Not chkKeepC Is Nothing Then
+        SaveSetting "NeonCenterline", "Clean", "Keep", IIf(chkKeepC.Value, "1", "0")
+        SaveSetting "NeonCenterline", "Split", "Keep", IIf(chkKeepS.Value, "1", "0")
+        SaveSetting "NeonCenterline", "Simplify", "Keep", IIf(chkKeepP.Value, "1", "0")
+    End If
     SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
     SaveSetting "NeonCenterline", "Cut", "Step", FmtNum(c)
     SaveSetting "NeonCenterline", "Script", "RefEnd", CStr(cboRef.ListIndex)
@@ -138,29 +153,41 @@ Private Sub btnCancel_Click()
     Unload Me
 End Sub
 
-' строки «Упрощение контура, допуск» и «показывать окно упрощения» под выбором режима курсива:
-' всё, что ниже, сдвигается вниз
+' строки «Упрощение контура, допуск», «показывать окно упрощения» и «Оставлять оригинал: очистка,
+' разбивка, упрощение» под выбором режима курсива: всё, что ниже, сдвигается вниз
 Private Sub AddSimpRow()
     Dim c As Object, y As Single
     On Error GoTo Fail
     y = cboRef.Top + cboRef.Height + 10
     For Each c In Me.Controls
         If c.Top >= y - 4 Then
-            c.Top = c.Top + 48
+            c.Top = c.Top + 72
         End If
     Next c
-    Me.Height = Me.Height + 48
+    Me.Height = Me.Height + 72
     Set lblSimp = Me.Controls.Add("Forms.Label.1", "lblSimp", True)
     lblSimp.Left = 12: lblSimp.Top = y + 4: lblSimp.Width = 170: lblSimp.Height = 18
     Set cboSimp = Me.Controls.Add("Forms.ComboBox.1", "cboSimp", True)
     cboSimp.Left = 190: cboSimp.Top = y: cboSimp.Width = 70: cboSimp.Height = 20
     Set chkSimpAsk = Me.Controls.Add("Forms.CheckBox.1", "chkSimpAsk", True)
     chkSimpAsk.Left = 12: chkSimpAsk.Top = y + 24: chkSimpAsk.Width = 326: chkSimpAsk.Height = 18
+    Set lblKeep = Me.Controls.Add("Forms.Label.1", "lblKeep", True)
+    lblKeep.Left = 12: lblKeep.Top = y + 52: lblKeep.Width = 112: lblKeep.Height = 18
+    Set chkKeepC = Me.Controls.Add("Forms.CheckBox.1", "chkKeepC", True)
+    chkKeepC.Left = 126: chkKeepC.Top = y + 48: chkKeepC.Width = 70: chkKeepC.Height = 18
+    Set chkKeepS = Me.Controls.Add("Forms.CheckBox.1", "chkKeepS", True)
+    chkKeepS.Left = 198: chkKeepS.Top = y + 48: chkKeepS.Width = 70: chkKeepS.Height = 18
+    Set chkKeepP = Me.Controls.Add("Forms.CheckBox.1", "chkKeepP", True)
+    chkKeepP.Left = 270: chkKeepP.Top = y + 48: chkKeepP.Width = 76: chkKeepP.Height = 18
     Exit Sub
 Fail:
     Set lblSimp = Nothing
     Set cboSimp = Nothing
     Set chkSimpAsk = Nothing
+    Set lblKeep = Nothing
+    Set chkKeepC = Nothing
+    Set chkKeepS = Nothing
+    Set chkKeepP = Nothing
 End Sub
 
 Private Sub btnUpdate_Click()

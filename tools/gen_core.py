@@ -35,7 +35,9 @@ ENTRY = r'''Public Function {fn}(ByVal tool As Double, nIn As Long, nOut As Long
     Set col = New Collection
     CollectShapes sr, col
     CoreInitRings
+    NeonProgPhase NeonL("prog_read"), col.Count
     For i = 1 To col.Count
+        NeonProgStep i - 1
         If ReadShape(col(i)) Then
             nIn = nIn + 1
         End If
@@ -78,6 +80,16 @@ def conv(src, dst, vbname, oldmacro, fn):
     s = open(src, encoding='utf-8').read()
     s = re.sub(r'^Attribute VB_Name = ".*"', f'Attribute VB_Name = "{vbname}"', s, count=1, flags=re.M)
     s = re.sub(r'^Public (Sub|Function) (Core\w+)', r'Private \1 \2', s, flags=re.M)
+    # окно хода работы (NeonUI): этапы и шаги расчёта — группы букв и построение линий
+    for old, new in (('    ReDim lst(0 To nPolys - 1)\n',
+                      '    NeonProgPhase NeonL("prog_core"), nPolys\n    ReDim lst(0 To nPolys - 1)\n'),
+                     ('            LoadGroup lst, nl, parent\n',
+                      '            NeonProgStep g\n            LoadGroup lst, nl, parent\n'),
+                     ('    For g = 0 To CoreGroupCount() - 1\n        Set crv = Application.CreateCurve(ActiveDocument)\n',
+                      '    NeonProgPhase NeonL("prog_emit"), CoreGroupCount()\n    For g = 0 To CoreGroupCount() - 1\n'
+                      '        NeonProgStep g\n        Set crv = Application.CreateCurve(ActiveDocument)\n')):
+        assert s.count(old) == 1, (vbname, old)
+        s = s.replace(old, new)
     a = s.index(f'Public Sub {oldmacro}()')
     b = s.index('End Sub', a) + len('End Sub')
     s = s[:a] + ENTRY.format(fn=fn).rstrip('\n') + s[b:]

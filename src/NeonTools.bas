@@ -338,6 +338,7 @@ End Function
 Public Sub SimplifyContours()
     Dim col As Collection, tol As Double, oldUnit As cdrUnit, i As Long, nSkip As Long
     Dim n0 As Long, n1 As Long, nObj As Long, grp As Boolean, errText As String, msg As String
+    Dim keep As Boolean, k0 As Long, d As Shape
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("app_title")
         Exit Sub
@@ -346,11 +347,17 @@ Public Sub SimplifyContours()
         MsgBox NeonL("err_nosel_any"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
-    ' окно с допуском перед запуском (как у центральных линий; отключается галочкой в окне)
-    If Not AskSimplifyParams() Then
+    ' окно с допуском перед запуском (как у центральных линий; отключается галочкой в окне), потом —
+    ' сама работа при окне хода работы (SimplifyContours ещё раз, уже внутри задания)
+    If Not NeonInJob("simp") Then
+        If Not AskSimplifyParams() Then
+            Exit Sub
+        End If
+        NeonJobRun "simp", NeonL("simp_title")
         Exit Sub
     End If
     tol = NeonSimplifyTol()
+    keep = (GetSetting("NeonCenterline", "Simplify", "Keep", "0") = "1")
     Set col = New Collection
     CollectSimp ActiveSelectionRange, col, nSkip
     If col.Count = 0 Then
@@ -364,8 +371,20 @@ Public Sub SimplifyContours()
     Optimization = True
     EventsEnabled = False
     On Error GoTo Fail
+    NeonProgPhase NeonL("prog_objects"), col.Count
     For i = 1 To col.Count
-        SimplifyShape col(i), tol, n0, n1, nObj
+        NeonProgStep i - 1
+        If keep Then
+            ' оставить оригинал: упрощается копия поверх; не упростилась — копия не нужна
+            k0 = nObj
+            Set d = col(i).Duplicate
+            SimplifyShape d, tol, n0, n1, nObj
+            If nObj = k0 Then
+                d.Delete
+            End If
+        Else
+            SimplifyShape col(i), tol, n0, n1, nObj
+        End If
     Next i
 Fin:
     On Error Resume Next
@@ -378,6 +397,7 @@ Fin:
     ActiveWindow.Refresh
     Application.Refresh
     On Error GoTo 0
+    NeonProgEnd
     If Len(errText) > 0 Then
         MsgBox NeonLF("err_fail", errText), vbCritical, NeonL("simp_title")
         Exit Sub
@@ -389,6 +409,9 @@ Fin:
     End If
     If nSkip > 0 Then
         msg = msg & vbCrLf & vbCrLf & NeonLF("simp_skipped", nSkip)
+    End If
+    If keep And nObj > 0 Then
+        msg = msg & vbCrLf & vbCrLf & NeonL("rep_kept")
     End If
     NeonReport msg, NeonL("simp_title"), nObj > 0
     NeonToolbarCheck
@@ -1915,7 +1938,7 @@ End Function
 ' =====================================================================
 Public Sub CleanContours()
     Dim col As Collection, oldUnit As cdrUnit, i As Long, nSkip As Long, grp As Boolean, errText As String, msg As String
-    Dim nObj As Long, nCuts As Long, nSp0 As Long, nSp1 As Long
+    Dim nObj As Long, nCuts As Long, nSp0 As Long, nSp1 As Long, keep As Boolean, k0 As Long
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("app_title")
         Exit Sub
@@ -1924,6 +1947,11 @@ Public Sub CleanContours()
         MsgBox NeonL("err_nosel_any"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
+    If Not NeonInJob("clean") Then
+        NeonJobRun "clean", NeonL("clean_title")
+        Exit Sub
+    End If
+    keep = (GetSetting("NeonCenterline", "Clean", "Keep", "0") = "1")
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
     ActiveDocument.BeginCommandGroup NeonL("clean_title")
@@ -1932,9 +1960,16 @@ Public Sub CleanContours()
     EventsEnabled = False
     On Error GoTo Fail
     Set col = New Collection
-    CollectClean ActiveSelectionRange, col, nSkip
+    CollectClean ActiveSelectionRange, col, nSkip, keep
+    NeonProgPhase NeonL("prog_objects"), col.Count
     For i = 1 To col.Count
+        NeonProgStep i - 1
+        k0 = nObj
         CleanShape col(i), nObj, nCuts, nSp0, nSp1
+        ' оставить оригинал: в col — копии; не очистилась — копия не нужна
+        If keep And nObj = k0 Then
+            col(i).Delete
+        End If
     Next i
 Fin:
     On Error Resume Next
@@ -1947,6 +1982,7 @@ Fin:
     ActiveWindow.Refresh
     Application.Refresh
     On Error GoTo 0
+    NeonProgEnd
     If Len(errText) > 0 Then
         MsgBox NeonLF("err_fail", errText), vbCritical, NeonL("clean_title")
         Exit Sub
@@ -1961,6 +1997,9 @@ Fin:
     If nSkip > 0 Then
         msg = msg & vbCrLf & vbCrLf & NeonLF("clean_skipped", nSkip)
     End If
+    If keep And nObj > 0 Then
+        msg = msg & vbCrLf & vbCrLf & NeonL("rep_kept")
+    End If
     NeonReport msg, NeonL("clean_title"), nObj > 0
     NeonToolbarCheck
     Exit Sub
@@ -1970,26 +2009,40 @@ Fail:
 End Sub
 
 ' кривые выделения; текст и многоугольники — в кривые (в той же операции отмены)
-Private Sub CollectClean(sr As ShapeRange, col As Collection, nSkip As Long)
-    Dim sh As Shape, tp As Long
+' keep — оставить оригинал: в col попадают копии (поверх оригиналов), текст в кривые переводится
+' тоже в копии; оригиналы не трогаются
+Private Sub CollectClean(sr As ShapeRange, col As Collection, nSkip As Long, ByVal keep As Boolean)
+    Dim sh As Shape, tp As Long, d As Shape
     For Each sh In sr
         tp = sh.Type
         If tp = cdrGroupShape Then
-            CollectClean sh.Shapes.All, col, nSkip
+            CollectClean sh.Shapes.All, col, nSkip, keep
         ElseIf tp = cdrCurveShape Then
-            col.Add sh
+            If keep Then
+                col.Add sh.Duplicate
+            Else
+                col.Add sh
+            End If
         ElseIf tp = cdrRectangleShape Or tp = cdrEllipseShape Then
             ' наложений не бывает — не трогать
         ElseIf tp = cdrTextShape Or tp = cdrPolygonShape Then
+            Set d = sh
+            If keep Then
+                Set d = sh.Duplicate
+            End If
             On Error Resume Next
-            sh.ConvertToCurves
+            d.ConvertToCurves
             On Error GoTo 0
-            If sh.Type = cdrCurveShape Then
-                col.Add sh
-            ElseIf sh.Type = cdrGroupShape Then
-                CollectClean sh.Shapes.All, col, nSkip
+            If d.Type = cdrCurveShape Then
+                col.Add d
+            ElseIf d.Type = cdrGroupShape Then
+                ' уже копия — её элементы ещё раз не копировать
+                CollectClean d.Shapes.All, col, nSkip, False
             Else
                 nSkip = nSkip + 1
+                If keep Then
+                    d.Delete
+                End If
             End If
         Else
             nSkip = nSkip + 1
@@ -2984,6 +3037,10 @@ Public Sub GroupSame()
         MsgBox NeonL("same_nosel"), vbExclamation, ttl
         Exit Sub
     End If
+    If Not NeonInJob("same") Then
+        NeonJobRun "same", ttl
+        Exit Sub
+    End If
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
     ActiveDocument.BeginCommandGroup ttl
@@ -3046,6 +3103,7 @@ Fin:
     ActiveWindow.Refresh
     Application.Refresh
     On Error GoTo 0
+    NeonProgEnd
     If Len(errText) > 0 Then
         MsgBox NeonLF("err_fail", errText), vbCritical, ttl
         Exit Sub
@@ -3111,13 +3169,25 @@ Private Sub SmLoad(col As Collection)
         SmW(i) = w: SmH(i) = h
         SmCk(i) = NtColorKey(sh, SmCn(i))
     Next i
+    NeonProgPhase NeonL("prog_objects"), NSm
     For i = 0 To NSm - 1
+        NeonProgStep i
         SmQ0(i) = NSq
         If SmHasTwin(i, SAME_TOL) Then
             SmReadGeo col(i + 1)
         End If
         SmQn(i) = NSq - SmQ0(i)
     Next i
+End Sub
+
+' окно хода работы из разделов геометрии (их стенды подставляют свои пустые NeonProg*):
+' сравнение форм «Одинаковых», раскладка по контуру — вариант k из n
+Public Sub NeonProgCompare(ByVal n As Long)
+    NeonProgPhase NeonL("prog_compare"), n
+End Sub
+
+Public Sub NeonProgPack(ByVal k As Long, ByVal n As Long)
+    NeonProgPhase NeonLF("prog_nest_pack", k, n), NRp
 End Sub
 
 ' подпути объекта (у группы — всех элементов) в SqS0/SqN/SqC и SgX/SgY/SgL
@@ -3222,7 +3292,7 @@ End Sub
 Public Sub SplitLetters()
     Dim col As Collection, oldUnit As cdrUnit, grp As Boolean, errText As String, ttl As String, msg As String
     Dim i As Long, g As Long, m As Long, q As Long, nSkip As Long, nObj As Long, nLet As Long, nKeep As Long
-    Dim shp As Shape, d As Shape, crv As Curve, res As ShapeRange
+    Dim shp As Shape, d As Shape, crv As Curve, res As ShapeRange, keep As Boolean
     ttl = NeonL("split_title")
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, ttl
@@ -3232,6 +3302,11 @@ Public Sub SplitLetters()
         MsgBox NeonL("err_nosel_any"), vbExclamation, ttl
         Exit Sub
     End If
+    If Not NeonInJob("split") Then
+        NeonJobRun "split", ttl
+        Exit Sub
+    End If
+    keep = (GetSetting("NeonCenterline", "Split", "Keep", "0") = "1")
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
     ActiveDocument.BeginCommandGroup ttl
@@ -3240,9 +3315,12 @@ Public Sub SplitLetters()
     EventsEnabled = False
     On Error GoTo Fail
     Set col = New Collection
-    CollectClean ActiveSelectionRange, col, nSkip
+    ' оставить оригинал: в col — копии (буквы режутся из копии, она потом удаляется)
+    CollectClean ActiveSelectionRange, col, nSkip, keep
     Set res = CreateShapeRange
+    NeonProgPhase NeonL("prog_objects"), col.Count
     For i = 1 To col.Count
+        NeonProgStep i - 1
         Set shp = col(i)
         NSq = 0: NSg = 0
         ReDim SqS0(0 To 63): ReDim SqN(0 To 63): ReDim SqC(0 To 63)
@@ -3253,7 +3331,11 @@ Public Sub SplitLetters()
             LettersGeo
         End If
         If LtNG <= 1 Then
-            res.Add shp
+            If keep Then
+                shp.Delete
+            Else
+                res.Add shp
+            End If
             nKeep = nKeep + 1
         Else
             For g = 0 To LtNG - 1
@@ -3284,6 +3366,7 @@ Fin:
     ActiveWindow.Refresh
     Application.Refresh
     On Error GoTo 0
+    NeonProgEnd
     If Len(errText) > 0 Then
         MsgBox NeonLF("err_fail", errText), vbCritical, ttl
         Exit Sub
@@ -3295,6 +3378,9 @@ Fin:
     End If
     If nSkip > 0 Then
         msg = msg & vbCrLf & vbCrLf & NeonLF("clean_skipped", nSkip)
+    End If
+    If keep And nObj > 0 Then
+        msg = msg & vbCrLf & vbCrLf & NeonL("rep_kept")
     End If
     NeonReport msg, ttl, nObj > 0
     NeonToolbarCheck
@@ -3408,7 +3494,7 @@ Public Sub NestSheets()
     Dim lay As Layer, fr As Shape, sh As Shape, sr As ShapeRange, g As Shape, allR As ShapeRange, vis As ShapeRange, lc As Color
     Dim nPlaced As Long, nUnfit As Long, nSheets As Long, colRep As String, wl As String, msg As String, wo As Object
     Dim fillMode As Long, labels As Boolean, lab As ShapeRange, whole As ShapeRange
-    Dim method As Long, rotM As Long, pa() As Double, how As String, inside As Boolean
+    Dim method As Long, rotM As Long, pa() As Double, how As String, inside As Boolean, keep As Boolean, src As ShapeRange
     ttl = NeonL("nest_title")
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, ttl
@@ -3418,7 +3504,12 @@ Public Sub NestSheets()
         MsgBox NeonL("nest_nosel"), vbExclamation, ttl
         Exit Sub
     End If
-    If Not AskNestParams() Then
+    ' окно параметров, потом сама раскладка при окне хода работы (NestSheets ещё раз, уже внутри задания)
+    If Not NeonInJob("nest") Then
+        If Not AskNestParams() Then
+            Exit Sub
+        End If
+        NeonJobRun "nest", ttl
         Exit Sub
     End If
     If Not NeonNestParse(NeonNestSize(), sw, shh) Then
@@ -3435,6 +3526,7 @@ Public Sub NestSheets()
     labels = NeonNestFlag("Labels", True)
     method = NeonNestMethod(): rotM = NeonNestRot()
     inside = NeonNestFlag("Inside", True)
+    keep = NeonNestFlag("Keep", False)
     If method = 1 Then
         how = NeonL("nest_how_box")
     Else
@@ -3452,9 +3544,18 @@ Public Sub NestSheets()
     On Error GoTo Fail
     Set col = New Collection
     Set old = CreateShapeRange
-    NtCollect ActiveSelectionRange, col, old, True
+    ' оставить оригинал: раскладываются копии выделения, оригиналы не трогаются
+    If keep Then
+        Set src = ActiveSelectionRange.Duplicate
+    Else
+        Set src = ActiveSelectionRange
+    End If
+    NtCollect src, col, old, True
     n = col.Count
     If n = 0 Then
+        If keep And old.Count > 0 Then
+            old.Delete
+        End If
         GoTo Fin
     End If
     ReDim bx(0 To n): ReDim by(0 To n): ReDim bw(0 To n): ReDim bh(0 To n): ReDim ck(0 To n): ReDim cn(0 To n)
@@ -3526,7 +3627,9 @@ Public Sub NestSheets()
         Else
             ' по контуру: контур каждой детали — в растр, площадь — для заполнения
             RnBegin sw, shh, mg, gp, fillMode, rotM, inside
+            NeonProgPhase NeonLF("prog_nest_geo", knm(k)), NNt
             For j = 0 To NNt - 1
+                NeonProgStep j
                 i = idx(j)
                 NtPartGeo col(i + 1), bw(i), bh(i)
                 pa(i) = RnPolyArea()
@@ -3540,7 +3643,9 @@ Public Sub NestSheets()
         End If
         kArea = 0: kSheet = 0: kCnt = 0: wl = ""
         cx = x0: cy = yTop - 2 * lh
+        NeonProgPhase NeonL("prog_nest_place"), NtSheets
         For s = 0 To NtSheets - 1
+            NeonProgStep s
             If s > 0 And s Mod NT_ROW = 0 Then
                 cx = x0: cy = cy - (shh + 2 * lh + sp)
             End If
@@ -3600,6 +3705,10 @@ Public Sub NestSheets()
         For j = 0 To NNt - 1
             If NtS(j) < 0 Then
                 nUnfit = nUnfit + 1
+                ' оставить оригинал: копия, которая не встала, не нужна — оригинал на месте
+                If keep Then
+                    col(idx(j) + 1).Delete
+                End If
             End If
         Next j
         If NtSheets > 0 Then
@@ -3630,6 +3739,7 @@ Fin:
     ActiveWindow.Refresh
     Application.Refresh
     On Error GoTo 0
+    NeonProgEnd
     If Len(errText) > 0 Then
         MsgBox NeonLF("err_fail", errText), vbCritical, ttl
         Exit Sub
@@ -3652,6 +3762,9 @@ Fin:
         msg = msg & vbCrLf & NeonLF("nest_unfit", nUnfit) & vbCrLf
     End If
     msg = msg & vbCrLf & NeonL(IIf(method = 1, "nest_rep_tail", "nest_rep_tail_c")) & vbCrLf & vbCrLf & NeonL("nest_beta")
+    If keep Then
+        msg = msg & vbCrLf & vbCrLf & NeonL("nest_rep_kept")
+    End If
     NeonReport msg, ttl, True
     NeonToolbarCheck
     Exit Sub
@@ -3928,7 +4041,9 @@ Public Sub SameGeo(ByVal tol As Double)
     Next i
     ReDim SmCls(0 To NSm): ReDim reps(0 To NSm)
     NSmCls = 0
+    NeonProgCompare NSm
     For i = 0 To NSm - 1
+        NeonProgStep i
         c = -1
         For k = 0 To NSmCls - 1
             If SmEq(reps(k), i, tol) Then
@@ -5430,6 +5545,7 @@ Public Sub RnPack(ByVal sw As Double, ByVal margin As Double, ByVal gap As Doubl
     NtSheets = 0
     For t = 0 To RnNT - 1
         For om = 0 To 1
+            NeonProgPack 2 * t + om + 1, 2 * RnNT
             RnOrderParts om
             nsh = RnRun(t, margin, gap)
             ReDim used(0 To nsh)
@@ -5531,6 +5647,7 @@ Private Function RnRun(ByVal t As Long, ByVal margin As Double, ByVal gap As Dou
         RnS(k) = -1: RnX(k) = 0: RnY(k) = 0: RnRot(k) = 0
     Next k
     For q = 0 To NRp - 1
+        NeonProgStep q
         k = RnOrd(q)
         v0 = RpV0(2 * k + t)
         has = False

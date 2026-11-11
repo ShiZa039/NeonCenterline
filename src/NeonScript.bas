@@ -269,6 +269,7 @@ Private Sub CoreRun()
         Next j
     Next k
 
+    NeonProgPhase NeonL("prog_core"), nPolys
     ReDim lst(0 To nPolys - 1)
     For g = 0 To nPolys - 1
         If UFFind(gid, g) = g Then
@@ -278,6 +279,7 @@ Private Sub CoreRun()
                     lst(nl) = outer(k): nl = nl + 1
                 End If
             Next k
+            NeonProgStep g
             LoadGroup lst, nl, parent
             BuildBins
             RunGroup
@@ -9174,7 +9176,9 @@ Public Function NeonScriptRun(ByVal tool As Double, nIn As Long, nOut As Long, t
     Set col = New Collection
     CollectShapes sr, col
     CoreInitRings
+    NeonProgPhase NeonL("prog_read"), col.Count
     For i = 1 To col.Count
+        NeonProgStep i - 1
         If ReadShape(col(i)) Then
             nIn = nIn + 1
         End If
@@ -9358,7 +9362,9 @@ End Sub
 Private Function EmitShapes(lay As Layer) As Long
     Dim crv As Curve, sp As SubPath, p As Long, s0 As Long, s1 As Long, i As Long, shp As Shape
     Dim g As Long, nSub As Long, nMade As Long
+    NeonProgPhase NeonL("prog_emit"), CoreGroupCount()
     For g = 0 To CoreGroupCount() - 1
+        NeonProgStep g
         Set crv = Application.CreateCurve(ActiveDocument)
         nSub = 0
         For p = 0 To CorePathCount() - 1
