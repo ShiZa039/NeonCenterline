@@ -23,6 +23,7 @@ Private Const FLAT_N As Long = 48             ' точек на сегмент �
 ' ---- данные кусков текущей обработки ----
 Private SX() As Double, SY() As Double        ' точки сегментов: 4 на сегмент (P0, P1, P2, P3)
 Private PcShape() As Long, PcSub() As Long, PcS0() As Long, PcN() As Long, PcClosed() As Boolean, NPc As Long, NSeg As Long
+Private NCutFitN As Long                      ' сколько кусков укоротила последняя подгонка
 
 Public Function NeonCutStep() As Double
     NeonCutStep = ParseNum(GetSetting(REG_APP, "Cut", "Step", "10"))
@@ -56,7 +57,7 @@ Public Sub FitToCut()
     ActiveDocument.BeginCommandGroup NeonL("cut_title")
     rep = NeonCutFitShapes(col)
     ActiveDocument.EndCommandGroup
-    MsgBox rep, vbInformation, NeonL("cut_title")
+    NeonReport rep, NeonL("cut_title"), NCutFitN > 0
 End Sub
 
 ' подгонка набора кривых (Shape); возвращает текст отчёта
@@ -65,6 +66,7 @@ Public Function NeonCutFitShapes(col As Collection) As String
     Dim f0 As Boolean, f1 As Boolean, a As Double, b As Double, oldUnit As cdrUnit
     Dim nFit As Long, nOk As Long, nSkipC As Long, nSkipJ As Long, nShort As Long, totCut As Double, trimEnd As Boolean
     Dim changed() As Boolean, rest As Double
+    NCutFitN = 0
     stp = NeonCutStep()
     If stp <= 0 Or col.Count = 0 Then
         Exit Function
@@ -118,6 +120,7 @@ Public Function NeonCutFitShapes(col As Collection) As String
         End If
     Next k
     ActiveDocument.Unit = oldUnit
+    NCutFitN = nFit
     NeonCutFitShapes = NeonLF("cut_report", FmtNum(stp), nFit, Format$(totCut, "0"), nOk, nSkipC + nSkipJ + nShort)
 End Function
 

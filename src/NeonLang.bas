@@ -219,8 +219,10 @@ Private Function LangRu_2(ByVal key As String, s As String) As Boolean
         s = s & LD("#cjgllzh irpmi: #{2}")
     Case "len_none"
         s = s & LD("#A azcdjdlgg ldq iogazt, cjglr imqmozt kmelm nmpvgq_q{.")
-    Case "len_copy"
-        s = s & LD("#Pimngoma_q{ a `rsdo m`kdl_#?")
+    Case "rep_undo"
+        s = s & LD("#MI $2014 mpq_agq{. Mqkdl_ $2014 mqkdlgq{ ap$0451 pcdj_llmd (i_i #Ctrl+Z).")
+    Case "rep_undo_fail"
+        s = s & LD("#Mqkdlgq{ ld nmjrvgjmp{ $2014 l_ekgqd #Ctrl+Z.")
     Case "sel_none"
         s = s & LD("#L_ pqo_lgud ldq udlqo_j{lzt jglgh nj_bgl_.")
     Case "unit_mm"
@@ -294,9 +296,7 @@ Private Function LangRu_2(ByVal key As String, s As String) As Boolean
     Case "clean_report"
         s = s & LD("#Mvgxdlm m`ydiqma: #{0} #gf #{1}.$000A#Ndodpdvdlgh imlqroma r`o_lm: #{")
         s = s & LD("2}.$000A#F_kilrqzt imlqroma `zjm #{3}, #pq_jm #{4}.$000A$000A#I_eczh m`ydiq $2014")
-        s = s & LD(" #mcl_ ioga_~. Mqkdlgq{ $2014 #Ctrl+Z.")
-    Case "clean_skipped"
-        s = s & LD("#Nomnrxdlm m`ydiqma (ld iogazd g ld qdipq): #{0}.")
+        s = s & LD(" #mcl_ ioga_~.")
     Case Else
         LangRu_2 = False
     End Select
@@ -306,6 +306,8 @@ Private Function LangRu_3(ByVal key As String, s As String) As Boolean
     LangRu_3 = True
     s = ""
     Select Case key
+    Case "clean_skipped"
+        s = s & LD("#Nomnrxdlm m`ydiqma (ld iogazd g ld qdipq): #{0}.")
     Case "simp_title"
         s = s & LD("#Rnompqgq{ imlqro")
     Case "simp_none"
@@ -313,7 +315,7 @@ Private Function LangRu_3(ByVal key As String, s As String) As Boolean
         s = s & LD("#iogazd (#Ctrl+Q).")
     Case "simp_report"
         s = s & LD("#Cmnrpi #{0} #kk: rnomxdlm iogazt #{1} #gf #{2}.$000A#Rfjma `zjm #{3}, #p")
-        s = s & LD("#q_jm #{4} (#kdl{wd l_ #{5}%).$000A$000A#Mqkdlgq{ $2014 #Ctrl+Z.")
+        s = s & LD("#q_jm #{4} (#kdl{wd l_ #{5}%).")
     Case "simp_skipped"
         s = s & LD("#Nomnrxdlm m`ydiqma, imqmozd ld iogazd: #{0} (#ndodadcgqd a iog")
         s = s & LD("#azd $2014 #Ctrl+Q).")
@@ -408,8 +410,6 @@ Private Function LangRu_3(ByVal key As String, s As String) As Boolean
     Case "bad_grom"
         s = s & LD("#Nomado{qd fl_vdlg~: mq io_~ 0$2013500 kk, o_ppqm~lgd 20$201310000 kk")
         s = s & LD(", #qmvi_ 0$2013100 kk.")
-    Case "split_title"
-        s = s & LD("#O_f`gq{ l_ `riaz")
     Case Else
         LangRu_3 = False
     End Select
@@ -419,6 +419,8 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
     LangRu_4 = True
     s = ""
     Select Case key
+    Case "split_title"
+        s = s & LD("#O_f`gq{ l_ `riaz")
     Case "split_none"
         s = s & LD("#A azcdjdlgg ldq iogazt gjg qdipq_ gf ldpimj{igt `ria $2014 o_f`g")
         s = s & LD("#a_q{ ldvdbm.")
@@ -428,7 +430,7 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD(" !, ?) $2014 #pm pamdh `riamh; cdq_jg alrqog czomi (`ria_ a $00AB$00AE$00BB, ")
         s = s & LD("#qmvi_ a lrjd) $2014 mqcdj{lzkg m`ydiq_kg. M`ydiqma gf mclmh `ria")
         s = s & LD("#z $2014 ld qomlrqz: #{2}.$000A$000A#Dpjg `riaz l_jdf_}q corb l_ corb_, pl_")
-        s = s & LD("#v_j_ $00ABMvgpqgq{ imlqro$00BB. Mqkdlgq{ $2014 #Ctrl+Z.")
+        s = s & LD("#v_j_ $00ABMvgpqgq{ imlqro$00BB.")
     Case "noodle_title"
         s = s & LD("#J_nw_ (nmjmpz)")
     Case "lbl_noodle_len"
@@ -474,7 +476,7 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#k.")
     Case "noodle_rep_tail"
         s = s & LD("#Mclmh bornnmh a udlqod pqo_lguz; nmo~cmi m`ydiqma $2014 nmo~cmi ")
-        s = s & LD("#odfig. Mqkdlgq{ $2014 #Ctrl+Z.")
+        s = s & LD("#odfig.")
     Case "same_title"
         s = s & LD("#Mcgl_imazd $2014 a bornnz")
     Case "same_nosel"
@@ -487,7 +489,7 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#M`ydiqma: #{0}, #o_flzt smok: #{1}.$000A#Mcgl_imazd pm`o_lz a bornnz")
         s = s & LD(": #bornn #{2}, #a lgt m`ydiqma #{3}. #@df n_oz: #{4}.$000A$000A#Mcgl_imazd ")
         s = s & LD("$2014 #mcl_ smok_ p qmvlmpq{} cm 0,1 kk (`df nmamomq_ g fdoi_j_) ")
-        s = s & LD("#g mcgl uadq. Mqkdlgq{ $2014 #Ctrl+Z.")
+        s = s & LD("#g mcgl uadq.")
     Case "same_list"
         s = s & LD("#Smokz (wqri $2014 b_`_ogq $2014 uadq):")
     Case "same_line"
@@ -532,8 +534,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#nm imlqror, p nmamomqmk l_ 180$00B0")
     Case "nest_how_c2"
         s = s & LD("#nm imlqror, p nmamomq_kg nm 90$00B0")
-    Case "nest_how_box"
-        s = s & LD("#nm b_`_ogq_k, `df nmamomq_")
     Case Else
         LangRu_4 = False
     End Select
@@ -543,6 +543,8 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     LangRu_5 = True
     s = ""
     Select Case key
+    Case "nest_how_box"
+        s = s & LD("#nm b_`_ogq_k, `df nmamomq_")
     Case "nest_how_noin"
         s = s & LD(", #ld alrqo{ corbgt cdq_jdh")
     Case "nest_rep_sheet"
@@ -557,12 +559,11 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     Case "nest_rep_tail"
         s = s & LD("#I_eczh jgpq $2014 bornn_ pno_a_ mq azcdjdlg~ l_ pjmd cdq_jdh: o_")
         s = s & LD("#ki_, nmcngp{ g cdq_jg (nmcngpg kmelm mqij}vgq{ a mild). F_nm")
-        s = s & LD("#jldlgd $2014 nm b_`_ogq_k cdq_jdh. Mqkdlgq{ $2014 #Ctrl+Z.")
+        s = s & LD("#jldlgd $2014 nm b_`_ogq_k cdq_jdh.")
     Case "nest_rep_tail_c"
         s = s & LD("#I_eczh jgpq $2014 bornn_ pno_a_ mq azcdjdlg~ l_ pjmd cdq_jdh: o_")
         s = s & LD("#ki_, nmcngp{ g cdq_jg (nmcngpg kmelm mqij}vgq{ a mild). F_nm")
-        s = s & LD("#jldlgd $2014 nm njmx_cg cdq_jdh (czoig ld a pv$0451q). Mqkdlgq{ $2014 #Ct")
-        s = s & LD("rl+Z.")
+        s = s & LD("#jldlgd $2014 nm njmx_cg cdq_jdh (czoig ld a pv$0451q).")
     Case "nest_unfit"
         s = s & LD("#@mj{wd o_`mvdbm nmj~ jgpq_, mpq_ajdlz l_ kdpqd: #{0}.")
     Case "nest_none"
@@ -771,8 +772,10 @@ Private Function LangEn_2(ByVal key As String, s As String) As Boolean
         s = s & LD("ce: {2}")
     Case "len_none"
         s = s & LD("The selection has no curves to measure.")
-    Case "len_copy"
-        s = s & LD("Copy to clipboard?")
+    Case "rep_undo"
+        s = s & LD("OK keeps the result. Cancel undoes all of it (like Ctrl+Z).")
+    Case "rep_undo_fail"
+        s = s & LD("Could not undo $2014 press Ctrl+Z.")
     Case "sel_none"
         s = s & LD("There are no plugin centerlines on this page.")
     Case "unit_mm"
@@ -846,9 +849,7 @@ Private Function LangEn_2(ByVal key As String, s As String) As Boolean
     Case "clean_report"
         s = s & LD("Cleaned {0} of {1} objects.$000AOutline crossings removed: {2}.$000A")
         s = s & LD("Closed outlines: {3} before, {4} after.$000A$000AEach object is one ")
-        s = s & LD("curve. Undo: Ctrl+Z.")
-    Case "clean_skipped"
-        s = s & LD("Skipped {0} objects that are neither curves nor text.")
+        s = s & LD("curve.")
     Case Else
         LangEn_2 = False
     End Select
@@ -858,6 +859,8 @@ Private Function LangEn_3(ByVal key As String, s As String) As Boolean
     LangEn_3 = True
     s = ""
     Select Case key
+    Case "clean_skipped"
+        s = s & LD("Skipped {0} objects that are neither curves nor text.")
     Case "simp_title"
         s = s & LD("Simplify outline")
     Case "simp_none"
@@ -865,7 +868,7 @@ Private Function LangEn_3(ByVal key As String, s As String) As Boolean
         s = s & LD("es first (Ctrl+Q).")
     Case "simp_report"
         s = s & LD("Tolerance {0} mm: {1} of {2} curves simplified.$000ANodes: {3} b")
-        s = s & LD("efore, {4} after ({5}% fewer).$000A$000AUndo: Ctrl+Z.")
+        s = s & LD("efore, {4} after ({5}% fewer).")
     Case "simp_skipped"
         s = s & LD("Skipped {0} objects that are not curves (convert to curves: ")
         s = s & LD("Ctrl+Q).")
@@ -962,8 +965,6 @@ Private Function LangEn_3(ByVal key As String, s As String) As Boolean
     Case "bad_grom"
         s = s & LD("Check the values: edge 0$2013500 mm, distance 20$201310000 mm, point")
         s = s & LD(" 0$2013100 mm.")
-    Case "split_title"
-        s = s & LD("Split into letters")
     Case Else
         LangEn_3 = False
     End Select
@@ -973,6 +974,8 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
     LangEn_4 = True
     s = ""
     Select Case key
+    Case "split_title"
+        s = s & LD("Split into letters")
     Case "split_none"
         s = s & LD("The selection has no curves or text made of several letters ")
         s = s & LD("$2014 nothing to split.")
@@ -982,7 +985,7 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("with their letter; parts inside holes (the letter in $00AE, the ")
         s = s & LD("dot in a zero) are separate objects. Single-letter objects l")
         s = s & LD("eft as they were: {2}.$000A$000AIf letters overlap, run $0022Clean outli")
-        s = s & LD("ne$0022 first. Undo: Ctrl+Z.")
+        s = s & LD("ne$0022 first.")
     Case "noodle_title"
         s = s & LD("Strips")
     Case "lbl_noodle_len"
@@ -1029,7 +1032,7 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD(" router are {3} $00D7 {4} mm.")
     Case "noodle_rep_tail"
         s = s & LD("One group in the middle of the page; the object order is the")
-        s = s & LD(" cutting order. Undo: Ctrl+Z.")
+        s = s & LD(" cutting order.")
     Case "same_title"
         s = s & LD("Group identical")
     Case "same_nosel"
@@ -1042,7 +1045,7 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("Objects: {0}, different shapes: {1}.$000AIdentical ones are grou")
         s = s & LD("ped: {2} groups with {3} objects. Without a pair: {4}.$000A$000AIden")
         s = s & LD("tical means the same shape within 0.1 mm (no rotation or mir")
-        s = s & LD("roring) and the same colour. Undo: Ctrl+Z.")
+        s = s & LD("roring) and the same colour.")
     Case "same_list"
         s = s & LD("Shapes (count $2014 size $2014 colour):")
     Case "same_line"
@@ -1086,8 +1089,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("by outline, rotation by 180$00B0")
     Case "nest_how_c2"
         s = s & LD("by outline, rotation in 90$00B0 steps")
-    Case "nest_how_box"
-        s = s & LD("by bounding boxes, no rotation")
     Case Else
         LangEn_4 = False
     End Select
@@ -1097,6 +1098,8 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     LangEn_5 = True
     s = ""
     Select Case key
+    Case "nest_how_box"
+        s = s & LD("by bounding boxes, no rotation")
     Case "nest_how_noin"
         s = s & LD(", not inside other parts")
     Case "nest_rep_sheet"
@@ -1111,13 +1114,11 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     Case "nest_rep_tail"
         s = s & LD("Each sheet is a group to the right of the selection on the p")
         s = s & LD("arts' layer: frame, label and parts (labels can be turned of")
-        s = s & LD("f in the window). Fill is by part bounding boxes. Undo: Ctrl")
-        s = s & LD("+Z.")
+        s = s & LD("f in the window). Fill is by part bounding boxes.")
     Case "nest_rep_tail_c"
         s = s & LD("Each sheet is a group to the right of the selection on the p")
         s = s & LD("arts' layer: frame, label and parts (labels can be turned of")
-        s = s & LD("f in the window). Fill is by part area (holes excluded). Und")
-        s = s & LD("o: Ctrl+Z.")
+        s = s & LD("f in the window). Fill is by part area (holes excluded).")
     Case "nest_unfit"
         s = s & LD("Larger than the sheet working area, left in place: {0}.")
     Case "nest_none"

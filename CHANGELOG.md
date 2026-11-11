@@ -3,10 +3,14 @@
 ## 1.1.1 — в работе
 
 RU
+- Окна-отчёты после инструментов, которые меняют документ (очистить, упростить, разбить на буквы, раскладка, одинаковые — в группы, лапша, люверсы, кратность реза): кнопки **ОК** — оставить и **Отмена** — отменить всё сделанное (как Ctrl+Z; Esc и крестик — тоже отмена). Если ничего не поменялось — только ОК. Вопрос «Скопировать в буфер обмена?» убран и из окна «Длина».
+- Раскладка на листы, по габаритам: исправлена ошибка «Subscript out of range» — проверялся поворот, которого у этого способа нет.
 - Лапша: галочка «Фреза» и диаметр фрезы. Фреза режет по центральной линии и съедает по радиусу с каждой стороны — горизонтальные резы теперь идут через ширину + диаметр, отрезы стоят на радиус за концами полос, и полосы после фрезы выходят ровно заданного размера (раньше фреза делала их уже на диаметр). Без галочки — как раньше, для лазера и плоттера. В отчёте — шаг резов и размер полос после фрезы.
 - Раскладка на листы, по контуру: галочка «Детали внутрь других (матрёшкой)» — по умолчанию включена, как в 1.1.0. Без неё детали не встают в дырки букв и внутрь рамок (дырки деталей считаются занятыми), но по-прежнему входят друг в друга открытыми выемками («П», «Г», «С»). В отчёте — «не внутрь других деталей».
 
 EN
+- Report windows after the tools that change the document (clean, simplify, split into letters, nest, group identical, strips, grommets, cut step): **OK** keeps the result, **Cancel** undoes all of it (like Ctrl+Z; Esc and the close button also cancel). If nothing changed, there is only OK. The "Copy to clipboard?" question is gone, also from the Length window.
+- Nest on sheets, by bounding boxes: fixed the "Subscript out of range" error — a rotation check ran although this method has no rotation.
 - Strips: a "Router" box with the cutter diameter. A router cuts along the centre line and eats a radius on each side, so horizontal cuts are now spaced by width + diameter and the end cuts sit a radius past the strip ends: after the router the strips are exactly the size you set (before, the router made them narrower by the diameter). Without the box it works as before, for a laser or plotter. The report shows the cut spacing and the strip size after the router.
 - Nest on sheets, by outline: a "Parts inside other parts (nested)" box — on by default, as in 1.1.0. Without it parts do not go into letter holes or inside frames (the holes of parts count as taken), but still interlock through open recesses (П, Г, С shapes). The report says "not inside other parts".
 

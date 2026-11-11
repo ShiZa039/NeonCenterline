@@ -657,6 +657,30 @@ Public Function ParseNum(ByVal s As String) As Double
     End If
 End Function
 
+' окно после действия: ОК — оставить, Отмена (и Esc, крестик) — отменить действие целиком, как Ctrl+Z
+' (действие — одна группа отмены). canUndo = False — ничего не поменялось: только ОК
+Public Sub NeonReport(ByVal msg As String, ByVal ttl As String, ByVal canUndo As Boolean)
+    Dim d As Object
+    If Not canUndo Then
+        MsgBox msg, vbInformation, ttl
+        Exit Sub
+    End If
+    If MsgBox(msg & vbCrLf & vbCrLf & NeonL("rep_undo"), vbOKCancel + vbInformation + vbDefaultButton1, ttl) <> vbCancel Then
+        Exit Sub
+    End If
+    On Error Resume Next
+    Set d = ActiveDocument
+    d.Undo
+    If Err.Number <> 0 Then
+        Err.Clear
+        On Error GoTo 0
+        MsgBox NeonL("rep_undo_fail"), vbExclamation, ttl
+        Exit Sub
+    End If
+    ActiveWindow.Refresh
+    On Error GoTo 0
+End Sub
+
 Public Function FmtNum(ByVal v As Double) As String
     Dim s As String
     s = Trim$(Str$(v))

@@ -1,8 +1,7 @@
 Attribute VB_Name = "NeonTools"
 ' =====================================================================
 '  NeonCenterline — инструменты:
-'    MeasureLength   — длина выделенных контуров (для резки) и центральных линий (неон),
-'                      результат можно скопировать в буфер обмена;
+'    MeasureLength   — длина выделенных контуров (для резки) и центральных линий (неон);
 '    SelectNeonLines — выделить все центральные линии, созданные плагином, на странице;
 '    NeonLineIds / NeonLinesNew — какие линии появились после расчёта (для подгонки под рез);
 '    SimplifyContours — упростить выделенные кривые (меньше узлов в пределах допуска);
@@ -164,9 +163,7 @@ Public Sub MeasureLength()
         MsgBox NeonL("len_none"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
-    If MsgBox(msg & vbCrLf & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, NeonL("len_title")) = vbYes Then
-        CopyText msg
-    End If
+    MsgBox msg, vbInformation, NeonL("len_title")
     Exit Sub
 Fail:
     On Error Resume Next
@@ -299,14 +296,6 @@ Private Function FmtLen(ByVal mm As Double) As String
     FmtLen = Format$(mm, "0") & " " & NeonL("unit_mm") & " (" & Format$(mm / 1000, "0.00") & " " & NeonL("unit_m") & ")"
 End Function
 
-Private Sub CopyText(ByVal s As String)
-    Dim d As Object
-    On Error Resume Next
-    Set d = CreateObject("new:{1C3B4210-F441-11CE-B9EA-00AA006B1A69}")
-    d.SetText s
-    d.PutInClipboard
-End Sub
-
 ' «Неон: центр » — имя линий, которые создаёт плагин (как в NeonMono / NeonScript)
 Private Function NeonPrefix() As String
     NeonPrefix = ChrW(&H41D) & ChrW(&H435) & ChrW(&H43E) & ChrW(&H43D) & ":" & " " & _
@@ -401,7 +390,7 @@ Fin:
     If nSkip > 0 Then
         msg = msg & vbCrLf & vbCrLf & NeonLF("simp_skipped", nSkip)
     End If
-    MsgBox msg, vbInformation, NeonL("simp_title")
+    NeonReport msg, NeonL("simp_title"), nObj > 0
     NeonToolbarCheck
     Exit Sub
 Fail:
@@ -1341,9 +1330,7 @@ Fin:
     If nSkip > 0 Then
         msg = msg & vbCrLf & NeonLF("grom_skipped", nSkip)
     End If
-    If MsgBox(msg & vbCrLf & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, NeonL("grom_title")) = vbYes Then
-        CopyText msg
-    End If
+    NeonReport msg, NeonL("grom_title"), True
     NeonToolbarCheck
     Exit Sub
 Fail:
@@ -1974,7 +1961,7 @@ Fin:
     If nSkip > 0 Then
         msg = msg & vbCrLf & vbCrLf & NeonLF("clean_skipped", nSkip)
     End If
-    MsgBox msg, vbInformation, NeonL("clean_title")
+    NeonReport msg, NeonL("clean_title"), nObj > 0
     NeonToolbarCheck
     Exit Sub
 Fail:
@@ -3102,9 +3089,7 @@ Fin:
         Next t
         msg = msg & NeonLF("same_more", NSmCls - 25) & vbCrLf
     End If
-    If MsgBox(msg & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, ttl) = vbYes Then
-        CopyText NeonL("same_list") & vbCrLf & lst
-    End If
+    NeonReport msg, ttl, nGrp > 0
     NeonToolbarCheck
     Exit Sub
 Fail:
@@ -3311,7 +3296,7 @@ Fin:
     If nSkip > 0 Then
         msg = msg & vbCrLf & vbCrLf & NeonLF("clean_skipped", nSkip)
     End If
-    MsgBox msg, vbInformation, ttl
+    NeonReport msg, ttl, nObj > 0
     NeonToolbarCheck
     Exit Sub
 Fail:
@@ -3391,7 +3376,7 @@ Fin:
                                                 FmtNum(w), FmtNum(l))
     End If
     msg = msg & vbCrLf & vbCrLf & NeonL("noodle_rep_tail")
-    MsgBox msg, vbInformation, ttl
+    NeonReport msg, ttl, True
     NeonToolbarCheck
     Exit Sub
 Fail:
@@ -3570,10 +3555,13 @@ Public Sub NestSheets()
                 If NtS(j) = s Then
                     i = idx(j)
                     Set sh = col(i + 1)
-                    If method = 0 And NtRot(j) <> 0 Then
-                        ' 1 — 90° по часовой, 2 — 180°, 3 — 90° против; габарит — заново
-                        sh.Rotate Choose(NtRot(j), -90, 180, 90)
-                        sh.GetBoundingBox bx(i), by(i), bw(i), bh(i)
+                    ' поворот — только по контуру (NtRot заполняет RnPack; в VBA And не сокращённый)
+                    If method = 0 Then
+                        If NtRot(j) <> 0 Then
+                            ' 1 — 90° по часовой, 2 — 180°, 3 — 90° против; габарит — заново
+                            sh.Rotate Choose(NtRot(j), -90, 180, 90)
+                            sh.GetBoundingBox bx(i), by(i), bw(i), bh(i)
+                        End If
                     End If
                     sh.Move cx + NtX(j) - bx(i), (cy - NtY(j)) - (by(i) + bh(i))
                     sr.Add sh
@@ -3664,9 +3652,7 @@ Fin:
         msg = msg & vbCrLf & NeonLF("nest_unfit", nUnfit) & vbCrLf
     End If
     msg = msg & vbCrLf & NeonL(IIf(method = 1, "nest_rep_tail", "nest_rep_tail_c")) & vbCrLf & vbCrLf & NeonL("nest_beta")
-    If MsgBox(msg & vbCrLf & vbCrLf & NeonL("len_copy"), vbYesNo + vbInformation, ttl) = vbYes Then
-        CopyText msg
-    End If
+    NeonReport msg, ttl, True
     NeonToolbarCheck
     Exit Sub
 Fail:
