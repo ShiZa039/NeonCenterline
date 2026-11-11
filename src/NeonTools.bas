@@ -3326,7 +3326,7 @@ End Sub
 Public Sub MakeNoodles()
     Dim oldUnit As cdrUnit, grp As Boolean, errText As String, ttl As String, msg As String
     Dim l As Double, w As Double, n As Long, overH As Double, overV As Double, cx As Double, cy As Double, i As Long
-    Dim lay As Layer, sr As ShapeRange, g As Shape, sh As Shape, pg As Object
+    Dim lay As Layer, sr As ShapeRange, g As Shape, sh As Shape, pg As Object, tool As Double
     ttl = NeonL("noodle_title")
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, ttl
@@ -3338,6 +3338,10 @@ Public Sub MakeNoodles()
     l = NeonNoodleNum("Length", 300): w = NeonNoodleNum("Width", 12)
     n = CLng(NeonNoodleNum("Count", 10))
     overH = NeonNoodleNum("OverH", NeonNoodleNum("Over", 10)): overV = NeonNoodleNum("OverV", NeonNoodleNum("Over", 10))
+    ' фреза: резы по центру фрезы — отодвинуть на её радиус
+    If GetSetting("NeonCenterline", "Noodle", "Router", "0") = "1" Then
+        tool = NeonNoodleNum("Tool", 4)
+    End If
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
     ActiveDocument.BeginCommandGroup ttl
@@ -3355,7 +3359,7 @@ Public Sub MakeNoodles()
         cy = pg.SizeHeight / 2
     End If
     On Error GoTo Fail
-    NoodleGeo cx, cy, l, w, n, overH, overV
+    NoodleGeo cx, cy, l, w, n, overH, overV, tool
     Set sr = CreateShapeRange
     For i = 0 To NNd - 1
         Set sh = lay.CreateLineSegment(NdX1(i), NdY1(i), NdX2(i), NdY2(i))
@@ -3380,7 +3384,13 @@ Fin:
         MsgBox NeonLF("err_fail", errText), vbCritical, ttl
         Exit Sub
     End If
-    msg = NeonLF("noodle_report", n, NtMM(w), NtMM(l), n + 1, FmtNum(overH), FmtNum(overV), NtMM(l + 2 * overH), NtMM(n * w + 2 * overV))
+    msg = NeonLF("noodle_report", n, NtMM(w), NtMM(l), n + 1, FmtNum(overH), FmtNum(overV), _
+                 NtMM(l + tool + 2 * overH), NtMM(n * (w + tool) + 2 * overV))
+    If tool > 0 Then
+        msg = msg & vbCrLf & vbCrLf & NeonLF("noodle_rep_tool", FmtNum(tool), FmtNum(Round(w + tool, 3)), FmtNum(Round(l + tool, 3)), _
+                                                FmtNum(w), FmtNum(l))
+    End If
+    msg = msg & vbCrLf & vbCrLf & NeonL("noodle_rep_tail")
     MsgBox msg, vbInformation, ttl
     NeonToolbarCheck
     Exit Sub
@@ -4489,21 +4499,24 @@ End Function
 '  слева направо), затем отрезы по ходу: на той стороне, где кончился последний горизонтальный (снизу
 '  вверх), потом на другой (сверху вниз). Отрезки — в обратном порядке (в порядке создания): в
 '  диспетчере объектов сверху вниз и при экспорте задом наперёд — как у образца автора, вертикальные
-'  в конце списка. Центр блока — (cx, cy), y вверх.
+'  в конце списка. Фреза диаметром tool режет по центру и съедает по радиусу с каждой стороны: чтобы
+'  полосы вышли ровно w × l, горизонтальные резы — через w + tool, отрезы — на tool / 2 за концами
+'  полос; хвосты — от линий резов (лазер, плоттер — tool = 0). Центр блока — (cx, cy), y вверх.
 ' ---------------------------------------------------------------------
 Public Sub NoodleGeo(ByVal cx As Double, ByVal cy As Double, ByVal l As Double, ByVal w As Double, _
-                     ByVal n As Long, ByVal overH As Double, ByVal overV As Double)
+                     ByVal n As Long, ByVal overH As Double, ByVal overV As Double, ByVal tool As Double)
     Dim xl As Double, xr As Double, yt As Double, yb As Double, y As Double, k As Long, m As Long
-    Dim a1 As Double, a2 As Double
-    xl = cx - l / 2
-    xr = cx + l / 2
-    yt = cy + n * w / 2
-    yb = yt - n * w
+    Dim a1 As Double, a2 As Double, p As Double
+    p = w + tool
+    xl = cx - l / 2 - tool / 2
+    xr = cx + l / 2 + tool / 2
+    yt = cy + n * p / 2
+    yb = yt - n * p
     NNd = n + 3
     ReDim NdX1(0 To NNd): ReDim NdY1(0 To NNd): ReDim NdX2(0 To NNd): ReDim NdY2(0 To NNd)
     ' m — место в порядке создания (с конца)
     For k = 0 To n
-        y = yt - k * w
+        y = yt - k * p
         m = NNd - 1 - k
         If k Mod 2 = 0 Then
             NdX1(m) = xl - overH: NdX2(m) = xr + overH

@@ -3,9 +3,11 @@
 ## 1.1.1 — в работе
 
 RU
+- Лапша: галочка «Фреза» и диаметр фрезы. Фреза режет по центральной линии и съедает по радиусу с каждой стороны — горизонтальные резы теперь идут через ширину + диаметр, отрезы стоят на радиус за концами полос, и полосы после фрезы выходят ровно заданного размера (раньше фреза делала их уже на диаметр). Без галочки — как раньше, для лазера и плоттера. В отчёте — шаг резов и размер полос после фрезы.
 - Раскладка на листы, по контуру: галочка «Детали внутрь других (матрёшкой)» — по умолчанию включена, как в 1.1.0. Без неё детали не встают в дырки букв и внутрь рамок (дырки деталей считаются занятыми), но по-прежнему входят друг в друга открытыми выемками («П», «Г», «С»). В отчёте — «не внутрь других деталей».
 
 EN
+- Strips: a "Router" box with the cutter diameter. A router cuts along the centre line and eats a radius on each side, so horizontal cuts are now spaced by width + diameter and the end cuts sit a radius past the strip ends: after the router the strips are exactly the size you set (before, the router made them narrower by the diameter). Without the box it works as before, for a laser or plotter. The report shows the cut spacing and the strip size after the router.
 - Nest on sheets, by outline: a "Parts inside other parts (nested)" box — on by default, as in 1.1.0. Without it parts do not go into letter holes or inside frames (the holes of parts count as taken), but still interlock through open recesses (П, Г, С shapes). The report says "not inside other parts".
 
 ## 1.1.0 — 2026-11-10

@@ -402,9 +402,26 @@ Private Sub InitNoodle()
         gV.AddItem v
     Next v
     gV.Text = FmtNum(NeonNoodleNum("OverV", NeonNoodleNum("Over", 10)))
-    lblHint.Left = 12: lblHint.Top = 148: lblHint.Width = 326
+    ' фреза: галочка и диаметр (список с правом ввести своё)
+    chkFit.Left = 12: chkFit.Top = 146: chkFit.Width = 232
+    chkFit.Caption = NeonL("chk_noodle_tool")
+    chkFit.Value = (GetSetting("NeonCenterline", "Noodle", "Router", "0") = "1")
+    chkFit.Visible = True
+    On Error Resume Next
+    cboTrim.Style = 0
+    On Error GoTo 0
+    cboTrim.Left = 250: cboTrim.Top = 144: cboTrim.Width = 88
+    cboTrim.Clear
+    For Each v In Array("2", "3", "3.175", "4", "5", "6", "8")
+        cboTrim.AddItem v
+    Next v
+    On Error Resume Next
+    cboTrim.Text = FmtNum(NeonNoodleNum("Tool", 4))
+    On Error GoTo 0
+    cboTrim.Visible = True
+    lblHint.Left = 12: lblHint.Top = 174: lblHint.Width = 326
     lblHint.WordWrap = True
-    lblHint.Height = 96
+    lblHint.Height = 120
     lblHint.Caption = NeonL("noodle_hint")
     lblHint.Visible = True
     btnOK.Top = lblHint.Top + lblHint.Height + 10
@@ -495,11 +512,19 @@ Private Sub btnOK_Click()
     Dim t As Double, c As Double, st As Double, d As Double, w As Double, h As Double
     If NeonRunMode = 4 Then
         w = ParseNum(cboTool.Text): h = ParseNum(cboEnd.Text): c = ParseNum(cboCut.Text): d = ParseNum(gH.Text)
-        st = ParseNum(gV.Text)
+        st = ParseNum(gV.Text): t = ParseNum(cboTrim.Text)
         If w <= 0 Or w > 100000 Or h <= 0 Or h > 10000 Or c < 1 Or c > 1000 Or c <> Int(c) Or d < 0 Or d > 1000 _
            Or st < 0 Or st > 1000 Then
             MsgBox NeonL("bad_noodle"), vbExclamation, NeonL("noodle_title")
             Exit Sub
+        End If
+        If chkFit.Value And (t <= 0 Or t > 100) Then
+            MsgBox NeonL("bad_noodle_tool"), vbExclamation, NeonL("noodle_title")
+            Exit Sub
+        End If
+        SaveSetting "NeonCenterline", "Noodle", "Router", IIf(chkFit.Value, "1", "0")
+        If t > 0 And t <= 100 Then
+            SaveSetting "NeonCenterline", "Noodle", "Tool", FmtNum(t)
         End If
         SaveSetting "NeonCenterline", "Noodle", "Length", FmtNum(w)
         SaveSetting "NeonCenterline", "Noodle", "Width", FmtNum(h)

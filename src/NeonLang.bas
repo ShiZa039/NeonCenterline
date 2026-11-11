@@ -441,15 +441,21 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#Tampqz bmogfmlq_j{lzt odfma, kk:")
     Case "lbl_noodle_overv"
         s = s & LD("#Tampqz adoqgi_j{lzt mqodfma, kk:")
+    Case "chk_noodle_tool"
+        s = s & LD("#Sodf_ $2014 cg_kdqo, kk:")
+    Case "bad_noodle_tool"
+        s = s & LD("#Cg_kdqo sodfz $2014 mq 0 cm 100 kk.")
     Case "noodle_hint"
         s = s & LD("#Nmjmpz cj~ njmqqdo_, j_fdo_, sodfdo_. Nmo~cmi odfig $2014 nmo~cm")
         s = s & LD("#i m`ydiqma: bmogfmlq_j{lzd odfz padotr algf fgbf_bmk (l_no_a")
         s = s & LD("#jdlg~ vdodcr}qp~, pq_lmi ld tmcgq atmjmpqr}), a p_kmk imlud ")
-        s = s & LD("#pngpi_ $2014 ca_ adoqgi_j{lzt mqodf_, qmed nm tmcr. Tampqz $2014 azt")
-        s = s & LD("#mc odf_ f_ io_h, vqm`z nmjmp_ mqcdjgj_p{ udjgimk: bmogfmlq_j")
-        s = s & LD("#{lzd $2014 f_ mqodfz, mqodfz $2014 f_ io_hlgd bmogfmlq_j{lzd. J_fdor")
-        s = s & LD(" #g njmqqdor ta_q_dq 1$20132 kk, sodfd $2014 ld kdl{wd o_cgrp_ sodfz ")
-        s = s & LD("#p f_n_pmk. Ap$0451 $2014 mclmh bornnmh a udlqod pqo_lguz.")
+        s = s & LD("#pngpi_ $2014 ca_ adoqgi_j{lzt mqodf_, qmed nm tmcr. P b_jmvimh $00AB")
+        s = s & LD("#Sodf_$00BB odfz $2014 nm udlqor sodfz: bmogfmlq_j{lzd gcrq vdodf wgo")
+        s = s & LD("#glr + cg_kdqo, mqodfz $2014 l_ o_cgrp f_ imlu_kg nmjmp, g nmjmpz")
+        s = s & LD(" #nmpjd sodfz aztmc~q omalm f_c_llmbm o_fkdo_. Tampqz $2014 aztmc")
+        s = s & LD(" #odf_ f_ jglg} corbmbm odf_, vqm`z nmjmp_ mqcdjgj_p{ udjgimk")
+        s = s & LD(": #j_fdor g njmqqdor ta_q_dq 1$20132 kk, sodfd $2014 2$20135 kk f_n_p_. A")
+        s = s & LD("#p$0451 $2014 mclmh bornnmh a udlqod pqo_lguz.")
     Case "btn_noodle"
         s = s & LD("#L_odf_q{")
     Case "bad_noodle"
@@ -461,8 +467,14 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#J_nw_: #{0} #nmjmp #{1} $00D7 {2} #kk.$000AOdfz: #{3} #bmogfmlq_j{lzt pado")
         s = s & LD("#tr algf fgbf_bmk, f_qdk 2 adoqgi_j{lzt mqodf_ $2014 a imlud pngp")
         s = s & LD("#i_; tampqz: bmogfmlq_j{lzt #{4} #kk, adoqgi_j{lzt #{5} #kk. B_`_")
-        s = s & LD("#ogq p tampq_kg: #{6} $00D7 {7} #kk.$000A$000AMclmh bornnmh a udlqod pqo_lg")
-        s = s & LD("#uz; nmo~cmi m`ydiqma $2014 nmo~cmi odfig. Mqkdlgq{ $2014 #Ctrl+Z.")
+        s = s & LD("#ogq p tampq_kg: #{6} $00D7 {7} #kk.")
+    Case "noodle_rep_tool"
+        s = s & LD("#Sodf_ $2300#{0} #kk: odfz $2014 nm udlqor sodfz, bmogfmlq_j{lzd vdodf ")
+        s = s & LD("{1} #kk, mqodfz vdodf #{2} #kk $2014 nmjmpz nmpjd sodfz #{3} $00D7 {4} #k")
+        s = s & LD("#k.")
+    Case "noodle_rep_tail"
+        s = s & LD("#Mclmh bornnmh a udlqod pqo_lguz; nmo~cmi m`ydiqma $2014 nmo~cmi ")
+        s = s & LD("#odfig. Mqkdlgq{ $2014 #Ctrl+Z.")
     Case "same_title"
         s = s & LD("#Mcgl_imazd $2014 a bornnz")
     Case "same_nosel"
@@ -522,15 +534,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#nm imlqror, p nmamomq_kg nm 90$00B0")
     Case "nest_how_box"
         s = s & LD("#nm b_`_ogq_k, `df nmamomq_")
-    Case "nest_how_noin"
-        s = s & LD(", #ld alrqo{ corbgt cdq_jdh")
-    Case "nest_rep_sheet"
-        s = s & LD("#Jgpq #{0} $00D7 {1} #kk (cjgl_ $00D7 wgogl_). ")
-    Case "nest_rep_auto"
-        s = s & LD("#Wgogl_ jgpq_ #{0} #kk, cjgl_ nm o_pij_cid (#{1}$2013{2} #kk, aadot c")
-        s = s & LD("#m 10 kk). ")
-    Case "nest_rep_color"
-        s = s & LD("{0}: #jgpqma #{1}, #cdq_jdh #{2}, #f_nmjldlgd #{3}%")
     Case Else
         LangRu_4 = False
     End Select
@@ -540,6 +543,15 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     LangRu_5 = True
     s = ""
     Select Case key
+    Case "nest_how_noin"
+        s = s & LD(", #ld alrqo{ corbgt cdq_jdh")
+    Case "nest_rep_sheet"
+        s = s & LD("#Jgpq #{0} $00D7 {1} #kk (cjgl_ $00D7 wgogl_). ")
+    Case "nest_rep_auto"
+        s = s & LD("#Wgogl_ jgpq_ #{0} #kk, cjgl_ nm o_pij_cid (#{1}$2013{2} #kk, aadot c")
+        s = s & LD("#m 10 kk). ")
+    Case "nest_rep_color"
+        s = s & LD("{0}: #jgpqma #{1}, #cdq_jdh #{2}, #f_nmjldlgd #{3}%")
     Case "nest_rep_widths"
         s = s & LD(" (#cjgl_: #{0})")
     Case "nest_rep_tail"
@@ -983,16 +995,22 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("Tails of horizontal cuts, mm:")
     Case "lbl_noodle_overv"
         s = s & LD("Tails of vertical end cuts, mm:")
+    Case "chk_noodle_tool"
+        s = s & LD("Router $2014 cutter diameter, mm:")
+    Case "bad_noodle_tool"
+        s = s & LD("The cutter diameter must be between 0 and 100 mm.")
     Case "noodle_hint"
         s = s & LD("Strips for a plotter, laser or router. The cutting order is ")
         s = s & LD("the object order: horizontal cuts top to bottom in a zigzag ")
         s = s & LD("(directions alternate, no idle runs), and at the very end of")
-        s = s & LD(" the list two vertical end cuts, also along the way. Tails r")
-        s = s & LD("un the cuts past the edge so each strip comes off completely")
-        s = s & LD(": horizontal cuts past the end cuts, end cuts past the outer")
-        s = s & LD(" horizontal ones. A laser or plotter needs 1$20132 mm, a router ")
-        s = s & LD("at least the cutter radius plus a margin. One group in the m")
-        s = s & LD("iddle of the page.")
+        s = s & LD(" the list two vertical end cuts, also along the way. With $0022R")
+        s = s & LD("outer$0022 the cuts are cutter centre lines: horizontal ones are")
+        s = s & LD(" spaced by width + diameter, end cuts sit a radius past the ")
+        s = s & LD("strip ends, so after the router the strips come out exactly ")
+        s = s & LD("the size you set. Tails run a cut past the other cut's line ")
+        s = s & LD("so each strip comes off completely: 1$20132 mm for a laser or pl")
+        s = s & LD("otter, 2$20135 mm of margin for a router. One group in the middl")
+        s = s & LD("e of the page.")
     Case "btn_noodle"
         s = s & LD("Make strips")
     Case "bad_noodle"
@@ -1004,8 +1022,14 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("Strips: {0} strips {1} $00D7 {2} mm.$000ACuts: {3} horizontal ones t")
         s = s & LD("op to bottom in a zigzag, then 2 vertical end cuts at the en")
         s = s & LD("d of the list; tails: horizontal {4} mm, vertical {5} mm. Si")
-        s = s & LD("ze with tails: {6} $00D7 {7} mm.$000A$000AOne group in the middle of the")
-        s = s & LD(" page; the object order is the cutting order. Undo: Ctrl+Z.")
+        s = s & LD("ze with tails: {6} $00D7 {7} mm.")
+    Case "noodle_rep_tool"
+        s = s & LD("Router $2300{0} mm: the cuts are cutter centre lines, horizontal")
+        s = s & LD(" ones {1} mm apart, end cuts {2} mm apart $2014 strips after the")
+        s = s & LD(" router are {3} $00D7 {4} mm.")
+    Case "noodle_rep_tail"
+        s = s & LD("One group in the middle of the page; the object order is the")
+        s = s & LD(" cutting order. Undo: Ctrl+Z.")
     Case "same_title"
         s = s & LD("Group identical")
     Case "same_nosel"
@@ -1064,15 +1088,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("by outline, rotation in 90$00B0 steps")
     Case "nest_how_box"
         s = s & LD("by bounding boxes, no rotation")
-    Case "nest_how_noin"
-        s = s & LD(", not inside other parts")
-    Case "nest_rep_sheet"
-        s = s & LD("Sheet {0} $00D7 {1} mm (length $00D7 width). ")
-    Case "nest_rep_auto"
-        s = s & LD("Sheet width {0} mm, length to fit the parts ({1}$2013{2} mm, rou")
-        s = s & LD("nded up to 10 mm). ")
-    Case "nest_rep_color"
-        s = s & LD("{0}: {1} sheets, {2} parts, {3}% filled")
     Case Else
         LangEn_4 = False
     End Select
@@ -1082,6 +1097,15 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     LangEn_5 = True
     s = ""
     Select Case key
+    Case "nest_how_noin"
+        s = s & LD(", not inside other parts")
+    Case "nest_rep_sheet"
+        s = s & LD("Sheet {0} $00D7 {1} mm (length $00D7 width). ")
+    Case "nest_rep_auto"
+        s = s & LD("Sheet width {0} mm, length to fit the parts ({1}$2013{2} mm, rou")
+        s = s & LD("nded up to 10 mm). ")
+    Case "nest_rep_color"
+        s = s & LD("{0}: {1} sheets, {2} parts, {3}% filled")
     Case "nest_rep_widths"
         s = s & LD(" (length: {0})")
     Case "nest_rep_tail"
