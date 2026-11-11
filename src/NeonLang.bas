@@ -652,6 +652,8 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
         s = s & LD("#nm imlqror, nmamomqz nm 90$00B0")
     Case "nest_m_box"
         s = s & LD("#nm b_`_ogq_k $2014 `zpqodd")
+    Case "chk_nest_groups"
+        s = s & LD("#Bornnz $2014 udjgimk (i_ec_~ bornn_ $2014 mcl_ cdq_j{)")
     Case "chk_nest_keep"
         s = s & LD("#Mpq_agq{ mogbgl_j $2014 l_ jgpqz apq_}q imngg cdq_jdh")
     Case "nest_rep_kept"
@@ -678,8 +680,10 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
         s = s & LD("#og_jr ap$0451 o_alm (`df qdipqroz g l_no_ajdlg~). Nm b_`_ogq_k $2014")
         s = s & LD(" #`zpqodd. Lg mcl_ cdq_j{ ld `jged nmj~ i io_} g f_fmo_ i pmp")
         s = s & LD("#dcldh; cj~ sodfz f_fmo $2014 ld kdl{wd d$0451 cg_kdqo_. P b_jmvimh $00AB")
-        s = s & LD("#Cjgl_ nm o_pij_cid$00BB jgpq m`odf_dqp~ nm cdq_j~k. Mcgl_imazd, ")
-        s = s & LD("#pm`o_llzd a bornnz, o_pij_cza_}qp~ nmwqrvlm.")
+        s = s & LD("#Cjgl_ nm o_pij_cid$00BB jgpq m`odf_dqp~ nm cdq_j~k. Bornnz $2014 udj")
+        s = s & LD("#gimk (q_`jgvig, p`moig); `df b_jmvig o_f`go_}qp~ l_ |jdkdlqz")
+        s = s & LD(" $2014 #q_i rcm`lm cj~ gknmoq_ #SVG/DXF #mclmh bornnmh. $00ABMcgl_imazd")
+        s = s & LD("$00BB $2014 #apdbc_ nmwqrvlm.")
     Case "btn_nest"
         s = s & LD("#O_fjmegq{")
     Case "bad_nest"
@@ -1269,6 +1273,8 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
         s = s & LD("by outline, rotate in 90$00B0 steps")
     Case "nest_m_box"
         s = s & LD("by bounding boxes $2014 faster")
+    Case "chk_nest_groups"
+        s = s & LD("Groups stay whole (each group is one part)")
     Case "chk_nest_keep"
         s = s & LD("Keep the original $2014 copies of the parts go onto the sheets")
     Case "nest_rep_kept"
@@ -1296,8 +1302,10 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
         s = s & LD("xes is faster. No part is closer than the margin to the edge")
         s = s & LD(" or the gap to another part; for a router, use a gap of at l")
         s = s & LD("east the cutter diameter. With $0022Length to fit$0022 each sheet is")
-        s = s & LD(" trimmed to the parts. Grouped identical objects are nested ")
-        s = s & LD("one by one.")
+        s = s & LD(" trimmed to the parts. Groups stay whole (plates, assemblies")
+        s = s & LD("); untick it to split groups into their elements $2014 handy for")
+        s = s & LD(" an SVG/DXF import that comes as one group. $0022Identical$0022 grou")
+        s = s & LD("ps are always nested one by one.")
     Case "btn_nest"
         s = s & LD("Nest")
     Case "bad_nest"

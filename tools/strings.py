@@ -305,6 +305,7 @@ STRINGS = {
     'nest_m_rot180': ('по контуру, поворот на 180°', 'by outline, rotate by 180°'),
     'nest_m_rot90':  ('по контуру, повороты по 90°', 'by outline, rotate in 90° steps'),
     'nest_m_box':    ('по габаритам — быстрее', 'by bounding boxes — faster'),
+    'chk_nest_groups':('Группы — целиком (каждая группа — одна деталь)', 'Groups stay whole (each group is one part)'),
     'chk_nest_keep': ('Оставить оригинал — на листы встают копии деталей', 'Keep the original — copies of the parts go onto the sheets'),
     'nest_rep_kept': ('Оригиналы оставлены на месте, на листах — копии.', 'The originals stay in place; the sheets hold copies.'),
     'chk_nest_inside':('Детали внутрь других (матрёшкой): в дырки букв, рамки', 'Parts inside other parts (nested): letter holes, frames'),
@@ -317,11 +318,11 @@ STRINGS = {
     'nest_hint':     ('Бета. Длина — по горизонтали, ширина — по вертикали; размер любой: впишите свой (стол лазера, заготовка), он появится в готовых. '
                       'По контуру — плотнее: детали входят друг в друга, «матрёшкой» — ещё и в дырки букв и рамки; поворот — если материалу всё равно (без текстуры и направления). По габаритам — быстрее. '
                       'Ни одна деталь не ближе поля к краю и зазора к соседней; для фрезы зазор — не меньше её диаметра. '
-                      'С галочкой «Длина по раскладке» лист обрезается по деталям. Одинаковые, собранные в группы, раскладываются поштучно.',
+                      'С галочкой «Длина по раскладке» лист обрезается по деталям. Группы — целиком (таблички, сборки); без галочки разбираются на элементы — так удобно для импорта SVG/DXF одной группой. «Одинаковые» — всегда поштучно.',
                       'Beta. Length is horizontal, width is vertical; any size: type your own (laser bed, offcut) and it appears in the presets. '
                       'By outline is tighter: parts fit into each other, and with "nested" also into letter holes and frames; rotate only if the material allows it (no texture or grain). By bounding boxes is faster. '
                       'No part is closer than the margin to the edge or the gap to another part; for a router, use a gap of at least the cutter diameter. '
-                      'With "Length to fit" each sheet is trimmed to the parts. Grouped identical objects are nested one by one.'),
+                      'With "Length to fit" each sheet is trimmed to the parts. Groups stay whole (plates, assemblies); untick it to split groups into their elements — handy for an SVG/DXF import that comes as one group. "Identical" groups are always nested one by one.'),
     'btn_nest':      ('Разложить', 'Nest'),
     'bad_nest':      ('Проверьте значения: длина и ширина листа 10–100000 мм, поле 0–1000 мм и меньше половины листа, зазор 0–1000 мм, наименьшая длина не больше длины листа.',
                       'Check the values: sheet length and width 10–100000 mm, margin 0–1000 mm and under half the sheet, gap 0–1000 mm, minimum length not above the sheet length.'),

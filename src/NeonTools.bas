@@ -3073,7 +3073,7 @@ Public Sub GroupSame()
     Set col = New Collection
     Set old = CreateShapeRange
     NeonProgPhase NeonL("prog_collect"), 0
-    NtCollect ActiveSelectionRange, col, old, True
+    NtCollect ActiveSelectionRange, col, old, True, 0
     NSm = 0: NSmCls = 0
     If col.Count = 0 Then
         GoTo Fin
@@ -3588,7 +3588,8 @@ Public Sub NestSheets()
         Set src = ActiveSelectionRange
     End If
     NeonProgPhase NeonL("prog_collect"), 0
-    NtCollect src, col, old, True
+    ' группы пользователя: целиком (таблички, сборки) или на элементы (импорт SVG/DXF одной группой)
+    NtCollect src, col, old, True, IIf(NeonNestFlag("Groups", True), 1, 2)
     n = col.Count
     If n = 0 Then
         If keep And old.Count > 0 Then
@@ -3858,14 +3859,18 @@ End Sub
 ' ---------------------------------------------------------------------
 ' детали выделения в col; рамки и подписи прежней раскладки — в old. Группа одинаковых и лист
 ' раскладки — поштучно; одна выделенная группа (top) — тоже: импорт SVG/DXF приходит одной группой
-Private Sub NtCollect(sr As ShapeRange, col As Collection, old As ShapeRange, ByVal top As Boolean)
+' grp — группы пользователя: 0 — целиком, но одна выделенная группа (импорт SVG/DXF) разбирается на
+' элементы («Одинаковые»); 1 — всегда целиком, каждая — одна деталь; 2 — разбираются на элементы (на один
+' уровень). Свои группы плагина («Одинаковые», листы прежней раскладки) разбираются всегда, рамки и
+' подписи прежней раскладки — в old
+Private Sub NtCollect(sr As ShapeRange, col As Collection, old As ShapeRange, ByVal top As Boolean, ByVal grp As Long)
     Dim sh As Shape
     NeonProgTick
-    If top And sr.Count = 1 Then
+    If top And sr.Count = 1 And grp = 0 Then
         Set sh = sr(1)
         If sh.Type = cdrGroupShape Then
             If Not NtIsLayout(sh) And Len(NtTagOf(sh)) = 0 Then
-                NtCollect NtUngroup(sh), col, old, True
+                NtCollect NtUngroup(sh), col, old, True, grp
                 Exit Sub
             End If
         End If
@@ -3875,7 +3880,9 @@ Private Sub NtCollect(sr As ShapeRange, col As Collection, old As ShapeRange, By
             old.Add sh
         ElseIf sh.Type = cdrGroupShape Then
             If Len(NtTagOf(sh)) > 0 Then
-                NtCollect NtUngroup(sh), col, old, False
+                NtCollect NtUngroup(sh), col, old, False, grp
+            ElseIf top And grp = 2 Then
+                NtCollect NtUngroup(sh), col, old, False, grp
             Else
                 col.Add sh
             End If

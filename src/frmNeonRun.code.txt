@@ -18,7 +18,7 @@ Private gCustom As String, gLastIdx As Long, gBusy As Boolean
 ' галочка «матрёшкой» (создаются при открытии окна); лапша: gH — хвосты горизонтальных резов, gV — хвосты
 ' вертикальных отрезов
 Private gH As Object, gHL As Object, gLab As Object, gV As Object, gVL As Object, gM As Object, gML As Object
-Private gIn As Object, gKeep As Object
+Private gIn As Object, gKeep As Object, gGrp As Object
 ' окно хода работы: рамка и заливка полосы, строка времени; работа уже запущена
 Private gPB As Object, gPF As Object, gPT As Object, gJobStarted As Boolean
 
@@ -359,7 +359,15 @@ Private Sub InitNest()
     gKeep.Caption = NeonL("chk_nest_keep")
     gKeep.Value = NeonNestFlag("Keep", False)
     gKeep.Visible = True
-    lblHint.Left = 12: lblHint.Top = 322: lblHint.Width = 326
+    ' группы — целиком (каждая — одна деталь) или на элементы
+    If gGrp Is Nothing Then
+        Set gGrp = Me.Controls.Add("Forms.CheckBox.1", "chkNestGrp", True)
+    End If
+    gGrp.Left = 12: gGrp.Top = 318: gGrp.Width = 326: gGrp.Height = chkFit.Height
+    gGrp.Caption = NeonL("chk_nest_groups")
+    gGrp.Value = NeonNestFlag("Groups", True)
+    gGrp.Visible = True
+    lblHint.Left = 12: lblHint.Top = 346: lblHint.Width = 326
     lblHint.WordWrap = True
     lblHint.Height = 132
     lblHint.Caption = NeonL("nest_hint")
@@ -578,6 +586,7 @@ Private Sub btnOK_Click()
         SaveSetting "NeonCenterline", "Nest", "Labels", IIf(gLab.Value, "1", "0")
         SaveSetting "NeonCenterline", "Nest", "Inside", IIf(gIn.Value, "1", "0")
         SaveSetting "NeonCenterline", "Nest", "Keep", IIf(gKeep.Value, "1", "0")
+        SaveSetting "NeonCenterline", "Nest", "Groups", IIf(gGrp.Value, "1", "0")
         If gM.ListIndex = 3 Then
             SaveSetting "NeonCenterline", "Nest", "Method", "box"
         ElseIf gM.ListIndex >= 0 Then
