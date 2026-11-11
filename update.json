@@ -1,8 +1,8 @@
 {
-    "version":  "1.1.0",
-    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.1.0/NeonCenterline.gms",
-    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.1.0/dist/NeonCenterline.gms",
-    "sha256":  "0d7e4490b886ece29781a9c01461012a14fe177a299efd1717c524b962b209b5",
-    "notes_ru":  "Новые кнопки: очистить контур, упростить контур, разбить на буквы, раскладка на листы (бета, по контуру — детали входят друг в друга), одинаковые — в группы, лапша, люверсы. «Курсив» — шрифт как образец и десятки правок стыков. Панель «Неон» собрана по группам и обновится сама: после обновления ответьте «Да» на вопрос про панель и перезапустите CorelDRAW.",
-    "notes_en":  "New buttons: clean outline, simplify outline, split into letters, nest on sheets (beta, by outline: parts fit into each other), group identical, strips, grommets. Script follows the font as a reference, with dozens of joint fixes. The toolbar is grouped and updates itself: after the update answer \"Yes\" to the toolbar question and restart CorelDRAW."
+    "version":  "1.1.1",
+    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.1.1/NeonCenterline.gms",
+    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.1.1/dist/NeonCenterline.gms",
+    "sha256":  "fdc64c1b5e5cefc1636a3174c8371598b27ee8b1afb0897965edd6bd27b654d0",
+    "notes_ru":  "Окно хода работы у всех инструментов; отчёт с «ОК» и «Отмена» (отменить всё одним шагом) вместо копирования в буфер; «Оставить оригинал» у раскладки, очистки, разбивки и упрощения; раскладка: «Группы — целиком», «матрёшку» можно отключить, исправлена ошибка по габаритам; лапша: галочка «Фреза» с диаметром.",
+    "notes_en":  "Progress window for every tool; report with OK and Cancel (undo all in one step) instead of copy to clipboard; keep the original for nesting, clean, split and simplify; nesting: groups stay whole, nested mode can be turned off, bounding-box error fixed; strips: router box with cutter diameter."
 }
