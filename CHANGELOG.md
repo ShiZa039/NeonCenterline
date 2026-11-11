@@ -3,7 +3,7 @@
 ## 1.1.1 — в работе
 
 RU
-- Окно хода работы у долгих инструментов (центральные линии, раскладка, очистить, упростить, разбить на буквы, одинаковые — в группы): этап, полоса, «N из M», сколько секунд прошло — видно, что плагин работает, а не CorelDRAW завис. Окно модальное (документ, пока идёт работа, не трогается) и закрывается само.
+- Окно хода работы у всех инструментов (центральные линии, раскладка, одинаковые — в группы, очистить, упростить, разбить на буквы, длина, выделить линии, люверсы, лапша, кратность реза); у раскладки и «Одинаковых» — по каждому этапу (сбор объектов, контуры, варианты раскладки, детали на листы; чтение, сравнение форм, группы): этап, полоса, «N из M», сколько секунд прошло — видно, что плагин работает, а не CorelDRAW завис. Окно модальное (документ, пока идёт работа, не трогается) и закрывается само.
 - «Оставить оригинал»: раскладка — галочка в её окне (на листы встают копии); упрощение — в его окне; очистка, разбивка, упрощение — в настройках («Оставлять оригинал: очистка, разбивка, упрощение»). Результат — копией поверх, объекты без изменений копий не получают.
 - Окна-отчёты после инструментов, которые меняют документ (очистить, упростить, разбить на буквы, раскладка, одинаковые — в группы, лапша, люверсы, кратность реза): кнопки **ОК** — оставить и **Отмена** — отменить всё сделанное (как Ctrl+Z; Esc и крестик — тоже отмена). Если ничего не поменялось — только ОК. Вопрос «Скопировать в буфер обмена?» убран и из окна «Длина».
 - Раскладка на листы, по габаритам: исправлена ошибка «Subscript out of range» — проверялся поворот, которого у этого способа нет.
@@ -11,7 +11,7 @@ RU
 - Раскладка на листы, по контуру: галочка «Детали внутрь других (матрёшкой)» — по умолчанию включена, как в 1.1.0. Без неё детали не встают в дырки букв и внутрь рамок (дырки деталей считаются занятыми), но по-прежнему входят друг в друга открытыми выемками («П», «Г», «С»). В отчёте — «не внутрь других деталей».
 
 EN
-- Progress window for the long tools (centerlines, nesting, clean, simplify, split into letters, group identical): stage, bar, "N of M", seconds elapsed — you can see the plugin is working and CorelDRAW has not hung. The window is modal (the document is not touched while it works) and closes by itself.
+- Progress window for every tool (centerlines, nesting, group identical, clean, simplify, split into letters, length, select lines, grommets, strips, cut step); for nesting and group identical — at every stage (collecting objects, outlines, nesting variants, parts onto sheets; reading, comparing shapes, groups): stage, bar, "N of M", seconds elapsed — you can see the plugin is working and CorelDRAW has not hung. The window is modal (the document is not touched while it works) and closes by itself.
 - "Keep the original": nesting — a box in its window (copies go onto the sheets); simplify — in its window; clean, split, simplify — in the settings ("Keep the original: clean, split, simplify"). The result is a copy on top; unchanged objects get no copy.
 - Report windows after the tools that change the document (clean, simplify, split into letters, nest, group identical, strips, grommets, cut step): **OK** keeps the result, **Cancel** undoes all of it (like Ctrl+Z; Esc and the close button also cancel). If nothing changed, there is only OK. The "Copy to clipboard?" question is gone, also from the Length window.
 - Nest on sheets, by bounding boxes: fixed the "Subscript out of range" error — a rotation check ran although this method has no rotation.

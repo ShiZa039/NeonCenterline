@@ -44,7 +44,7 @@
 
 После инструментов, которые меняют документ (очистить, упростить, разбить, раскладка, одинаковые, лапша, люверсы, кратность реза), показывается отчёт с кнопками **ОК** — оставить и **Отмена** — отменить всё сделанное одним шагом (как Ctrl+Z; Esc и крестик — тоже отмена). Если ничего не поменялось — только ОК.
 
-Пока идут долгие инструменты (центральные линии, раскладка, очистить, упростить, разбить, одинаковые), открыто **окно хода работы**: этап, полоса, сколько из скольких и сколько секунд прошло — видно, что плагин работает, а не CorelDRAW завис. Пока оно открыто, документ трогать нельзя; закроется само.
+Пока работает любой инструмент (центральные линии, раскладка, одинаковые, очистить, упростить, разбить, длина, выделить линии, люверсы, лапша, кратность реза), открыто **окно хода работы**: этап, полоса, сколько из скольких и сколько секунд прошло — видно, что плагин работает, а не CorelDRAW завис. Пока оно открыто, документ трогать нельзя; закроется само.
 
 **Оставить оригинал**: у раскладки — галочка в её окне (на листы встают копии деталей, детали остаются на месте); у упрощения — в его окне; у очистки, разбивки и упрощения — в настройках плагина («Оставлять оригинал: очистка, разбивка, упрощение»). Результат — копией поверх оригинала; объекты, которые не поменялись, копий не получают.
 
@@ -120,7 +120,7 @@ The "Неон" toolbar: **Mono**, **Script** | **Outline ▾**, **Lines ▾**, *
 
 After the tools that change the document (clean, simplify, split, nest, group identical, strips, grommets, cut step), a report window shows **OK** to keep the result and **Cancel** to undo all of it in one step (like Ctrl+Z; Esc and the close button also cancel). If nothing changed, there is only OK.
 
-While the long tools run (centerlines, nesting, clean, simplify, split, group identical), a **progress window** shows the stage, a bar, how many of how many and the seconds elapsed — you can see the plugin is working and CorelDRAW has not hung. The document cannot be touched while it is open; it closes by itself.
+While any tool runs (centerlines, nesting, group identical, clean, simplify, split, length, select lines, grommets, strips, cut step), a **progress window** shows the stage, a bar, how many of how many and the seconds elapsed — you can see the plugin is working and CorelDRAW has not hung. The document cannot be touched while it is open; it closes by itself.
 
 **Keep the original**: for nesting — a box in its window (copies of the parts go onto the sheets, the parts stay in place); for simplify — in its window; for clean, split and simplify — in the plugin settings ("Keep the original: clean, split, simplify"). The result is a copy on top of the original; objects that did not change get no copy.
 

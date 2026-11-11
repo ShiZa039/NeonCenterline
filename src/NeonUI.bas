@@ -39,7 +39,7 @@ Public NeonTbInstalled As Boolean
 Private NeonTbQuiet As Boolean
 ' окно хода работы: задание, идёт ли оно, окно, начало, последнее обновление, этап, число шагов, заголовок
 Private gJob As String, gJobOn As Boolean, gProg As Object, gProgT0 As Single, gProgLast As Single
-Private gProgText As String, gProgTotal As Long, gProgTitle As String
+Private gProgText As String, gProgTotal As Long, gProgTitle As String, gProgCnt As Long
 
 ' ---------------------------------------------------------------------
 '  Кнопки
@@ -718,6 +718,16 @@ Public Sub NeonJobGo()
         CleanContours
     Case "same"
         GroupSame
+    Case "len"
+        MeasureLength
+    Case "sel"
+        SelectNeonLines
+    Case "grom"
+        PlaceGrommets
+    Case "noodle"
+        MakeNoodles
+    Case "cut"
+        FitToCut
     End Select
     gJobOn = False
     NeonProgEnd
@@ -736,8 +746,14 @@ End Function
 
 ' новый этап: подпись и число шагов (0 — без счёта)
 Public Sub NeonProgPhase(ByVal txt As String, ByVal total As Long)
-    gProgText = txt: gProgTotal = total: gProgLast = -1
+    gProgText = txt: gProgTotal = total: gProgLast = -1: gProgCnt = 0
     NeonProgStep 0
+End Sub
+
+' ещё один шаг этапа без известного итога (обход объектов, групп): в окне — сколько уже
+Public Sub NeonProgTick()
+    gProgCnt = gProgCnt + 1
+    NeonProgStep gProgCnt
 End Sub
 
 ' шаг i этапа: окно обновляется не чаще 5 раз в секунду, тогда же DoEvents — окно не «зависает»
@@ -755,6 +771,9 @@ Public Sub NeonProgStep(ByVal i As Long)
     gProgLast = t
     fr = -1
     s = gProgText
+    If gProgTotal <= 0 And i > 0 Then
+        s = NeonLF("prog_count", gProgText, i)
+    End If
     If gProgTotal > 0 Then
         If i > gProgTotal Then
             i = gProgTotal

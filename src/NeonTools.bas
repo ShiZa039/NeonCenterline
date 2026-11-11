@@ -138,9 +138,14 @@ Public Sub MeasureLength()
         MsgBox NeonL("err_nosel_any"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
+    If Not NeonInJob("len") Then
+        NeonJobRun "len", NeonL("len_title")
+        Exit Sub
+    End If
     oldUnit = ActiveDocument.Unit
     ActiveDocument.Unit = cdrMillimeter
     On Error GoTo Fail
+    NeonProgPhase NeonL("prog_measure"), 0
     MeasureRange sr, lenC, nObjC, nPathC, lenN, nObjN, nPathN, nmax
     ActiveDocument.Unit = oldUnit
 
@@ -159,6 +164,7 @@ Public Sub MeasureLength()
             msg = msg & vbCrLf & cs
         End If
     End If
+    NeonProgEnd
     If Len(msg) = 0 Then
         MsgBox NeonL("len_none"), vbExclamation, NeonL("app_title")
         Exit Sub
@@ -168,6 +174,7 @@ Public Sub MeasureLength()
 Fail:
     On Error Resume Next
     ActiveDocument.Unit = oldUnit
+    NeonProgEnd
     MsgBox NeonLF("err_fail", Err.Description), vbCritical, NeonL("app_title")
 End Sub
 
@@ -178,8 +185,14 @@ Public Sub SelectNeonLines()
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
+    If Not NeonInJob("sel") Then
+        NeonJobRun "sel", NeonL("app_title")
+        Exit Sub
+    End If
     Set col = New Collection
+    NeonProgPhase NeonL("prog_find"), 0
     FindNeon ActivePage.Shapes.All, col
+    NeonProgEnd
     If col.Count = 0 Then
         MsgBox NeonL("sel_none"), vbInformation, NeonL("app_title")
         Exit Sub
@@ -233,6 +246,7 @@ Private Sub MeasureRange(sr As ShapeRange, lenC As Double, nObjC As Long, nPathC
                          lenN As Double, nObjN As Long, nPathN As Long, nmax As Double)
     Dim sh As Shape, crv As Curve, tmp As Shape, L As Double, sp As SubPath, isNeon As Boolean
     For Each sh In sr
+        NeonProgTick
         If sh.Type = cdrGroupShape Then
             MeasureRange sh.Shapes.All, lenC, nObjC, nPathC, lenN, nObjN, nPathN, nmax
         Else
@@ -283,6 +297,7 @@ End Sub
 Private Sub FindNeon(sr As ShapeRange, col As Collection)
     Dim sh As Shape
     For Each sh In sr
+        NeonProgTick
         If sh.Type = cdrGroupShape Then
             FindNeon sh.Shapes.All, col
         ElseIf Left$(sh.Name, Len(NeonPrefix())) = NeonPrefix() Then
@@ -1291,7 +1306,11 @@ Public Sub PlaceGrommets()
         MsgBox NeonL("grom_nosel"), vbExclamation, NeonL("grom_title")
         Exit Sub
     End If
-    If Not AskGrommetParams() Then
+    If Not NeonInJob("grom") Then
+        If Not AskGrommetParams() Then
+            Exit Sub
+        End If
+        NeonJobRun "grom", NeonL("grom_title")
         Exit Sub
     End If
     edge = NeonGromEdge(): stp = NeonGromStep(): dia = NeonGromDot(): rf = NeonGromReinf()
@@ -1304,7 +1323,9 @@ Public Sub PlaceGrommets()
     ActiveDocument.BeginCommandGroup NeonL("grom_title")
     grpOn = True
     Set lay = Nothing
+    NeonProgPhase NeonL("prog_objects"), col.Count
     For i = 1 To col.Count
+        NeonProgStep i - 1
         Set sh = col(i)
         If ShapeGrommets(sh, edge, stp, rf) Then
             If lay Is Nothing Then
@@ -1335,6 +1356,7 @@ Fin:
         ActiveDocument.EndCommandGroup
     End If
     ActiveDocument.Unit = oldUnit
+    NeonProgEnd
     If Len(errText) > 0 Then
         MsgBox NeonLF("err_fail", errText), vbCritical, NeonL("grom_title")
         Exit Sub
@@ -3050,6 +3072,7 @@ Public Sub GroupSame()
     On Error GoTo Fail
     Set col = New Collection
     Set old = CreateShapeRange
+    NeonProgPhase NeonL("prog_collect"), 0
     NtCollect ActiveSelectionRange, col, old, True
     NSm = 0: NSmCls = 0
     If col.Count = 0 Then
@@ -3066,7 +3089,9 @@ Public Sub GroupSame()
         cnt(c) = cnt(c) + 1
     Next i
     Set allR = CreateShapeRange
+    NeonProgPhase NeonL("prog_groups"), NSmCls
     For c = 0 To NSmCls - 1
+        NeonProgStep c
         If cnt(c) >= 2 Then
             Set sr = CreateShapeRange
             For i = 0 To NSm - 1
@@ -3163,15 +3188,16 @@ Private Sub SmLoad(col As Collection)
     ReDim SmQ0(0 To NSm): ReDim SmQn(0 To NSm)
     ReDim SqS0(0 To 63): ReDim SqN(0 To 63): ReDim SqC(0 To 63)
     ReDim SgX(0 To 1023): ReDim SgY(0 To 1023): ReDim SgL(0 To 255)
+    NeonProgPhase NeonL("prog_objects"), 2 * NSm
     For i = 0 To NSm - 1
+        NeonProgStep i
         Set sh = col(i + 1)
         sh.GetBoundingBox x, y, w, h
         SmW(i) = w: SmH(i) = h
         SmCk(i) = NtColorKey(sh, SmCn(i))
     Next i
-    NeonProgPhase NeonL("prog_objects"), NSm
     For i = 0 To NSm - 1
-        NeonProgStep i
+        NeonProgStep NSm + i
         SmQ0(i) = NSq
         If SmHasTwin(i, SAME_TOL) Then
             SmReadGeo col(i + 1)
@@ -3188,6 +3214,10 @@ End Sub
 
 Public Sub NeonProgPack(ByVal k As Long, ByVal n As Long)
     NeonProgPhase NeonLF("prog_nest_pack", k, n), NRp
+End Sub
+
+Public Sub NeonProgBox(ByVal k As Long, ByVal n As Long)
+    NeonProgPhase NeonLF("prog_nest_pack", k, n), NNt
 End Sub
 
 ' подпути объекта (у группы — всех элементов) в SqS0/SqN/SqC и SgX/SgY/SgL
@@ -3403,7 +3433,11 @@ Public Sub MakeNoodles()
         MsgBox NeonL("err_nodoc"), vbExclamation, ttl
         Exit Sub
     End If
-    If Not AskNoodleParams() Then
+    If Not NeonInJob("noodle") Then
+        If Not AskNoodleParams() Then
+            Exit Sub
+        End If
+        NeonJobRun "noodle", ttl
         Exit Sub
     End If
     l = NeonNoodleNum("Length", 300): w = NeonNoodleNum("Width", 12)
@@ -3432,7 +3466,9 @@ Public Sub MakeNoodles()
     On Error GoTo Fail
     NoodleGeo cx, cy, l, w, n, overH, overV, tool
     Set sr = CreateShapeRange
+    NeonProgPhase NeonL("prog_cuts"), NNd
     For i = 0 To NNd - 1
+        NeonProgStep i
         Set sh = lay.CreateLineSegment(NdX1(i), NdY1(i), NdX2(i), NdY2(i))
         sr.Add sh
     Next i
@@ -3451,6 +3487,7 @@ Fin:
     ActiveDocument.Unit = oldUnit
     ActiveWindow.Refresh
     On Error GoTo 0
+    NeonProgEnd
     If Len(errText) > 0 Then
         MsgBox NeonLF("err_fail", errText), vbCritical, ttl
         Exit Sub
@@ -3550,6 +3587,7 @@ Public Sub NestSheets()
     Else
         Set src = ActiveSelectionRange
     End If
+    NeonProgPhase NeonL("prog_collect"), 0
     NtCollect src, col, old, True
     n = col.Count
     If n = 0 Then
@@ -3560,7 +3598,9 @@ Public Sub NestSheets()
     End If
     ReDim bx(0 To n): ReDim by(0 To n): ReDim bw(0 To n): ReDim bh(0 To n): ReDim ck(0 To n): ReDim cn(0 To n)
     ReDim pa(0 To n)
+    NeonProgPhase NeonL("prog_objects"), n
     For i = 0 To n - 1
+        NeonProgStep i
         Set sh = col(i + 1)
         sh.GetBoundingBox bx(i), by(i), bw(i), bh(i)
         pa(i) = bw(i) * bh(i)
@@ -3643,9 +3683,8 @@ Public Sub NestSheets()
         End If
         kArea = 0: kSheet = 0: kCnt = 0: wl = ""
         cx = x0: cy = yTop - 2 * lh
-        NeonProgPhase NeonL("prog_nest_place"), NtSheets
+        NeonProgPhase NeonLF("prog_nest_place", knm(k)), NNt
         For s = 0 To NtSheets - 1
-            NeonProgStep s
             If s > 0 And s Mod NT_ROW = 0 Then
                 cx = x0: cy = cy - (shh + 2 * lh + sp)
             End If
@@ -3671,6 +3710,7 @@ Public Sub NestSheets()
                     sh.Move cx + NtX(j) - bx(i), (cy - NtY(j)) - (by(i) + bh(i))
                     sr.Add sh
                     cnt = cnt + 1: area = area + pa(i)
+                    NeonProgStep kCnt + cnt
                 End If
             Next j
             Set lab = CreateShapeRange
@@ -3820,6 +3860,7 @@ End Sub
 ' раскладки — поштучно; одна выделенная группа (top) — тоже: импорт SVG/DXF приходит одной группой
 Private Sub NtCollect(sr As ShapeRange, col As Collection, old As ShapeRange, ByVal top As Boolean)
     Dim sh As Shape
+    NeonProgTick
     If top And sr.Count = 1 Then
         Set sh = sr(1)
         If sh.Type = cdrGroupShape Then
@@ -4036,14 +4077,15 @@ Public Sub SameGeo(ByVal tol As Double)
     ReDim SmX(0 To 1023): ReDim SmY(0 To 1023)
     ReDim QP0(0 To NSq): ReDim QPn(0 To NSq)
     ReDim SmSW(0 To NSm): ReDim SmSH(0 To NSm): ReDim SmLen(0 To NSm)
+    NeonProgCompare 2 * NSm
     For i = 0 To NSm - 1
+        NeonProgStep i
         SmSample i
     Next i
     ReDim SmCls(0 To NSm): ReDim reps(0 To NSm)
     NSmCls = 0
-    NeonProgCompare NSm
     For i = 0 To NSm - 1
-        NeonProgStep i
+        NeonProgStep NSm + i
         c = -1
         For k = 0 To NSmCls - 1
             If SmEq(reps(k), i, tol) Then
@@ -4677,6 +4719,7 @@ Public Sub NestPack(ByVal sw As Double, ByVal sh As Double, ByVal margin As Doub
         NtOrder mode
         For q = 0 To UBound(hs)
             heur = hs(q)
+            NeonProgBox 4 * q + mode + 1, 4 * (UBound(hs) + 1)
             nsh = NtRun(bw, bh, heur)
             If autoW Then
                 NtUsedW nsh
@@ -4836,6 +4879,7 @@ Private Function NtRun(ByVal bw As Double, ByVal bh As Double, ByVal heur As Lon
         End If
     Next q
     For q = 0 To NNt - 1
+        NeonProgStep q
         i = NtOrd(q)
         pw = NtPW(i): ph = NtPH(i)
         If pw <= bw + NT_EPS And ph <= bh + NT_EPS Then

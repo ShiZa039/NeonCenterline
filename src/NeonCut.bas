@@ -48,9 +48,14 @@ Public Sub FitToCut()
         MsgBox NeonL("cut_nostep"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
+    If Not NeonInJob("cut") Then
+        NeonJobRun "cut", NeonL("cut_title")
+        Exit Sub
+    End If
     Set col = New Collection
     CollectCurves ActiveSelectionRange, col
     If col.Count = 0 Then
+        NeonProgEnd
         MsgBox NeonL("len_none"), vbExclamation, NeonL("app_title")
         Exit Sub
     End If
@@ -76,7 +81,9 @@ Public Function NeonCutFitShapes(col As Collection) As String
     ActiveDocument.Unit = cdrMillimeter
     LoadPieces col
     ReDim changed(0 To col.Count)
+    NeonProgPhase NeonL("prog_cutfit"), NPc
     For i = 0 To NPc - 1
+        NeonProgStep i
         L = PieceLen(i)
         tgt = Int(L / stp + 0.000001) * stp
         rest = L - tgt
