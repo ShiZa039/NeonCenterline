@@ -40,6 +40,8 @@ Private Const GROM_JOIN As Double = 0.5
 ' контур под подгиб (смещение контура баннера наружу на выпуск): шаг ломаной на кривых, мм; вершины
 Private Const GROM_HEM_STEP As Double = 2
 Private GHX() As Double, GHY() As Double, GHN As Long
+' почему объект без люверсов (для отчёта); подпутей и замкнутых у последнего прочитанного контура
+Private GromWhy As String, GromNSub As Long, GromNClosed As Long
 ' куски контура объекта (подпути): сегменты по 4 точки подряд в GQX/GQY, кусок k — сегменты
 ' GQ0(k)..GQ0(k)+GQn(k)-1, GQc(k) — замкнут; контуры из кусков (GromChain): контур m — элементы
 ' GL0(m)..GL0(m)+GLn(m)-1 списков GLP (кусок) / GLR (обратным ходом)
@@ -1319,7 +1321,7 @@ Public Sub PlaceGrommets()
     Dim nAll As Long, nObj As Long, nSkip As Long, msg As String, per As String, errText As String
     Dim grpOn As Boolean, dots As ShapeRange, dot As Shape, g As Shape, sh As Shape
     Dim n As Long, bx() As Double, by() As Double, bw() As Double, bh() As Double, inner() As Boolean, nInner As Long
-    Dim hem As Double, nHem As Long, hcrv As Curve, hsp As SubPath, hs As Shape, ownLay As Boolean
+    Dim hem As Double, nHem As Long, hcrv As Curve, hsp As SubPath, hs As Shape, ownLay As Boolean, why As String
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("grom_title")
         Exit Sub
@@ -1419,6 +1421,10 @@ Public Sub PlaceGrommets()
             End If
         Else
             nSkip = nSkip + 1
+            ' почему — для отчёта (первые шесть)
+            If nSkip <= 6 Then
+                why = why & "  • " & GromKind(sh) & ": " & GromWhy & vbCrLf
+            End If
         End If
     Next i
 Fin:
@@ -1432,7 +1438,11 @@ Fin:
         Exit Sub
     End If
     If nObj = 0 Then
-        MsgBox NeonL("grom_none"), vbExclamation, NeonL("grom_title")
+        If Len(why) > 0 Then
+            MsgBox NeonL("grom_none") & vbCrLf & vbCrLf & why, vbExclamation, NeonL("grom_title")
+        Else
+            MsgBox NeonL("grom_none"), vbExclamation, NeonL("grom_title")
+        End If
         Exit Sub
     End If
     msg = NeonLF("grom_report", nAll, nObj, FmtNum(edge), FmtNum(stp), FmtNum(dia))
@@ -1443,7 +1453,7 @@ Fin:
         msg = msg & vbCrLf & vbCrLf & per
     End If
     If nSkip > 0 Then
-        msg = msg & vbCrLf & NeonLF("grom_skipped", nSkip)
+        msg = msg & vbCrLf & NeonLF("grom_skipped", nSkip) & vbCrLf & why
     End If
     If nInner > 0 Then
         msg = msg & vbCrLf & NeonLF("grom_inner", nInner)
@@ -1496,30 +1506,63 @@ End Function
 ' люверсы одного объекта (GRX/GRY/GRN): самый большой замкнутый подпуть его контура
 Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As Double, ByVal rf As Double, _
                                ByVal hem As Double) As Boolean
-    Dim crv As Curve, tmp As Shape, sp As SubPath, sg As Segment, best As Double, a As Double
-    Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, x2 As Double, y2 As Double, x3 As Double, y3 As Double
-    Dim bx() As Double, by() As Double, bn As Long, k As Long, m As Long, e As Long, q As Long, s As Long
+    Dim crv As Curve, tmp As Shape
+    GromWhy = ""
     On Error Resume Next
     If sh.Type = cdrCurveShape Then
         Set crv = sh.Curve
     Else
-        ' прямоугольник, эллипс, текст...: кривая отображения, иначе — временная копия в кривых
+        ' прямоугольник, эллипс, многоугольник...: кривая отображения
         Set crv = sh.DisplayCurve
-        If crv Is Nothing Then
-            Set tmp = sh.Duplicate
-            tmp.ConvertToCurves
-            If tmp.Type = cdrCurveShape Then
-                Set crv = tmp.Curve
-            End If
-        End If
     End If
     Err.Clear
     On Error GoTo 0
-    If crv Is Nothing Then
-        GoTo Done
+    If Not GromBest(crv, edge) And sh.Type <> cdrCurveShape Then
+        ' кривая отображения не дала замкнутого контура — временная копия в кривых
+        On Error Resume Next
+        Set tmp = sh.Duplicate
+        tmp.ConvertToCurves
+        Set crv = Nothing
+        If tmp.Type = cdrCurveShape Then
+            Set crv = tmp.Curve
+        End If
+        Err.Clear
+        On Error GoTo 0
+        GromBest crv, edge
     End If
-    ' подпути — куски; замкнутые, сошедшиеся концами и цепочки кусков, концы которых сходятся
-    ' (контур, нарисованный линиями без замыкания, или собранный из отрезков), — контуры
+    If NS = 0 Then
+        If crv Is Nothing Then
+            GromWhy = NeonL("grom_why_nocurve")
+        Else
+            GromWhy = NeonLF("grom_why_open", GromNSub, GromNClosed)
+        End If
+    Else
+        ShapeGrommets = GromPlace(edge, stp, rf)
+        If Not ShapeGrommets Then
+            GromWhy = NeonL("grom_why_small")
+        End If
+        ' контур под подгиб — по тому же контуру баннера (GromPlace SX/NS не трогает)
+        GHN = 0
+        If ShapeGrommets And hem > 0 Then
+            GromHem hem
+        End If
+    End If
+    If Not tmp Is Nothing Then
+        tmp.Delete
+    End If
+End Function
+
+' контур баннера из кривой: подпути — куски; замкнутые, сошедшиеся концами и цепочки кусков, концы
+' которых сходятся (контур, нарисованный линиями без замыкания, или собранный из отрезков), — контуры;
+' самый большой по площади — в SX/NS (нет — NS = 0). GromNSub / GromNClosed — для объяснения в отчёте
+Private Function GromBest(crv As Curve, ByVal edge As Double) As Boolean
+    Dim sp As SubPath, sg As Segment, best As Double, a As Double
+    Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, x2 As Double, y2 As Double, x3 As Double, y3 As Double
+    Dim bx() As Double, by() As Double, bn As Long, k As Long, m As Long, e As Long, q As Long, s As Long
+    NS = 0: GromNSub = 0: GromNClosed = 0
+    If crv Is Nothing Then
+        Exit Function
+    End If
     NGQ = 0: NGQS = 0
     ReDim GQX(0 To 255): ReDim GQY(0 To 255)
     ReDim GQ0(0 To 15): ReDim GQn(0 To 15): ReDim GQc(0 To 15)
@@ -1528,6 +1571,10 @@ Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As D
             ReDim Preserve GQ0(0 To 2 * NGQ): ReDim Preserve GQn(0 To 2 * NGQ): ReDim Preserve GQc(0 To 2 * NGQ)
         End If
         GQ0(NGQ) = NGQS: GQc(NGQ) = sp.Closed
+        GromNSub = GromNSub + 1
+        If sp.Closed Then
+            GromNClosed = GromNClosed + 1
+        End If
         For Each sg In sp.Segments
             x0 = sg.StartNode.PositionX: y0 = sg.StartNode.PositionY
             x3 = sg.EndNode.PositionX: y3 = sg.EndNode.PositionY
@@ -1572,22 +1619,33 @@ Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As D
             End If
         End If
     Next m
+    NS = 0
     If best > 0 Then
         NS = bn
         ReDim SX(0 To 4 * bn): ReDim SY(0 To 4 * bn)
         For k = 0 To 4 * bn - 1
             SX(k) = bx(k): SY(k) = by(k)
         Next k
-        ShapeGrommets = GromPlace(edge, stp, rf)
-        ' контур под подгиб — по тому же контуру баннера (GromPlace SX/NS не трогает)
-        GHN = 0
-        If ShapeGrommets And hem > 0 Then
-            GromHem hem
-        End If
+        GromBest = True
     End If
-Done:
-    If Not tmp Is Nothing Then
-        tmp.Delete
+End Function
+
+' название вида объекта для отчёта люверсов
+Private Function GromKind(sh As Shape) As String
+    Dim tp As Long
+    tp = sh.Type
+    If tp = cdrCurveShape Then
+        GromKind = NeonL("grom_t_curve")
+    ElseIf tp = cdrRectangleShape Then
+        GromKind = NeonL("grom_t_rect")
+    ElseIf tp = cdrEllipseShape Then
+        GromKind = NeonL("grom_t_ellipse")
+    ElseIf tp = cdrPolygonShape Then
+        GromKind = NeonL("grom_t_poly")
+    ElseIf tp = cdrTextShape Then
+        GromKind = NeonL("grom_t_text")
+    Else
+        GromKind = NeonLF("grom_t_other", tp)
     End If
 End Function
 
