@@ -188,6 +188,7 @@ STRINGS = {
     'grom_report_reinf': ('Усиление углов: ещё по точке в {0} мм от каждого угла.', 'Corner reinforcement: one more point {0} mm from each corner.'),
     'grom_skipped':  ('Пропущено объектов: {0} (нет замкнутого контура или отступ больше размера).',
                       'Objects skipped: {0} (no closed outline, or the edge distance is larger than the object).'),
+    'grom_inner':    ('Внутри баннера (рисунок, текст, рамки) — без люверсов: {0}.', 'Inside the banner (artwork, text, frames) — no grommets: {0}.'),
     'grom_layer':    ('Люверсы', 'Grommets'),
     'grom_dot':      ('Люверс', 'Grommet'),
     'grom_group':    ('Люверсы: {0}', 'Grommets: {0}'),

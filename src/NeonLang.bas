@@ -437,6 +437,8 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
     Case "grom_skipped"
         s = s & LD("#Nomnrxdlm m`ydiqma: #{0} (#ldq f_kilrqmbm imlqro_ gjg mqpqrn `")
         s = s & LD("#mj{wd o_fkdo_).")
+    Case "grom_inner"
+        s = s & LD("#Alrqog `_lldo_ (ogprlmi, qdipq, o_kig) $2014 `df j}adopma: #{0}.")
     Case "grom_layer"
         s = s & LD("#J}adopz")
     Case "grom_dot"
@@ -515,8 +517,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD(" #odf_ f_ jglg} corbmbm odf_, vqm`z nmjmp_ mqcdjgj_p{ udjgimk")
         s = s & LD(": #j_fdor g njmqqdor ta_q_dq 1$20132 kk, sodfd $2014 2$20135 kk f_n_p_. A")
         s = s & LD("#p$0451 $2014 mclmh bornnmh a udlqod pqo_lguz.")
-    Case "btn_noodle"
-        s = s & LD("#L_odf_q{")
     Case Else
         LangRu_4 = False
     End Select
@@ -526,6 +526,8 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     LangRu_5 = True
     s = ""
     Select Case key
+    Case "btn_noodle"
+        s = s & LD("#L_odf_q{")
     Case "bad_noodle"
         s = s & LD("#Nomado{qd fl_vdlg~: cjgl_ 0$2013100000 kk, wgogl_ 0$201310000 kk, im")
         s = s & LD("#jgvdpqam $2014 udjmd 1$20131000, tampqz 0$20131000 kk.")
@@ -629,8 +631,6 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
         s = s & LD("#apd uadq_")
     Case "lbl_nest_size"
         s = s & LD("#Bmqmazh o_fkdo:")
-    Case "lbl_nest_len"
-        s = s & LD("#Cjgl_ jgpq_, kk:")
     Case Else
         LangRu_5 = False
     End Select
@@ -640,6 +640,8 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
     LangRu_6 = True
     s = ""
     Select Case key
+    Case "lbl_nest_len"
+        s = s & LD("#Cjgl_ jgpq_, kk:")
     Case "lbl_nest_wid"
         s = s & LD("#Wgogl_ jgpq_, kk:")
     Case "prompt_nest_size"
@@ -1066,6 +1068,9 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
     Case "grom_skipped"
         s = s & LD("Objects skipped: {0} (no closed outline, or the edge distanc")
         s = s & LD("e is larger than the object).")
+    Case "grom_inner"
+        s = s & LD("Inside the banner (artwork, text, frames) $2014 no grommets: {0}")
+        s = s & LD(".")
     Case "grom_layer"
         s = s & LD("Grommets")
     Case "grom_dot"
@@ -1146,8 +1151,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("so each strip comes off completely: 1$20132 mm for a laser or pl")
         s = s & LD("otter, 2$20135 mm of margin for a router. One group in the middl")
         s = s & LD("e of the page.")
-    Case "btn_noodle"
-        s = s & LD("Make strips")
     Case Else
         LangEn_4 = False
     End Select
@@ -1157,6 +1160,8 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     LangEn_5 = True
     s = ""
     Select Case key
+    Case "btn_noodle"
+        s = s & LD("Make strips")
     Case "bad_noodle"
         s = s & LD("Check the values: length 0$2013100000 mm, width 0$201310000 mm, coun")
         s = s & LD("t a whole number 1$20131000, tails 0$20131000 mm.")
@@ -1259,8 +1264,6 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
         s = s & LD("all colours")
     Case "lbl_nest_size"
         s = s & LD("Preset size:")
-    Case "lbl_nest_len"
-        s = s & LD("Sheet length, mm:")
     Case Else
         LangEn_5 = False
     End Select
@@ -1270,6 +1273,8 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
     LangEn_6 = True
     s = ""
     Select Case key
+    Case "lbl_nest_len"
+        s = s & LD("Sheet length, mm:")
     Case "lbl_nest_wid"
         s = s & LD("Sheet width, mm:")
     Case "prompt_nest_size"

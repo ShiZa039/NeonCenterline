@@ -1304,6 +1304,7 @@ Public Sub PlaceGrommets()
     Dim edge As Double, stp As Double, dia As Double, rf As Double, i As Long, k As Long
     Dim nAll As Long, nObj As Long, nSkip As Long, msg As String, per As String, errText As String
     Dim grpOn As Boolean, dots As ShapeRange, dot As Shape, g As Shape, sh As Shape
+    Dim n As Long, bx() As Double, by() As Double, bw() As Double, bh() As Double, inner() As Boolean, nInner As Long
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("grom_title")
         Exit Sub
@@ -1330,11 +1331,34 @@ Public Sub PlaceGrommets()
     ActiveDocument.BeginCommandGroup NeonL("grom_title")
     grpOn = True
     Set lay = Nothing
-    NeonProgPhase NeonL("prog_objects"), col.Count
-    For i = 1 To col.Count
+    ' край баннера — только у внешних объектов: объект, габарит которого внутри габарита другого
+    ' выделенного (рисунок, текст, рамка внутри баннера, в том числе в одной группе с ним), пропускается;
+    ' из одинаковых габаритов — первый
+    n = col.Count
+    ReDim bx(0 To n): ReDim by(0 To n): ReDim bw(0 To n): ReDim bh(0 To n): ReDim inner(0 To n)
+    For i = 1 To n
+        col(i).GetBoundingBox bx(i - 1), by(i - 1), bw(i - 1), bh(i - 1)
+    Next i
+    For i = 0 To n - 1
+        For k = 0 To n - 1
+            If k <> i Then
+                If bx(k) <= bx(i) + 0.01 And by(k) <= by(i) + 0.01 And bx(k) + bw(k) >= bx(i) + bw(i) - 0.01 _
+                   And by(k) + bh(k) >= by(i) + bh(i) - 0.01 Then
+                    If bw(k) * bh(k) > bw(i) * bh(i) + 0.0001 Or k < i Then
+                        inner(i) = True
+                        Exit For
+                    End If
+                End If
+            End If
+        Next k
+    Next i
+    NeonProgPhase NeonL("prog_objects"), n
+    For i = 1 To n
         NeonProgStep i - 1
         Set sh = col(i)
-        If ShapeGrommets(sh, edge, stp, rf) Then
+        If inner(i - 1) Then
+            nInner = nInner + 1
+        ElseIf ShapeGrommets(sh, edge, stp, rf) Then
             If lay Is Nothing Then
                 Set lay = GromLayer()
             End If
@@ -1382,6 +1406,9 @@ Fin:
     If nSkip > 0 Then
         msg = msg & vbCrLf & NeonLF("grom_skipped", nSkip)
     End If
+    If nInner > 0 Then
+        msg = msg & vbCrLf & NeonLF("grom_inner", nInner)
+    End If
     NeonReport msg, NeonL("grom_title"), True
     NeonToolbarCheck
     Exit Sub
@@ -1390,7 +1417,8 @@ Fail:
     Resume Fin
 End Sub
 
-' объекты под люверсы: всё выделенное (группы — насквозь), кроме линий плагина и самих точек
+' объекты под люверсы: всё выделенное (группы — насквозь), кроме линий плагина и самих точек;
+' внутренние (внутри габарита другого) отсеивает PlaceGrommets
 Private Sub CollectGrom(sr As ShapeRange, col As Collection)
     Dim sh As Shape, ln As String
     For Each sh In sr

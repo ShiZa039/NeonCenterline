@@ -4,10 +4,12 @@
 
 RU
 - **Обновление из плагина не работало** с файлами CorelDRAW 2026: проверка «скачан настоящий файл плагина» искала подпись OLE в самом начале файла, а у `.gms` из CorelDRAW 2026 перед ней заголовок «GMS» на 18 байт, — любое обновление отбраковывалось как «повреждённое (контрольная сумма не совпала)». Теперь заголовок учитывается; если файл не подошёл, пробуется запасной адрес (jsDelivr); в сообщении — почему не подошёл (не файл плагина / контрольная сумма: что ждали и что пришло); если certutil недоступен, контрольная сумма считается через PowerShell.
+- **Люверсы** ставились и внутрь баннера: у группы «баннер + рисунок» точки получал каждый замкнутый контур. Теперь люверсы получают только внешние объекты — то, что лежит внутри другого выделенного (по габариту), пропускается; в отчёте — сколько.
 - **Люверсы** не ставились на контуры, нарисованные линиями без замыкания (у кривой нет признака «замкнута», хотя конец пришёл в начало) и собранные из отдельных отрезков: теперь куски, концы которых сходятся (ближе 0.5 мм), собираются в замкнутый контур.
 
 EN
 - **Updating from the plugin did not work** with CorelDRAW 2026 files: the "a real plugin file was downloaded" check looked for the OLE signature at the very start of the file, while a CorelDRAW 2026 `.gms` has an 18-byte "GMS" header in front of it — every update was rejected as "damaged (checksum mismatch)". The header is now accepted; if a file does not pass, the backup address (jsDelivr) is tried; the message says why (not a plugin file / checksum: expected and got); if certutil is unavailable, the checksum is computed with PowerShell.
+- **Grommets** were also placed inside the banner: with a "banner + artwork" group every closed outline got points. Now only outer objects get grommets — anything inside another selected object (by bounding box) is skipped; the report says how many.
 - **Grommets** were not placed on outlines drawn with lines and not closed (the curve has no "closed" flag although its end meets its start) or assembled from separate segments: pieces whose ends meet (closer than 0.5 mm) are now joined into a closed outline.
 
 ## 1.1.1 — 2026-11-11
