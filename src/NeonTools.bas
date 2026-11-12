@@ -37,6 +37,9 @@ Private GPX() As Double, GPY() As Double, GPC() As Boolean, GN As Long
 Private GRX() As Double, GRY() As Double, GRN As Long
 ' концы кусков контура ближе этого (мм) — сходятся (контур, нарисованный линиями без замыкания)
 Private Const GROM_JOIN As Double = 0.5
+' контур под подгиб (смещение контура баннера наружу на выпуск): шаг ломаной на кривых, мм; вершины
+Private Const GROM_HEM_STEP As Double = 2
+Private GHX() As Double, GHY() As Double, GHN As Long
 ' куски контура объекта (подпути): сегменты по 4 точки подряд в GQX/GQY, кусок k — сегменты
 ' GQ0(k)..GQ0(k)+GQn(k)-1, GQc(k) — замкнут; контуры из кусков (GromChain): контур m — элементы
 ' GL0(m)..GL0(m)+GLn(m)-1 списков GLP (кусок) / GLR (обратным ходом)
@@ -1232,6 +1235,17 @@ Public Function NeonGromReinfDist() As Double
     NeonGromReinfDist = GromNum("ReinfDist", 50)
 End Function
 
+' контур под подгиб: выпуск наружу от края баннера, мм; 0 — выключено
+Public Function NeonGromHem() As Double
+    If GetSetting("NeonCenterline", "Grommet", "Hem", "0") = "1" Then
+        NeonGromHem = GromNum("HemOut", 50)
+    End If
+End Function
+
+Public Function NeonGromHemOut() As Double
+    NeonGromHemOut = GromNum("HemOut", 50)
+End Function
+
 ' цвет точки: "P:n" — из списка (0 чёрный, 1 красный, 2 пурпурный, 3 синий, 4 зелёный, 5 белый),
 ' "S:строка" — свой цвет (Color.ToString)
 Public Function NeonGromColorSetting() As String
@@ -1305,6 +1319,7 @@ Public Sub PlaceGrommets()
     Dim nAll As Long, nObj As Long, nSkip As Long, msg As String, per As String, errText As String
     Dim grpOn As Boolean, dots As ShapeRange, dot As Shape, g As Shape, sh As Shape
     Dim n As Long, bx() As Double, by() As Double, bw() As Double, bh() As Double, inner() As Boolean, nInner As Long
+    Dim hem As Double, nHem As Long, hcrv As Curve, hsp As SubPath, hs As Shape
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("grom_title")
         Exit Sub
@@ -1321,7 +1336,7 @@ Public Sub PlaceGrommets()
         NeonJobRun "grom", NeonL("grom_title")
         Exit Sub
     End If
-    edge = NeonGromEdge(): stp = NeonGromStep(): dia = NeonGromDot(): rf = NeonGromReinf()
+    edge = NeonGromEdge(): stp = NeonGromStep(): dia = NeonGromDot(): rf = NeonGromReinf(): hem = NeonGromHem()
     Set clr = GromColor(NeonGromColorSetting())
     Set col = New Collection
     CollectGrom sr, col
@@ -1358,9 +1373,25 @@ Public Sub PlaceGrommets()
         Set sh = col(i)
         If inner(i - 1) Then
             nInner = nInner + 1
-        ElseIf ShapeGrommets(sh, edge, stp, rf) Then
+        ElseIf ShapeGrommets(sh, edge, stp, rf, hem) Then
             If lay Is Nothing Then
                 Set lay = GromLayer()
+            End If
+            ' контур под подгиб — на слое баннера, кривой без заливки
+            If GHN >= 3 Then
+                Set hcrv = Application.CreateCurve(ActiveDocument)
+                Set hsp = hcrv.CreateSubPath(GHX(0), GHY(0))
+                For k = 1 To GHN - 1
+                    hsp.AppendLineSegment GHX(k), GHY(k)
+                Next k
+                hsp.Closed = True
+                Set hs = sh.Layer.CreateCurve(hcrv)
+                hs.Fill.ApplyNoFill
+                hs.Outline.Width = 0.2
+                hs.Outline.Color.RGBAssign 0, 0, 0
+                hs.Name = NeonLF("grom_hem_name", FmtNum(hem))
+                NtTag hs, "hem"
+                nHem = nHem + 1
             End If
             Set dots = CreateShapeRange
             For k = 0 To GRN - 1
@@ -1409,6 +1440,9 @@ Fin:
     If nInner > 0 Then
         msg = msg & vbCrLf & NeonLF("grom_inner", nInner)
     End If
+    If nHem > 0 Then
+        msg = msg & vbCrLf & NeonLF("grom_hem_rep", FmtNum(hem), nHem)
+    End If
     NeonReport msg, NeonL("grom_title"), True
     NeonToolbarCheck
     Exit Sub
@@ -1428,6 +1462,8 @@ Private Sub CollectGrom(sr As ShapeRange, col As Collection)
         On Error GoTo 0
         If ln = NeonL("grom_layer") Then
             ' точки, поставленные раньше
+        ElseIf NtTagOf(sh) = "hem" Then
+            ' контур под подгиб, поставленный раньше
         ElseIf sh.Type = cdrGroupShape Then
             CollectGrom sh.Shapes.All, col
         ElseIf Left$(sh.Name, Len(NeonPrefix())) <> NeonPrefix() Then
@@ -1450,7 +1486,8 @@ Private Function GromLayer() As Layer
 End Function
 
 ' люверсы одного объекта (GRX/GRY/GRN): самый большой замкнутый подпуть его контура
-Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As Double, ByVal rf As Double) As Boolean
+Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As Double, ByVal rf As Double, _
+                               ByVal hem As Double) As Boolean
     Dim crv As Curve, tmp As Shape, sp As SubPath, sg As Segment, best As Double, a As Double
     Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, x2 As Double, y2 As Double, x3 As Double, y3 As Double
     Dim bx() As Double, by() As Double, bn As Long, k As Long, m As Long, e As Long, q As Long, s As Long
@@ -1534,6 +1571,11 @@ Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As D
             SX(k) = bx(k): SY(k) = by(k)
         Next k
         ShapeGrommets = GromPlace(edge, stp, rf)
+        ' контур под подгиб — по тому же контуру баннера (GromPlace SX/NS не трогает)
+        GHN = 0
+        If ShapeGrommets And hem > 0 Then
+            GromHem hem
+        End If
     End If
 Done:
     If Not tmp Is Nothing Then
@@ -1552,6 +1594,57 @@ Private Sub GromPutQ(ByVal x0 As Double, ByVal y0 As Double, ByVal x1 As Double,
     GQX(s) = x0: GQY(s) = y0: GQX(s + 1) = x1: GQY(s + 1) = y1
     GQX(s + 2) = x2: GQY(s + 2) = y2: GQX(s + 3) = x3: GQY(s + 3) = y3
     NGQS = NGQS + 1
+End Sub
+
+' контур под подгиб: контур SX/NS (обход любой), смещённый НАРУЖУ на выпуск h — в GHX/GHY/GHN (против
+' часовой). Ломаная с шагом GROM_HEM_STEP, точки на одной прямой с соседями убираются (у прямоугольника —
+' 4 вершины), углы острые (очень острые — не дальше 4h). Как proto/grommets.py hem()
+Private Sub GromHem(ByVal h As Double)
+    Dim kx() As Double, ky() As Double, n As Long, i As Long, a As Long, c As Long
+    Dim e1x As Double, e1y As Double, e2x As Double, e2y As Double, cr As Double, dt As Double
+    Dim nx() As Double, ny() As Double, tx As Double, ty As Double, mx As Double, my As Double, cs As Double, L As Double
+    GHN = 0
+    GromFlatten GROM_HEM_STEP
+    If GN < 3 Then
+        Exit Sub
+    End If
+    If GromArea() < 0 Then
+        GromReverse
+    End If
+    ReDim kx(0 To GN - 1): ReDim ky(0 To GN - 1)
+    For i = 0 To GN - 1
+        a = (i - 1 + GN) Mod GN: c = (i + 1) Mod GN
+        e1x = GPX(i) - GPX(a): e1y = GPY(i) - GPY(a)
+        e2x = GPX(c) - GPX(i): e2y = GPY(c) - GPY(i)
+        cr = e1x * e2y - e1y * e2x: dt = e1x * e2x + e1y * e2y
+        If Abs(cr) <= 0.000000001 * Sqr(e1x * e1x + e1y * e1y) * Sqr(e2x * e2x + e2y * e2y) And dt > 0 Then
+            ' середина прямой стороны — лишняя
+        Else
+            kx(n) = GPX(i): ky(n) = GPY(i): n = n + 1
+        End If
+    Next i
+    If n < 3 Then
+        Exit Sub
+    End If
+    ReDim nx(0 To n - 1): ReDim ny(0 To n - 1)
+    For i = 0 To n - 1
+        c = (i + 1) Mod n
+        NormV kx(c) - kx(i), ky(c) - ky(i), tx, ty
+        nx(i) = ty: ny(i) = -tx
+    Next i
+    ReDim GHX(0 To n - 1): ReDim GHY(0 To n - 1)
+    For i = 0 To n - 1
+        a = (i - 1 + n) Mod n
+        NormV nx(a) + nx(i), ny(a) + ny(i), mx, my
+        cs = mx * nx(i) + my * ny(i)
+        If cs > 0.25 Then
+            L = h / cs
+        Else
+            L = 4 * h
+        End If
+        GHX(i) = kx(i) + mx * L: GHY(i) = ky(i) + my * L
+    Next i
+    GHN = n
 End Sub
 
 ' начало (e = False) или конец (e = True) куска k

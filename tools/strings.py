@@ -204,10 +204,16 @@ STRINGS = {
     'grom_c_white':  ('Белый', 'White'),
     'grom_c_other':  ('Другой…', 'Other…'),
     'chk_grom_reinf': ('Усиление углов: ещё точка в, мм', 'Corner reinforcement: extra point at, mm'),
+    'chk_grom_hem':  ('Контур под подгиб, выпуск, мм:', 'Hem outline, allowance, mm:'),
+    'bad_grom_hem':  ('Выпуск под подгиб — от 0 до 1000 мм.', 'The hem allowance must be between 0 and 1000 mm.'),
+    'grom_hem_name': ('Подгиб {0} мм', 'Hem {0} mm'),
+    'grom_hem_rep':  ('Контур под подгиб: выпуск {0} мм наружу от края (объектов: {1}) — на слое баннера.', 'Hem outline: {0} mm outside the edge ({1} objects) — on the banner layer.'),
     'grom_hint':     ('В каждом углу — люверс, на сторонах — равномерно, не реже заданного расстояния. Скруглённый угол — тоже угол; '
-                      'у круга и овала — равномерно по контуру.',
+                      'у круга и овала — равномерно по контуру. Контур под подгиб — линия реза на выпуск наружу от края баннера '
+                      '(люверсы — от края, как без подгиба).',
                       'A grommet in every corner, evenly along the sides, never further apart than the given distance. A rounded corner '
-                      'counts as a corner; circles and ovals get grommets evenly all round.'),
+                      'counts as a corner; circles and ovals get grommets evenly all round. The hem outline is a cut line the allowance '
+                      'outside the banner edge (grommets are still measured from the edge).'),
     'btn_grom':      ('Расставить', 'Place'),
     'bad_grom':      ('Проверьте значения: от края 0–500 мм, расстояние 20–10000 мм, точка 0–100 мм.',
                       'Check the values: edge 0–500 mm, distance 20–10000 mm, point 0–100 mm.'),

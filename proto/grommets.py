@@ -94,6 +94,43 @@ def offset_in(pts, d):
     return out
 
 
+HEM_STEP = 2.0
+
+
+def hem(segs, h):
+    """Контур под подгиб: контур баннера, смещённый НАРУЖУ на выпуск h (мм). Ломаная с шагом HEM_STEP,
+    точки на одной прямой убираются (у прямоугольника — 4 вершины), углы — острые (у очень острых —
+    не дальше 4h). -> вершины (против часовой)."""
+    pts, _ = flatten(segs, HEM_STEP)
+    if area(pts) < 0:
+        pts = pts[::-1]
+    # точки на одной прямой с соседями (середины прямых сторон) — лишние
+    keep = []
+    n = len(pts)
+    for i in range(n):
+        a = pts[i-1]; b = pts[i]; c = pts[(i+1) % n]
+        e1 = (b[0]-a[0], b[1]-a[1]); e2 = (c[0]-b[0], c[1]-b[1])
+        cr = e1[0]*e2[1] - e1[1]*e2[0]; dt = e1[0]*e2[0] + e1[1]*e2[1]
+        if abs(cr) <= 1e-9 * math.hypot(*e1) * math.hypot(*e2) and dt > 0:
+            continue
+        keep.append(b)
+    pts = keep
+    n = len(pts)
+    out = []
+    nrm = []
+    for i in range(n):
+        a = pts[i]; b = pts[(i+1) % n]
+        t = _norm(b[0]-a[0], b[1]-a[1])
+        nrm.append((t[1], -t[0]))                        # вправо = наружу у обхода против часовой
+    for i in range(n):
+        n0 = nrm[i-1]; n1 = nrm[i]
+        m = _norm(n0[0]+n1[0], n0[1]+n1[1])
+        c = m[0]*n1[0] + m[1]*n1[1]
+        L = h/c if c > 0.25 else 4*h
+        out.append((pts[i][0] + m[0]*L, pts[i][1] + m[1]*L))
+    return out
+
+
 def soft_corners(pts, cor):
     """Скругления углов: подряд идущие вершины с радиусом кривизны < 0.25 меньшей стороны
     габарита (без острых углов внутри), поворот участка >= 45 град; почти прямых участков

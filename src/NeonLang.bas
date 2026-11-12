@@ -469,10 +469,21 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#Corbmh$2026")
     Case "chk_grom_reinf"
         s = s & LD("#Rpgjdlgd rbjma: dx$0451 qmvi_ a, kk")
+    Case "chk_grom_hem"
+        s = s & LD("#Imlqro nmc nmcbg`, aznrpi, kk:")
+    Case "bad_grom_hem"
+        s = s & LD("#Aznrpi nmc nmcbg` $2014 mq 0 cm 1000 kk.")
+    Case "grom_hem_name"
+        s = s & LD("#Nmcbg` #{0} #kk")
+    Case "grom_hem_rep"
+        s = s & LD("#Imlqro nmc nmcbg`: aznrpi #{0} #kk l_orer mq io_~ (m`ydiqma: #{")
+        s = s & LD("1}) $2014 #l_ pjmd `_lldo_.")
     Case "grom_hint"
         s = s & LD("#A i_ecmk rbjr $2014 j}adop, l_ pqmoml_t $2014 o_almkdolm, ld oded f_")
         s = s & LD("#c_llmbm o_ppqm~lg~. Piorbj$0451llzh rbmj $2014 qmed rbmj; r iorb_ g ")
-        s = s & LD("#ma_j_ $2014 o_almkdolm nm imlqror.")
+        s = s & LD("#ma_j_ $2014 o_almkdolm nm imlqror. Imlqro nmc nmcbg` $2014 jglg~ odf")
+        s = s & LD("#_ l_ aznrpi l_orer mq io_~ `_lldo_ (j}adopz $2014 mq io_~, i_i `")
+        s = s & LD("#df nmcbg`_).")
     Case "btn_grom"
         s = s & LD("#O_ppq_agq{")
     Case "bad_grom"
@@ -500,6 +511,15 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#Imjgvdpqam, wq:")
     Case "lbl_noodle_overh"
         s = s & LD("#Tampqz bmogfmlq_j{lzt odfma, kk:")
+    Case Else
+        LangRu_4 = False
+    End Select
+End Function
+
+Private Function LangRu_5(ByVal key As String, s As String) As Boolean
+    LangRu_5 = True
+    s = ""
+    Select Case key
     Case "lbl_noodle_overv"
         s = s & LD("#Tampqz adoqgi_j{lzt mqodfma, kk:")
     Case "chk_noodle_tool"
@@ -517,15 +537,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD(" #odf_ f_ jglg} corbmbm odf_, vqm`z nmjmp_ mqcdjgj_p{ udjgimk")
         s = s & LD(": #j_fdor g njmqqdor ta_q_dq 1$20132 kk, sodfd $2014 2$20135 kk f_n_p_. A")
         s = s & LD("#p$0451 $2014 mclmh bornnmh a udlqod pqo_lguz.")
-    Case Else
-        LangRu_4 = False
-    End Select
-End Function
-
-Private Function LangRu_5(ByVal key As String, s As String) As Boolean
-    LangRu_5 = True
-    s = ""
-    Select Case key
     Case "btn_noodle"
         s = s & LD("#L_odf_q{")
     Case "bad_noodle"
@@ -623,14 +634,6 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
         s = s & LD("#I_eczh jgpq $2014 bornn_ pno_a_ mq azcdjdlg~ l_ pjmd cdq_jdh: o_")
         s = s & LD("#ki_, nmcngp{ g cdq_jg (nmcngpg kmelm mqij}vgq{ a mild). F_nm")
         s = s & LD("#jldlgd $2014 nm njmx_cg cdq_jdh (czoig ld a pv$0451q).")
-    Case "nest_unfit"
-        s = s & LD("#@mj{wd o_`mvdbm nmj~ jgpq_, mpq_ajdlz l_ kdpqd: #{0}.")
-    Case "nest_none"
-        s = s & LD("#Lg mcl_ cdq_j{ ld nmkdx_dqp~ l_ jgpq p q_igkg nmj~kg.")
-    Case "all_colors"
-        s = s & LD("#apd uadq_")
-    Case "lbl_nest_size"
-        s = s & LD("#Bmqmazh o_fkdo:")
     Case Else
         LangRu_5 = False
     End Select
@@ -640,6 +643,14 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
     LangRu_6 = True
     s = ""
     Select Case key
+    Case "nest_unfit"
+        s = s & LD("#@mj{wd o_`mvdbm nmj~ jgpq_, mpq_ajdlz l_ kdpqd: #{0}.")
+    Case "nest_none"
+        s = s & LD("#Lg mcl_ cdq_j{ ld nmkdx_dqp~ l_ jgpq p q_igkg nmj~kg.")
+    Case "all_colors"
+        s = s & LD("#apd uadq_")
+    Case "lbl_nest_size"
+        s = s & LD("#Bmqmazh o_fkdo:")
     Case "lbl_nest_len"
         s = s & LD("#Cjgl_ jgpq_, kk:")
     Case "lbl_nest_wid"
@@ -1101,11 +1112,21 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("Other$2026")
     Case "chk_grom_reinf"
         s = s & LD("Corner reinforcement: extra point at, mm")
+    Case "chk_grom_hem"
+        s = s & LD("Hem outline, allowance, mm:")
+    Case "bad_grom_hem"
+        s = s & LD("The hem allowance must be between 0 and 1000 mm.")
+    Case "grom_hem_name"
+        s = s & LD("Hem {0} mm")
+    Case "grom_hem_rep"
+        s = s & LD("Hem outline: {0} mm outside the edge ({1} objects) $2014 on the ")
+        s = s & LD("banner layer.")
     Case "grom_hint"
         s = s & LD("A grommet in every corner, evenly along the sides, never fur")
         s = s & LD("ther apart than the given distance. A rounded corner counts ")
         s = s & LD("as a corner; circles and ovals get grommets evenly all round")
-        s = s & LD(".")
+        s = s & LD(". The hem outline is a cut line the allowance outside the ba")
+        s = s & LD("nner edge (grommets are still measured from the edge).")
     Case "btn_grom"
         s = s & LD("Place")
     Case "bad_grom"
@@ -1133,6 +1154,15 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("Number of strips:")
     Case "lbl_noodle_overh"
         s = s & LD("Tails of horizontal cuts, mm:")
+    Case Else
+        LangEn_4 = False
+    End Select
+End Function
+
+Private Function LangEn_5(ByVal key As String, s As String) As Boolean
+    LangEn_5 = True
+    s = ""
+    Select Case key
     Case "lbl_noodle_overv"
         s = s & LD("Tails of vertical end cuts, mm:")
     Case "chk_noodle_tool"
@@ -1151,15 +1181,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("so each strip comes off completely: 1$20132 mm for a laser or pl")
         s = s & LD("otter, 2$20135 mm of margin for a router. One group in the middl")
         s = s & LD("e of the page.")
-    Case Else
-        LangEn_4 = False
-    End Select
-End Function
-
-Private Function LangEn_5(ByVal key As String, s As String) As Boolean
-    LangEn_5 = True
-    s = ""
-    Select Case key
     Case "btn_noodle"
         s = s & LD("Make strips")
     Case "bad_noodle"
@@ -1256,14 +1277,6 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
         s = s & LD("Each sheet is a group to the right of the selection on the p")
         s = s & LD("arts' layer: frame, label and parts (labels can be turned of")
         s = s & LD("f in the window). Fill is by part area (holes excluded).")
-    Case "nest_unfit"
-        s = s & LD("Larger than the sheet working area, left in place: {0}.")
-    Case "nest_none"
-        s = s & LD("No part fits on the sheet with these margins.")
-    Case "all_colors"
-        s = s & LD("all colours")
-    Case "lbl_nest_size"
-        s = s & LD("Preset size:")
     Case Else
         LangEn_5 = False
     End Select
@@ -1273,6 +1286,14 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
     LangEn_6 = True
     s = ""
     Select Case key
+    Case "nest_unfit"
+        s = s & LD("Larger than the sheet working area, left in place: {0}.")
+    Case "nest_none"
+        s = s & LD("No part fits on the sheet with these margins.")
+    Case "all_colors"
+        s = s & LD("all colours")
+    Case "lbl_nest_size"
+        s = s & LD("Preset size:")
     Case "lbl_nest_len"
         s = s & LD("Sheet length, mm:")
     Case "lbl_nest_wid"

@@ -19,6 +19,8 @@ Private gCustom As String, gLastIdx As Long, gBusy As Boolean
 ' вертикальных отрезов
 Private gH As Object, gHL As Object, gLab As Object, gV As Object, gVL As Object, gM As Object, gML As Object
 Private gIn As Object, gKeep As Object, gGrp As Object
+' люверсы: галочка «контур под подгиб» и выпуск
+Private gHem As Object, gHemV As Object
 ' окно хода работы: рамка и заливка полосы, строка времени; работа уже запущена
 Private gPB As Object, gPF As Object, gPT As Object, gJobStarted As Boolean
 
@@ -195,9 +197,26 @@ Private Sub InitGrommets()
         End If
     Next i
     cboTrim.Visible = True
-    lblHint.Left = 12: lblHint.Top = 150: lblHint.Width = 326
+    ' контур под подгиб: галочка и выпуск (список с правом ввести своё)
+    If gHem Is Nothing Then
+        Set gHem = Me.Controls.Add("Forms.CheckBox.1", "chkGromHem", True)
+        Set gHemV = Me.Controls.Add("Forms.ComboBox.1", "cboGromHem", True)
+        gHemV.Height = cboTrim.Height
+    End If
+    gHem.Left = 12: gHem.Top = 148: gHem.Width = 230: gHem.Height = chkFit.Height
+    gHem.Caption = NeonL("chk_grom_hem")
+    gHem.Value = (GetSetting("NeonCenterline", "Grommet", "Hem", "0") = "1")
+    gHem.Visible = True
+    gHemV.Left = 250: gHemV.Top = 146: gHemV.Width = 88
+    gHemV.Clear
+    For Each v In Array("20", "30", "40", "50", "60", "80", "100")
+        gHemV.AddItem v
+    Next v
+    gHemV.Text = FmtNum(NeonGromHemOut())
+    gHemV.Visible = True
+    lblHint.Left = 12: lblHint.Top = 176: lblHint.Width = 326
     lblHint.WordWrap = True
-    lblHint.Height = 44
+    lblHint.Height = 56
     lblHint.Caption = NeonL("grom_hint")
     lblHint.Visible = True
     btnOK.Top = lblHint.Top + lblHint.Height + 10
@@ -612,6 +631,14 @@ Private Sub btnOK_Click()
             End If
         ElseIf cboType.ListIndex >= 0 Then
             SaveSetting "NeonCenterline", "Grommet", "Color", "P:" & cboType.ListIndex
+        End If
+        If gHem.Value And (ParseNum(gHemV.Text) <= 0 Or ParseNum(gHemV.Text) > 1000) Then
+            MsgBox NeonL("bad_grom_hem"), vbExclamation, NeonL("grom_title")
+            Exit Sub
+        End If
+        SaveSetting "NeonCenterline", "Grommet", "Hem", IIf(gHem.Value, "1", "0")
+        If ParseNum(gHemV.Text) > 0 And ParseNum(gHemV.Text) <= 1000 Then
+            SaveSetting "NeonCenterline", "Grommet", "HemOut", FmtNum(ParseNum(gHemV.Text))
         End If
         SaveSetting "NeonCenterline", "Grommet", "Reinf", IIf(chkFit.Value, "1", "0")
         If cboTrim.ListIndex >= 0 Then
