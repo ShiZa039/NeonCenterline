@@ -67,7 +67,7 @@ LibreOffice прощает то, чего не прощает VBA: `And` / `Or` 
 2. `git pull`, собрать `.gms` (см. «Сборка»), проверить в CorelDRAW.
 3. PowerShell в корне репозитория:
    `.\tools\make_release.ps1 -Version <версия> -NotesRu '...' -NotesEn '...'`
-   — находит свежий `.gms`, копирует в `release\` и `dist\`, собирает `release\NeonCenterline-<версия>.zip` для новых пользователей, считает SHA-256, пишет `update.json`.
+   — находит свежий `.gms`, **снимает заголовок CorelDRAW 2026** («GMS», 18 байт: плагины 1.0.x–1.1.1 при обновлении ждут подпись OLE в начале файла и иначе отбраковывают его; CorelDRAW 2026 файл без заголовка загружает), кладёт в `release\` и `dist\`, собирает `release\NeonCenterline-<версия>.zip` для новых пользователей, считает SHA-256, пишет `update.json`.
 4. Закоммитить и запушить **только** `dist\NeonCenterline.gms` — чтобы тег встал на коммит с новой сборкой (запасной адрес jsDelivr `@<версия>/dist/…`).
 5. GitHub → Releases → новый релиз: тег `<версия>` (без буквы v), на `main`; заголовок `NeonCenterline <версия>`; описание — содержимое `docs/releases/<версия>.md`; приложить `release\NeonCenterline.gms` и `release\NeonCenterline-<версия>.zip` → Publish.
 6. Только после этого закоммитить и запушить `update.json` — с этого момента плагины пользователей предложат обновление.

@@ -1,9 +1,9 @@
 # Выпуск новой версии (запускать в PowerShell из корня репозитория):
-#   .\tools\make_release.ps1 -Version 1.1.0 -NotesRu "Что нового" -NotesEn "What's new"
+#   .\tools\make_release.ps1 -Version 1.1.2 -NotesRu 'Что нового' -NotesEn 'What is new'
 # 1) Перед этим: поднять NEON_VERSION в src\NeonUI.bas, собрать проект NeonBuild-ом, сохранить (Ctrl+S).
-# 2) Скрипт копирует NeonCenterline.gms из папки GMS в release\, считает SHA-256 и пишет update.json.
-# 3) Дальше: GitHub -> Releases -> новый релиз v<версия>, приложить release\NeonCenterline.gms;
-#    закоммитить update.json в main. Плагины у пользователей увидят обновление.
+# 2) Скрипт берёт свежий NeonCenterline.gms из папки GMS, снимает заголовок CorelDRAW 2026 (см. ниже),
+#    кладёт в release\ и dist\, считает SHA-256, пишет update.json и собирает архив для пользователей.
+# 3) Дальше — по BUILD.md: запушить dist\, создать релиз с файлами, потом запушить update.json.
 param(
   [Parameter(Mandatory=$true)][string]$Version,
   [string]$NotesRu = "",
@@ -17,7 +17,20 @@ $gms = Get-ChildItem "$env:APPDATA\Corel" -Recurse -Filter "NeonCenterline.gms" 
        Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $gms) { Write-Error "NeonCenterline.gms not found under $env:APPDATA\Corel"; exit 1 }
 New-Item -ItemType Directory -Force -Path "release" | Out-Null
-Copy-Item $gms.FullName "release\NeonCenterline.gms" -Force
+# .gms из CorelDRAW 2026 начинается с заголовка "GMS" на 18 байт, дальше обычный файл OLE. Плагины
+# 1.0.x-1.1.1 при обновлении проверяют подпись OLE в самом начале файла и отбраковывают такой .gms,
+# поэтому в релиз и в dist\ идёт файл без заголовка: CorelDRAW 2026 его загружает (проверено 12.11).
+$b = [System.IO.File]::ReadAllBytes($gms.FullName)
+$ole = [byte[]](0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1)
+$off = 0
+if ($b.Length -gt 26 -and $b[0] -eq 0x47 -and $b[1] -eq 0x4D -and $b[2] -eq 0x53) { $off = 18 }
+for ($i = 0; $i -lt 8; $i++) {
+  if ($b[$off + $i] -ne $ole[$i]) { Write-Error "NeonCenterline.gms: no OLE signature at offset $off"; exit 1 }
+}
+$out = New-Object byte[] ($b.Length - $off)
+[System.Array]::Copy($b, $off, $out, 0, $out.Length)
+[System.IO.File]::WriteAllBytes((Join-Path (Get-Location) "release\NeonCenterline.gms"), $out)
+if ($off -gt 0) { Write-Host "GMS header (18 bytes) removed for older plugin updaters" }
 $hash = (Get-FileHash "release\NeonCenterline.gms" -Algorithm SHA256).Hash.ToLower()
 # копия .gms в репозитории (dist\) — запасной адрес через CDN jsDelivr по тегу версии
 New-Item -ItemType Directory -Force -Path "dist" | Out-Null
