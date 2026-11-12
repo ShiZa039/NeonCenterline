@@ -205,6 +205,7 @@ STRINGS = {
     'grom_c_other':  ('Другой…', 'Other…'),
     'chk_grom_reinf': ('Усиление углов: ещё точка в, мм', 'Corner reinforcement: extra point at, mm'),
     'chk_grom_hem':  ('Контур под подгиб, выпуск, мм:', 'Hem outline, allowance, mm:'),
+    'chk_grom_layer':('Люверсы — на отдельный слой «Люверсы» (иначе — на слой баннера)', 'Grommets on a separate "Grommets" layer (otherwise on the banner layer)'),
     'bad_grom_hem':  ('Выпуск под подгиб — от 0 до 1000 мм.', 'The hem allowance must be between 0 and 1000 mm.'),
     'grom_hem_name': ('Подгиб {0} мм', 'Hem {0} mm'),
     'grom_hem_rep':  ('Контур под подгиб: выпуск {0} мм наружу от края (объектов: {1}) — на слое баннера.', 'Hem outline: {0} mm outside the edge ({1} objects) — on the banner layer.'),

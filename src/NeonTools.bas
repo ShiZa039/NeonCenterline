@@ -1319,7 +1319,7 @@ Public Sub PlaceGrommets()
     Dim nAll As Long, nObj As Long, nSkip As Long, msg As String, per As String, errText As String
     Dim grpOn As Boolean, dots As ShapeRange, dot As Shape, g As Shape, sh As Shape
     Dim n As Long, bx() As Double, by() As Double, bw() As Double, bh() As Double, inner() As Boolean, nInner As Long
-    Dim hem As Double, nHem As Long, hcrv As Curve, hsp As SubPath, hs As Shape
+    Dim hem As Double, nHem As Long, hcrv As Curve, hsp As SubPath, hs As Shape, ownLay As Boolean
     If ActiveDocument Is Nothing Then
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("grom_title")
         Exit Sub
@@ -1337,6 +1337,7 @@ Public Sub PlaceGrommets()
         Exit Sub
     End If
     edge = NeonGromEdge(): stp = NeonGromStep(): dia = NeonGromDot(): rf = NeonGromReinf(): hem = NeonGromHem()
+    ownLay = (GetSetting("NeonCenterline", "Grommet", "OwnLayer", "0") = "1")
     Set clr = GromColor(NeonGromColorSetting())
     Set col = New Collection
     CollectGrom sr, col
@@ -1374,8 +1375,13 @@ Public Sub PlaceGrommets()
         If inner(i - 1) Then
             nInner = nInner + 1
         ElseIf ShapeGrommets(sh, edge, stp, rf, hem) Then
-            If lay Is Nothing Then
-                Set lay = GromLayer()
+            ' точки — на слое баннера или (галочка) на своём слое «Люверсы»
+            If ownLay Then
+                If lay Is Nothing Then
+                    Set lay = GromLayer()
+                End If
+            Else
+                Set lay = sh.Layer
             End If
             ' контур под подгиб — на слое баннера, кривой без заливки
             If GHN >= 3 Then
@@ -1399,11 +1405,13 @@ Public Sub PlaceGrommets()
                 dot.Fill.ApplyUniformFill clr
                 dot.Outline.SetNoOutline
                 dot.Name = NeonL("grom_dot")
+                NtTag dot, "grom"
                 dots.Add dot
             Next k
             If dots.Count > 1 Then
                 Set g = dots.Group
                 g.Name = NeonLF("grom_group", GRN)
+                NtTag g, "grom"
             End If
             nObj = nObj + 1: nAll = nAll + GRN
             If nObj <= 12 Then
@@ -1462,8 +1470,8 @@ Private Sub CollectGrom(sr As ShapeRange, col As Collection)
         On Error GoTo 0
         If ln = NeonL("grom_layer") Then
             ' точки, поставленные раньше
-        ElseIf NtTagOf(sh) = "hem" Then
-            ' контур под подгиб, поставленный раньше
+        ElseIf NtTagOf(sh) = "hem" Or NtTagOf(sh) = "grom" Then
+            ' контур под подгиб и точки, поставленные раньше (на слое баннера)
         ElseIf sh.Type = cdrGroupShape Then
             CollectGrom sh.Shapes.All, col
         ElseIf Left$(sh.Name, Len(NeonPrefix())) <> NeonPrefix() Then
@@ -4104,7 +4112,7 @@ Private Sub NtCollect(sr As ShapeRange, col As Collection, old As ShapeRange, By
     If top And sr.Count = 1 And grp = 0 Then
         Set sh = sr(1)
         If sh.Type = cdrGroupShape Then
-            If Not NtIsLayout(sh) And Len(NtTagOf(sh)) = 0 Then
+            If Not NtIsLayout(sh) And Not NtUnpack(sh) Then
                 NtCollect NtUngroup(sh), col, old, True, grp
                 Exit Sub
             End If
@@ -4114,7 +4122,7 @@ Private Sub NtCollect(sr As ShapeRange, col As Collection, old As ShapeRange, By
         If NtIsLayout(sh) Then
             old.Add sh
         ElseIf sh.Type = cdrGroupShape Then
-            If Len(NtTagOf(sh)) > 0 Then
+            If NtUnpack(sh) Then
                 NtCollect NtUngroup(sh), col, old, False, grp
             ElseIf top And grp = 2 Then
                 NtCollect NtUngroup(sh), col, old, False, grp
@@ -4193,6 +4201,13 @@ Private Function NtStarts(ByVal nm As String, ByVal key As String) As Boolean
         p = Left$(p, q - 1)
         NtStarts = (Left$(nm, Len(p)) = p)
     End If
+End Function
+
+' своя группа плагина, которую раскладка разбирает всегда: «Одинаковые» и лист прежней раскладки
+Private Function NtUnpack(sh As Shape) As Boolean
+    Dim tg As String
+    tg = NtTagOf(sh)
+    NtUnpack = (tg = "same" Or tg = "sheet")
 End Function
 
 ' рамка или подпись прежней раскладки (или объект со слоя «Раскладка» первых сборок)

@@ -20,7 +20,7 @@ Private gCustom As String, gLastIdx As Long, gBusy As Boolean
 Private gH As Object, gHL As Object, gLab As Object, gV As Object, gVL As Object, gM As Object, gML As Object
 Private gIn As Object, gKeep As Object, gGrp As Object
 ' люверсы: галочка «контур под подгиб» и выпуск
-Private gHem As Object, gHemV As Object
+Private gHem As Object, gHemV As Object, gGL As Object
 ' окно хода работы: рамка и заливка полосы, строка времени; работа уже запущена
 Private gPB As Object, gPF As Object, gPT As Object, gJobStarted As Boolean
 
@@ -214,7 +214,15 @@ Private Sub InitGrommets()
     Next v
     gHemV.Text = FmtNum(NeonGromHemOut())
     gHemV.Visible = True
-    lblHint.Left = 12: lblHint.Top = 176: lblHint.Width = 326
+    ' точки — на свой слой «Люверсы» (по умолчанию — на слой баннера)
+    If gGL Is Nothing Then
+        Set gGL = Me.Controls.Add("Forms.CheckBox.1", "chkGromLayer", True)
+    End If
+    gGL.Left = 12: gGL.Top = 172: gGL.Width = 326: gGL.Height = chkFit.Height
+    gGL.Caption = NeonL("chk_grom_layer")
+    gGL.Value = (GetSetting("NeonCenterline", "Grommet", "OwnLayer", "0") = "1")
+    gGL.Visible = True
+    lblHint.Left = 12: lblHint.Top = 200: lblHint.Width = 326
     lblHint.WordWrap = True
     lblHint.Height = 56
     lblHint.Caption = NeonL("grom_hint")
@@ -637,6 +645,7 @@ Private Sub btnOK_Click()
             Exit Sub
         End If
         SaveSetting "NeonCenterline", "Grommet", "Hem", IIf(gHem.Value, "1", "0")
+        SaveSetting "NeonCenterline", "Grommet", "OwnLayer", IIf(gGL.Value, "1", "0")
         If ParseNum(gHemV.Text) > 0 And ParseNum(gHemV.Text) <= 1000 Then
             SaveSetting "NeonCenterline", "Grommet", "HemOut", FmtNum(ParseNum(gHemV.Text))
         End If

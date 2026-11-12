@@ -471,6 +471,9 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#Rpgjdlgd rbjma: dx$0451 qmvi_ a, kk")
     Case "chk_grom_hem"
         s = s & LD("#Imlqro nmc nmcbg`, aznrpi, kk:")
+    Case "chk_grom_layer"
+        s = s & LD("#J}adopz $2014 l_ mqcdj{lzh pjmh $00ABJ}adopz$00BB (gl_vd $2014 l_ pjmh `_lld")
+        s = s & LD("#o_)")
     Case "bad_grom_hem"
         s = s & LD("#Aznrpi nmc nmcbg` $2014 mq 0 cm 1000 kk.")
     Case "grom_hem_name"
@@ -509,8 +512,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#Wgogl_ j_nwg, kk:")
     Case "lbl_noodle_cnt"
         s = s & LD("#Imjgvdpqam, wq:")
-    Case "lbl_noodle_overh"
-        s = s & LD("#Tampqz bmogfmlq_j{lzt odfma, kk:")
     Case Else
         LangRu_4 = False
     End Select
@@ -520,6 +521,8 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     LangRu_5 = True
     s = ""
     Select Case key
+    Case "lbl_noodle_overh"
+        s = s & LD("#Tampqz bmogfmlq_j{lzt odfma, kk:")
     Case "lbl_noodle_overv"
         s = s & LD("#Tampqz adoqgi_j{lzt mqodfma, kk:")
     Case "chk_noodle_tool"
@@ -630,10 +633,6 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
         s = s & LD("#I_eczh jgpq $2014 bornn_ pno_a_ mq azcdjdlg~ l_ pjmd cdq_jdh: o_")
         s = s & LD("#ki_, nmcngp{ g cdq_jg (nmcngpg kmelm mqij}vgq{ a mild). F_nm")
         s = s & LD("#jldlgd $2014 nm b_`_ogq_k cdq_jdh.")
-    Case "nest_rep_tail_c"
-        s = s & LD("#I_eczh jgpq $2014 bornn_ pno_a_ mq azcdjdlg~ l_ pjmd cdq_jdh: o_")
-        s = s & LD("#ki_, nmcngp{ g cdq_jg (nmcngpg kmelm mqij}vgq{ a mild). F_nm")
-        s = s & LD("#jldlgd $2014 nm njmx_cg cdq_jdh (czoig ld a pv$0451q).")
     Case Else
         LangRu_5 = False
     End Select
@@ -643,6 +642,10 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
     LangRu_6 = True
     s = ""
     Select Case key
+    Case "nest_rep_tail_c"
+        s = s & LD("#I_eczh jgpq $2014 bornn_ pno_a_ mq azcdjdlg~ l_ pjmd cdq_jdh: o_")
+        s = s & LD("#ki_, nmcngp{ g cdq_jg (nmcngpg kmelm mqij}vgq{ a mild). F_nm")
+        s = s & LD("#jldlgd $2014 nm njmx_cg cdq_jdh (czoig ld a pv$0451q).")
     Case "nest_unfit"
         s = s & LD("#@mj{wd o_`mvdbm nmj~ jgpq_, mpq_ajdlz l_ kdpqd: #{0}.")
     Case "nest_none"
@@ -1114,6 +1117,9 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("Corner reinforcement: extra point at, mm")
     Case "chk_grom_hem"
         s = s & LD("Hem outline, allowance, mm:")
+    Case "chk_grom_layer"
+        s = s & LD("Grommets on a separate $0022Grommets$0022 layer (otherwise on the ba")
+        s = s & LD("nner layer)")
     Case "bad_grom_hem"
         s = s & LD("The hem allowance must be between 0 and 1000 mm.")
     Case "grom_hem_name"
@@ -1152,8 +1158,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("Strip width, mm:")
     Case "lbl_noodle_cnt"
         s = s & LD("Number of strips:")
-    Case "lbl_noodle_overh"
-        s = s & LD("Tails of horizontal cuts, mm:")
     Case Else
         LangEn_4 = False
     End Select
@@ -1163,6 +1167,8 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     LangEn_5 = True
     s = ""
     Select Case key
+    Case "lbl_noodle_overh"
+        s = s & LD("Tails of horizontal cuts, mm:")
     Case "lbl_noodle_overv"
         s = s & LD("Tails of vertical end cuts, mm:")
     Case "chk_noodle_tool"
@@ -1273,10 +1279,6 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
         s = s & LD("Each sheet is a group to the right of the selection on the p")
         s = s & LD("arts' layer: frame, label and parts (labels can be turned of")
         s = s & LD("f in the window). Fill is by part bounding boxes.")
-    Case "nest_rep_tail_c"
-        s = s & LD("Each sheet is a group to the right of the selection on the p")
-        s = s & LD("arts' layer: frame, label and parts (labels can be turned of")
-        s = s & LD("f in the window). Fill is by part area (holes excluded).")
     Case Else
         LangEn_5 = False
     End Select
@@ -1286,6 +1288,10 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
     LangEn_6 = True
     s = ""
     Select Case key
+    Case "nest_rep_tail_c"
+        s = s & LD("Each sheet is a group to the right of the selection on the p")
+        s = s & LD("arts' layer: frame, label and parts (labels can be turned of")
+        s = s & LD("f in the window). Fill is by part area (holes excluded).")
     Case "nest_unfit"
         s = s & LD("Larger than the sheet working area, left in place: {0}.")
     Case "nest_none"
