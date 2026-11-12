@@ -35,6 +35,13 @@ Private CosLocal As Double, CosChord As Double
 '@@GROM_DECL_BEGIN
 Private GPX() As Double, GPY() As Double, GPC() As Boolean, GN As Long
 Private GRX() As Double, GRY() As Double, GRN As Long
+' концы кусков контура ближе этого (мм) — сходятся (контур, нарисованный линиями без замыкания)
+Private Const GROM_JOIN As Double = 0.5
+' куски контура объекта (подпути): сегменты по 4 точки подряд в GQX/GQY, кусок k — сегменты
+' GQ0(k)..GQ0(k)+GQn(k)-1, GQc(k) — замкнут; контуры из кусков (GromChain): контур m — элементы
+' GL0(m)..GL0(m)+GLn(m)-1 списков GLP (кусок) / GLR (обратным ходом)
+Private GQX() As Double, GQY() As Double, GQ0() As Long, GQn() As Long, GQc() As Boolean, NGQ As Long, NGQS As Long
+Private GLP() As Long, GLR() As Boolean, GL0() As Long, GLn() As Long, NGL As Long, NGLP As Long
 '@@GROM_DECL_END
 
 ' ---- очистка контура: вход, рабочие данные, выход (см. раздел «Очистка контура» ниже) ----
@@ -1418,7 +1425,7 @@ End Function
 Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As Double, ByVal rf As Double) As Boolean
     Dim crv As Curve, tmp As Shape, sp As SubPath, sg As Segment, best As Double, a As Double
     Dim x0 As Double, y0 As Double, x1 As Double, y1 As Double, x2 As Double, y2 As Double, x3 As Double, y3 As Double
-    Dim bx() As Double, by() As Double, bn As Long, k As Long
+    Dim bx() As Double, by() As Double, bn As Long, k As Long, m As Long, e As Long, q As Long, s As Long
     On Error Resume Next
     If sh.Type = cdrCurveShape Then
         Set crv = sh.Curve
@@ -1438,36 +1445,60 @@ Private Function ShapeGrommets(sh As Shape, ByVal edge As Double, ByVal stp As D
     If crv Is Nothing Then
         GoTo Done
     End If
+    ' подпути — куски; замкнутые, сошедшиеся концами и цепочки кусков, концы которых сходятся
+    ' (контур, нарисованный линиями без замыкания, или собранный из отрезков), — контуры
+    NGQ = 0: NGQS = 0
+    ReDim GQX(0 To 255): ReDim GQY(0 To 255)
+    ReDim GQ0(0 To 15): ReDim GQn(0 To 15): ReDim GQc(0 To 15)
     For Each sp In crv.SubPaths
-        If sp.Closed Then
-            NS = 0
-            ReDim SX(0 To 63): ReDim SY(0 To 63)
-            For Each sg In sp.Segments
-                x0 = sg.StartNode.PositionX: y0 = sg.StartNode.PositionY
-                x3 = sg.EndNode.PositionX: y3 = sg.EndNode.PositionY
-                If sg.Type = cdrCurveSegment Then
-                    sg.GetStartingControlPointPosition x1, y1
-                    sg.GetEndingControlPointPosition x2, y2
+        If NGQ > UBound(GQ0) Then
+            ReDim Preserve GQ0(0 To 2 * NGQ): ReDim Preserve GQn(0 To 2 * NGQ): ReDim Preserve GQc(0 To 2 * NGQ)
+        End If
+        GQ0(NGQ) = NGQS: GQc(NGQ) = sp.Closed
+        For Each sg In sp.Segments
+            x0 = sg.StartNode.PositionX: y0 = sg.StartNode.PositionY
+            x3 = sg.EndNode.PositionX: y3 = sg.EndNode.PositionY
+            If sg.Type = cdrCurveSegment Then
+                sg.GetStartingControlPointPosition x1, y1
+                sg.GetEndingControlPointPosition x2, y2
+            Else
+                x1 = x0 + (x3 - x0) / 3: y1 = y0 + (y3 - y0) / 3
+                x2 = x0 + 2 * (x3 - x0) / 3: y2 = y0 + 2 * (y3 - y0) / 3
+            End If
+            GromPutQ x0, y0, x1, y1, x2, y2, x3, y3
+        Next sg
+        GQn(NGQ) = NGQS - GQ0(NGQ)
+        NGQ = NGQ + 1
+    Next sp
+    GromChain GROM_JOIN
+    For m = 0 To NGL - 1
+        NS = 0
+        ReDim SX(0 To 63): ReDim SY(0 To 63)
+        For e = GL0(m) To GL0(m) + GLn(m) - 1
+            q = GLP(e)
+            For k = 0 To GQn(q) - 1
+                If GLR(e) Then
+                    s = 4 * (GQ0(q) + GQn(q) - 1 - k)
+                    PutS NS, GQX(s + 3), GQY(s + 3), GQX(s + 2), GQY(s + 2), GQX(s + 1), GQY(s + 1), GQX(s), GQY(s)
                 Else
-                    x1 = x0 + (x3 - x0) / 3: y1 = y0 + (y3 - y0) / 3
-                    x2 = x0 + 2 * (x3 - x0) / 3: y2 = y0 + 2 * (y3 - y0) / 3
+                    s = 4 * (GQ0(q) + k)
+                    PutS NS, GQX(s), GQY(s), GQX(s + 1), GQY(s + 1), GQX(s + 2), GQY(s + 2), GQX(s + 3), GQY(s + 3)
                 End If
-                PutS NS, x0, y0, x1, y1, x2, y2, x3, y3
                 NS = NS + 1
-            Next sg
-            If NS > 0 Then
-                GromFlatten GromFlatStep(edge)
-                a = Abs(GromArea())
-                If a > best Then
-                    best = a: bn = NS
-                    ReDim bx(0 To 4 * NS): ReDim by(0 To 4 * NS)
-                    For k = 0 To 4 * NS - 1
-                        bx(k) = SX(k): by(k) = SY(k)
-                    Next k
-                End If
+            Next k
+        Next e
+        If NS > 0 Then
+            GromFlatten GromFlatStep(edge)
+            a = Abs(GromArea())
+            If a > best Then
+                best = a: bn = NS
+                ReDim bx(0 To 4 * NS): ReDim by(0 To 4 * NS)
+                For k = 0 To 4 * NS - 1
+                    bx(k) = SX(k): by(k) = SY(k)
+                Next k
             End If
         End If
-    Next sp
+    Next m
     If best > 0 Then
         NS = bn
         ReDim SX(0 To 4 * bn): ReDim SY(0 To 4 * bn)
@@ -1483,6 +1514,89 @@ Done:
 End Function
 
 '@@GROMGEO_BEGIN
+Private Sub GromPutQ(ByVal x0 As Double, ByVal y0 As Double, ByVal x1 As Double, ByVal y1 As Double, _
+                     ByVal x2 As Double, ByVal y2 As Double, ByVal x3 As Double, ByVal y3 As Double)
+    Dim s As Long
+    s = 4 * NGQS
+    If s + 3 > UBound(GQX) Then
+        ReDim Preserve GQX(0 To 2 * s + 16): ReDim Preserve GQY(0 To 2 * s + 16)
+    End If
+    GQX(s) = x0: GQY(s) = y0: GQX(s + 1) = x1: GQY(s + 1) = y1
+    GQX(s + 2) = x2: GQY(s + 2) = y2: GQX(s + 3) = x3: GQY(s + 3) = y3
+    NGQS = NGQS + 1
+End Sub
+
+' начало (e = False) или конец (e = True) куска k
+Private Sub GromEnd(ByVal k As Long, ByVal e As Boolean, x As Double, y As Double)
+    Dim s As Long
+    If e Then
+        s = 4 * (GQ0(k) + GQn(k) - 1) + 3
+    Else
+        s = 4 * GQ0(k)
+    End If
+    x = GQX(s): y = GQY(s)
+End Sub
+
+' контуры из кусков: замкнутый кусок или сошедшийся концами — сам по себе; остальные — цепочками,
+' пока конец не сойдётся с началом (концы — ближе tol); незамкнувшиеся цепочки отбрасываются
+Private Sub GromChain(ByVal tol As Double)
+    Dim used() As Boolean, k As Long, j As Long, l0 As Long, found As Boolean
+    Dim sx As Double, sy As Double, ex As Double, ey As Double, ax As Double, ay As Double, bx As Double, by As Double
+    NGL = 0: NGLP = 0
+    ReDim GL0(0 To NGQ): ReDim GLn(0 To NGQ): ReDim GLP(0 To NGQ): ReDim GLR(0 To NGQ)
+    ReDim used(0 To NGQ)
+    For k = 0 To NGQ - 1
+        If GQn(k) > 0 Then
+            GromEnd k, False, sx, sy
+            GromEnd k, True, ex, ey
+            If GQc(k) Or (sx - ex) ^ 2 + (sy - ey) ^ 2 < tol * tol Then
+                used(k) = True
+                GL0(NGL) = NGLP: GLn(NGL) = 1: NGL = NGL + 1
+                GLP(NGLP) = k: GLR(NGLP) = False: NGLP = NGLP + 1
+            End If
+        Else
+            used(k) = True
+        End If
+    Next k
+    For k = 0 To NGQ - 1
+        If Not used(k) Then
+            used(k) = True
+            l0 = NGLP
+            GLP(NGLP) = k: GLR(NGLP) = False: NGLP = NGLP + 1
+            GromEnd k, False, sx, sy
+            GromEnd k, True, ex, ey
+            Do
+                If (sx - ex) ^ 2 + (sy - ey) ^ 2 < tol * tol And NGLP - l0 > 1 Then
+                    GL0(NGL) = l0: GLn(NGL) = NGLP - l0: NGL = NGL + 1
+                    Exit Do
+                End If
+                found = False
+                For j = 0 To NGQ - 1
+                    If Not used(j) Then
+                        GromEnd j, False, ax, ay
+                        GromEnd j, True, bx, by
+                        If (ax - ex) ^ 2 + (ay - ey) ^ 2 < tol * tol Then
+                            used(j) = True: found = True
+                            GLP(NGLP) = j: GLR(NGLP) = False: NGLP = NGLP + 1
+                            ex = bx: ey = by
+                            Exit For
+                        ElseIf (bx - ex) ^ 2 + (by - ey) ^ 2 < tol * tol Then
+                            used(j) = True: found = True
+                            GLP(NGLP) = j: GLR(NGLP) = True: NGLP = NGLP + 1
+                            ex = ax: ey = ay
+                            Exit For
+                        End If
+                    End If
+                Next j
+                If Not found Then
+                    NGLP = l0
+                    Exit Do
+                End If
+            Loop
+        End If
+    Next k
+End Sub
+
 Private Function GromFlatStep(ByVal edge As Double) As Double
     Dim f As Double
     f = edge / 4

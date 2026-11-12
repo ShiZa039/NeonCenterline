@@ -46,8 +46,11 @@ STRINGS = {
     'upd_pending':   ('Обновление {0} уже скачано и установится после закрытия CorelDRAW.',
                       'Update {0} is already downloaded and will be installed when CorelDRAW is closed.'),
     'upd_err':       ('Не удалось проверить обновления: {0}', 'Could not check for updates: {0}'),
-    'upd_bad':       ('Скачанный файл обновления повреждён (контрольная сумма не совпала). Обновление отменено.',
-                      'The downloaded update is damaged (checksum mismatch). The update was cancelled.'),
+    'upd_bad':       ('Скачанный файл обновления не подошёл: {0}. Обновление отменено — новую версию можно поставить из архива с GitHub (install.cmd).',
+                      'The downloaded update did not pass the check: {0}. The update was cancelled — you can install the new version from the archive on GitHub (install.cmd).'),
+    'upd_why_type':  ('это не файл плагина (сеть подменила или оборвала загрузку)', 'it is not a plugin file (the network replaced or cut the download)'),
+    'upd_why_sum':   ('контрольная сумма не совпала (ждали {0}…, пришло {1}…)', 'checksum mismatch (expected {0}…, got {1}…)'),
+    'upd_why_nohash':('не удалось посчитать контрольную сумму (certutil и PowerShell недоступны)', 'could not compute the checksum (certutil and PowerShell are unavailable)'),
     'upd_nourl':     ('Адрес обновлений не настроен.', 'The update address is not configured.'),
     'upd_nogms':     ('Не найден файл плагина (.gms) для замены.', 'The plugin file (.gms) to replace was not found.'),
     'about':         ('NeonCenterline {0}\n\nЦентральная линия по контурам букв для фрезеровки канала под гибкий неон. '

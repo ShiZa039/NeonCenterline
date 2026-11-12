@@ -36,7 +36,7 @@ End Sub
 ' quiet = True: не сообщать «обновлений нет» и ошибки сети
 Public Sub NeonUpdateCheck(ByVal quiet As Boolean)
     Dim js As String, ver As String, url As String, sha As String, notes As String, errText As String
-    Dim pending As String, target As String, tmpF As String, url2 As String
+    Dim pending As String, target As String, tmpF As String, u As Variant, ok As Boolean, why As String, got As String
     gQuiet = quiet
 
     If InStr(NEON_UPDATE_URL, "/OWNER/") > 0 Or Len(NEON_UPDATE_URL) = 0 Then
@@ -103,28 +103,41 @@ Public Sub NeonUpdateCheck(ByVal quiet As Boolean)
         Exit Sub
     End If
     tmpF = TempDir() & "\NeonCenterline_" & ver & ".gms"
-    If Not HttpDownload(url, tmpF, errText) Then
-        url2 = JsonStr(js, "gms_url2")
-        If Len(url2) = 0 Then
-            MsgBox NeonLF("upd_err", errText) & NeonL("upd_net_hint"), vbExclamation, NeonL("app_title")
-            Exit Sub
+    ' основной адрес, потом запасной — пока не скачается настоящий файл плагина с нужной контрольной суммой
+    ok = False
+    For Each u In Array(url, JsonStr(js, "gms_url2"))
+        If Len(u) > 0 And Not ok Then
+            If HttpDownload(CStr(u), tmpF, errText) Then
+                If Not IsOleFile(tmpF) Then
+                    why = NeonL("upd_why_type")
+                Else
+                    got = ""
+                    If Len(sha) = 64 Then
+                        got = FileSha256(tmpF)
+                    End If
+                    If Len(sha) = 64 And got <> sha Then
+                        If Len(got) = 0 Then
+                            why = NeonL("upd_why_nohash")
+                        Else
+                            why = NeonLF("upd_why_sum", Left$(sha, 12), Left$(got, 12))
+                        End If
+                    Else
+                        ok = True
+                    End If
+                End If
+                If Not ok Then
+                    KillQuiet tmpF
+                End If
+            End If
         End If
-        If Not HttpDownload(url2, tmpF, errText) Then
+    Next u
+    If Not ok Then
+        If Len(why) > 0 Then
+            MsgBox NeonLF("upd_bad", why), vbExclamation, NeonL("app_title")
+        Else
             MsgBox NeonLF("upd_err", errText) & NeonL("upd_net_hint"), vbExclamation, NeonL("app_title")
-            Exit Sub
         End If
-    End If
-    If Not IsOleFile(tmpF) Then
-        KillQuiet tmpF
-        MsgBox NeonL("upd_bad"), vbExclamation, NeonL("app_title")
         Exit Sub
-    End If
-    If Len(sha) = 64 Then
-        If FileSha256(tmpF) <> sha Then
-            KillQuiet tmpF
-            MsgBox NeonL("upd_bad"), vbExclamation, NeonL("app_title")
-            Exit Sub
-        End If
     End If
     If Not StartSwapScript(tmpF, target, errText) Then
         MsgBox NeonLF("upd_err", errText), vbExclamation, NeonL("app_title")
@@ -389,8 +402,11 @@ Private Function PluginGmsPath() As String
     Next i
 End Function
 
+' файл проекта макросов: подпись OLE (D0 CF 11 E0 A1 B1 1A E1) в начале — или после заголовка «GMS»
+' на 18 байт, как у .gms из CorelDRAW 2026 (до 1.1.2 проверялось только начало — обновление 2026-го
+' файла всегда отбраковывалось как повреждённое)
 Private Function IsOleFile(ByVal path As String) As Boolean
-    Dim f As Integer, b(0 To 7) As Byte
+    Dim f As Integer, b(0 To 63) As Byte, o As Long
     On Error GoTo Fail
     If FileLen(path) < 1024 Then
         Exit Function
@@ -399,7 +415,16 @@ Private Function IsOleFile(ByVal path As String) As Boolean
     Open path For Binary Access Read As #f
     Get #f, 1, b
     Close #f
-    IsOleFile = (b(0) = &HD0 And b(1) = &HCF And b(2) = &H11 And b(3) = &HE0)
+    o = -1
+    If b(0) = &HD0 Then
+        o = 0
+    ElseIf b(0) = &H47 And b(1) = &H4D And b(2) = &H53 Then
+        o = 18
+    End If
+    If o >= 0 Then
+        IsOleFile = (b(o) = &HD0 And b(o + 1) = &HCF And b(o + 2) = &H11 And b(o + 3) = &HE0 _
+                     And b(o + 4) = &HA1 And b(o + 5) = &HB1 And b(o + 6) = &H1A And b(o + 7) = &HE1)
+    End If
     Exit Function
 Fail:
     On Error Resume Next
@@ -425,6 +450,22 @@ Private Function FileSha256(ByVal path As String) As String
     Loop
     Close #f
     KillQuiet outF
+    ' certutil не дал хеша (нет, запрещён политикой) — PowerShell
+    If Len(s) = 0 Then
+        sh.Run "powershell -NoProfile -ExecutionPolicy Bypass -Command ""(Get-FileHash -Algorithm SHA256 -LiteralPath '" & _
+               Replace(path, "'", "''") & "').Hash | Out-File -Encoding ascii '" & Replace(outF, "'", "''") & "'""", 0, True
+        f = FreeFile
+        Open outF For Input As #f
+        Do While Not EOF(f)
+            Line Input #f, ln
+            ln = LCase$(Replace(Trim$(ln), " ", ""))
+            If IsHex64(ln) Then
+                s = ln
+            End If
+        Loop
+        Close #f
+        KillQuiet outF
+    End If
     FileSha256 = s
     Exit Function
 Fail:
