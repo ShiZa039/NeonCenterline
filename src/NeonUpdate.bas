@@ -2,16 +2,20 @@ Attribute VB_Name = "NeonUpdate"
 ' =====================================================================
 '  NeonCenterline — обновление с GitHub.
 '
-'  1) Читается update.json (адрес — NEON_UPDATE_URL в NeonUI):
-'       { "version": "1.1.0",
-'         "gms_url": "https://github.com/.../releases/download/v1.1.0/NeonCenterline.gms",
-'         "sha256":  "64 hex-символа",
+'  1) Читается update.json (адреса — NEON_UPDATE_URL, ...URL2, ...URL3 в NeonUI; пишет его
+'     tools/make_release.ps1, тег выпуска — номер версии без «v»):
+'       { "version": "1.1.2",
+'         "gms_url":  "https://github.com/.../releases/download/1.1.2/NeonCenterline.gms",
+'         "gms_url2": "https://cdn.jsdelivr.net/gh/.../NeonCenterline@1.1.2/dist/NeonCenterline.gms",
+'         "sha256":   "64 hex-символа",
 '         "notes_ru": "Что нового...", "notes_en": "What's new..." }
-'  2) Если версия новее — спрашиваем, скачиваем .gms во временную папку, проверяем
-'     контрольную сумму (certutil) и что это файл проекта VBA (сигнатура OLE).
+'  2) Если версия новее — спрашиваем, скачиваем .gms во временную папку (gms_url, не подошёл —
+'     gms_url2), проверяем, что это файл проекта VBA (подпись OLE, в том числе после заголовка
+'     .gms CorelDRAW 2026), и контрольную сумму (certutil, запасной — PowerShell).
 '  3) Работающий проект нельзя заменить, пока он загружен в CorelDRAW, поэтому
 '     запускается маленький скрипт (wscript, скрыто): ждёт закрытия CorelDRAW, сохраняет
 '     старый файл как .bak и кладёт новый на его место. Новая версия — со следующего запуска.
+'  Подробно — docs/architecture.md («Обновление»), грабли — docs/pitfalls.md.
 ' =====================================================================
 Option Explicit
 

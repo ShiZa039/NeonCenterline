@@ -120,6 +120,10 @@
 
 Раз в день (после расчёта центральных линий) плагин проверяет, нет ли новой версии на GitHub. Если есть — спросит, скачает, проверит контрольную сумму, и новая версия установится сама, когда вы закроете CorelDRAW. Старая версия сохраняется рядом как `NeonCenterline.gms.bak`. Проверить вручную: «Настройки и помощь ▾» → «Проверить обновления». Отключить ежедневную проверку — в Настройках.
 
+## Если что-то не работает
+
+Панель не появилась или на ней старые кнопки, обновление не проходит, непонятное сообщение инструмента — разбор по сообщениям и что делать: [docs/troubleshooting.md](https://github.com/ShiZa039/NeonCenterline/blob/main/docs/troubleshooting.md). Там же — как откатить версию, сбросить настройки и сообщить о проблеме. Документация для разработчика — в папке [docs](https://github.com/ShiZa039/NeonCenterline/tree/main/docs).
+
 ## Лицензия
 
 Бесплатно для любого использования, в том числе коммерческого (изготовление вывесок, фрезеровка на заказ). Продавать и перепаковывать плагин нельзя. Полный текст — [LICENSE.txt](LICENSE.txt).
@@ -246,6 +250,10 @@ The **Settings** window (Settings and help ▾): cutter diameter, line end inset
 ## Updates
 
 Once a day (after a centerline run) the plugin checks GitHub for a new version. If there is one, it asks, downloads it, verifies the checksum, and the new version is installed automatically when you close CorelDRAW. The previous version is kept as `NeonCenterline.gms.bak`. Manual check: Settings and help ▾ → "Check for updates". The daily check can be turned off in the Settings.
+
+## Troubleshooting
+
+Toolbar missing or showing old buttons, an update that does not go through, a tool message you do not understand — see [docs/troubleshooting.md](https://github.com/ShiZa039/NeonCenterline/blob/main/docs/troubleshooting.md) (in Russian): every message, what it means and what to do, plus how to roll back a version, reset the settings and report a problem.
 
 ## License
 
