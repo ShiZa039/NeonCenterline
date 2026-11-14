@@ -1,8 +1,8 @@
 {
-    "version":  "1.1.2",
-    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.1.2/NeonCenterline.gms",
-    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.1.2/dist/NeonCenterline.gms",
-    "sha256":  "1a19b92cb815de641043c51fb4ecb7c3f6e5738f439a9a7606b75a874a80e6c3",
-    "notes_ru":  "Обновление из плагина снова работает (в том числе с 1.0.x–1.1.1); люверсы: контур под подгиб с выпуском, только край баннера (без рисунка внутри), контуры из линий без замыкания, точки — на слое баннера.",
-    "notes_en":  "Updating from the plugin works again (also from 1.0.x–1.1.1); grommets: hem outline with allowance, banner edge only (no artwork inside), outlines drawn with lines and not closed, points on the banner layer."
+    "version":  "1.1.3",
+    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.1.3/NeonCenterline.gms",
+    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.1.3/dist/NeonCenterline.gms",
+    "sha256":  "4cfdd14c43b455b5609914449e7ae1071b0944dc5d13dd81889f5cd7aad5be70",
+    "notes_ru":  "Моно на мелком тексте и при гравировке: гладкие дуги, предупреждение «фреза велика»; окно Моно без строки Курсива; отчёт люверсов называет слой.",
+    "notes_en":  "Mono on small text and engraving: smooth arcs, a cutter-too-large warning; the Mono window has no Script row; the grommet report names the layer."
 }
