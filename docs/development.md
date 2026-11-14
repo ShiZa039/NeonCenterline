@@ -68,6 +68,14 @@ python tools/stands/mono_font.py diff base.pkl new.pkl --png d.png   # «diff 0�
 ```
 По умолчанию — высота прописных 70 мм с фрезой 6 и 100 мм с фрезой 8 (~16 минут); `--sizes 40:4,6:1` — свои размеры, `--text` — только нужные знаки. Изменения на мелком тексте (штрих тоньше 4 мм) ожидаемы, если правка именно о нём — смотреть картинку.
 
+«Курсив» — тот же стенд с `--script N` (ядро `core/NeonScript.bas`, режим «шрифт как образец» N: 0 — нет, 1 — до кончика штриха, как в плагине по умолчанию, 2 — с отступом на полширины). Рукописных шрифтов в репозитории нет — `--font <ttf/otf/woff/woff2>` (например, Marck Script, Bad Script, Caveat с fontsource), строки — `--texts "Привет тест|Neon sign"`, готовые контуры (дамп из CorelDRAW: список объектов, объект — список колец `[(x, y), …]` в мм) — `--polys <файл.pkl>`. Копию ядра «до» — в `--core`, иначе берётся текущее:
+```
+python tools/stands/mono_font.py snap s_base.pkl --core base_script.bas --script 1 --font marck.woff2 --texts "Привет тест|абвгд…" --sizes 80:8
+python tools/stands/mono_font.py snap s_new.pkl --script 1 --font marck.woff2 --texts "Привет тест|абвгд…" --sizes 80:8
+python tools/stands/mono_font.py diff s_base.pkl s_new.pkl --png d.png --font marck.woff2
+```
+«Курсив» считается заметно дольше «Моно»: набор сверки 14.11 (три шрифта, режимы 0/1/2, дамп из CorelDRAW) — около полутора часов на версию.
+
 ### Шаблон команды
 
 ```vb
