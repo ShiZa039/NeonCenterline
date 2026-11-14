@@ -16,6 +16,10 @@ STRINGS = {
                       'Module "{0}" was not found in the plugin project. Please reinstall the plugin.'),
     'done':          ('Готово ({0}, фреза {1} мм): объектов {2}, линий создано {3}.\nВремя {4} с (расчёт {5} с).',
                       'Done ({0}, cutter {1} mm): {2} objects, {3} lines created.\nTime {4} s (computing {5} s).'),
+    'warn_thin':     ('Фреза велика для этих букв: штрих ≈ {0} мм, а концы линий отступают от края на {1} мм — линии укорочены, пропало целиком: {2}.\n'
+                      'Для мелкого текста и гравировки в окне перед расчётом задайте диаметр фрезы = диаметр гравера или «Отступ конца линии от края» 0–0,3 мм.',
+                      'The cutter is too large for these letters: the stroke is ≈ {0} mm, but line ends stay {1} mm from the edge — lines are shortened, dropped entirely: {2}.\n'
+                      'For small text and engraving, in the window before the run set the cutter diameter to the engraver diameter, or "Line end inset from the edge" to 0–0.3 mm.'),
     'prompt_tool':   ('Диаметр фрезы / рассеивателя, мм:\n(конец линии ставится на D/2 от края контура)',
                       'Cutter / diffuser diameter, mm:\n(a free line end is placed D/2 from the outline edge)'),
     'bad_tool':      ('Неверный диаметр.', 'Invalid diameter.'),

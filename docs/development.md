@@ -58,7 +58,15 @@
 
 ### «Моно» и «Курсив»
 
-Править `core/NeonCenterline.bas` / `core/NeonScript.bas`, затем `python tools/gen_core.py` (заменяет макрос-точку входа функцией без интерфейса, вставляет шаги окна хода работы и имя группы отмены). «Моно» — только при нулевой регрессии на `font/SABNeonTest.ttf`; «Курсив» — сверка с `samples/`.
+Править `core/NeonCenterline.bas` / `core/NeonScript.bas`, затем `python tools/gen_core.py` (заменяет макрос-точку входа функцией без интерфейса, вставляет шаги окна хода работы и имя группы отмены). «Курсив» — сверка с `samples/`.
+
+«Моно» — только при нулевой регрессии на `font/SABNeonTest.ttf`, проверка — `tools/stands/mono_font.py` (ядро в LibreOffice, весь шрифт, сравнение узел в узел):
+```
+python tools/stands/mono_font.py snap base.pkl                  # до правки (или --core <копия «до»>)
+python tools/stands/mono_font.py snap new.pkl                   # после
+python tools/stands/mono_font.py diff base.pkl new.pkl --png d.png   # «diff 0» — можно; иначе картинка изменившихся строк
+```
+По умолчанию — высота прописных 70 мм с фрезой 6 и 100 мм с фрезой 8 (~16 минут); `--sizes 40:4,6:1` — свои размеры, `--text` — только нужные знаки. Изменения на мелком тексте (штрих тоньше 4 мм) ожидаемы, если правка именно о нём — смотреть картинку.
 
 ### Шаблон команды
 
@@ -141,7 +149,7 @@ lines = S.run(code)                         # что напечатал Main
 - `run()` кладёт модуль в библиотеку `Standard` LibreOffice, запускает без экрана с таймаутом; ошибка компиляции — `StandTimeout`;
 - `python tools/lo_stand.py GROMGEO NESTRASTER` — только «компилируется ли раздел».
 
-Образец целиком — `tools/stands/grom_hem.py` (контур под подгиб против `proto/grommets.py hem()`): `python tools/stands/grom_hem.py` → `mismatches: 0`. Новый стенд — копия образца: свои входные данные, своя процедура, сравнение с допуском (`1e-4` мм для точек).
+Образец целиком — `tools/stands/grom_hem.py`; стенд ядра «Моно» по всему тестовому шрифту — `tools/stands/mono_font.py` (см. выше). (контур под подгиб против `proto/grommets.py hem()`): `python tools/stands/grom_hem.py` → `mismatches: 0`. Новый стенд — копия образца: свои входные данные, своя процедура, сравнение с допуском (`1e-4` мм для точек).
 
 ## Сборка `.gms`
 

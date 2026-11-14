@@ -1,5 +1,19 @@
 # Changelog
 
+## Не выпущено · Unreleased
+
+RU
+- **«Моно» на мелком тексте** (гравировка по центральной линии, буквы 5–6 мм) ломался: конец линии ставится на D/2 от края, и с фрезой 8 мм отступ 4 мм съедал штрих ~0,8 мм целиком, а где отступ длиннее линии — её конец уезжал за начало, и отрезок торчал из буквы. Теперь такая линия пропускается, а в отчёте — предупреждение: ширина штриха, отступ конца, сколько линий пропало и что задать (диаметр гравера или «Отступ конца линии от края»).
+- **«Моно»:** острия (вершины «А», «Л», «М») отступали от края на D/2 даже при заданном «Отступе конца» — теперь на тот же отступ, что и свободные концы.
+- **«Моно» на мелком тексте:** допуск аппроксимации 0,25 мм — треть штриха буквы высотой 6 мм, дуги выходили ломаными. Теперь допуск не грубее W/16 (при штрихе 4 мм и толще — прежние 0,25 мм). Метка точки (над «ё», «i») — не больше четверти самой точки.
+- На обычных размерах неона «Моно» не изменился: весь тестовый шрифт (высота 70 мм с фрезой 6, 100 мм с фрезой 8; кириллица и цифры — 40 мм с фрезой 4) — узел в узел как раньше. Проверка — новый стенд `tools/stands/mono_font.py`.
+
+EN
+- **Mono on small text** (centerline engraving, 5–6 mm letters) broke: a line end is placed D/2 from the edge, and with an 8 mm cutter the 4 mm inset ate a ~0.8 mm stroke entirely; where the inset was longer than the line, its end ran past the start and the segment stuck out of the letter. Such a line is now dropped, and the report warns: stroke width, end inset, how many lines were dropped and what to set (the engraver diameter or "Line end inset from the edge").
+- **Mono:** tips (apexes of A, Л, M) were set back by D/2 even with an "end inset" set — they now use the same inset as free ends.
+- **Mono on small text:** the 0.25 mm fitting tolerance is a third of the stroke of a 6 mm letter, arcs came out as polylines. The tolerance is now at most W/16 (strokes of 4 mm and thicker keep 0.25 mm). A dot mark (over ё, i) is at most a quarter of the dot itself.
+- At regular neon sizes Mono is unchanged: the whole test font (70 mm height with a 6 mm cutter, 100 mm with 8 mm; Cyrillic and digits at 40 mm with 4 mm) gives the same nodes as before. Checked with the new stand `tools/stands/mono_font.py`.
+
 ## 1.1.2 — 2026-11-12
 
 RU

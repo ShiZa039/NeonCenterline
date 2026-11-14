@@ -89,6 +89,7 @@ Private Sub RunMode(ByVal mode As Long)
     Dim tool As Double, rc As Long, nIn As Long, nOut As Long
     Dim tAll As Double, tCore As Double, errText As String, mname As String
     Dim before As Collection, cutRep As String, newCol As Collection, eo As String
+    Dim thinW As Double, thinRep As String, eoEff As Double
 
     ' сначала окно параметров, потом сам расчёт — при окне хода работы (RunMono / RunScript ещё раз)
     If Not NeonInJob(IIf(mode = 0, "mono", "script")) Then
@@ -121,6 +122,17 @@ Private Sub RunMode(ByVal mode As Long)
     If mode = 0 Then
         mname = NeonL("mode_mono")
         rc = NeonMonoRun(tool, nIn, nOut, tAll, tCore, errText)
+        ' фреза шире штриха (мелкий текст, гравировка): сказать, почему линии короткие или пропали
+        If rc = 0 Then
+            thinW = NeonMonoThinW()
+            If thinW > 0 Then
+                eoEff = tool / 2
+                If Len(eo) > 0 Then
+                    eoEff = ParseNum(eo)
+                End If
+                thinRep = vbCrLf & vbCrLf & NeonLF("warn_thin", FmtNum(Round(thinW, 2)), FmtNum(Round(eoEff, 2)), NeonMonoDropped())
+            End If
+        End If
     Else
         mname = NeonL("mode_script")
         NeonScriptSetRef CLng(Val(GetSetting(REG_APP, "Script", "RefEnd", "1")))
@@ -151,8 +163,8 @@ Private Sub RunMode(ByVal mode As Long)
             MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & cutRep & _
                    NeonL("script_beta"), vbExclamation, NeonL("center_title")
         Else
-            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & cutRep, _
-                   vbInformation, NeonL("center_title")
+            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & thinRep & cutRep, _
+                   IIf(Len(thinRep) > 0, vbExclamation, vbInformation), NeonL("center_title")
         End If
     Case 1
         MsgBox NeonL("err_nodoc"), vbExclamation, NeonL("center_title")

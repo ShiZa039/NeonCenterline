@@ -118,6 +118,12 @@ Private Function LangRu_1(ByVal key As String, s As String) As Boolean
     Case "done"
         s = s & LD("#Bmqmam (#{0}, #sodf_ #{1} #kk): m`ydiqma #{2}, #jglgh pmfc_lm #{3}.")
         s = s & LD("$000A#Aodk~ #{4} #p (o_pv$0451q #{5} #p).")
+    Case "warn_thin"
+        s = s & LD("#Sodf_ adjgi_ cj~ |qgt `ria: wqogt $2248 #{0} #kk, _ imluz jglgh mq")
+        s = s & LD("#pqrn_}q mq io_~ l_ #{1} #kk $2014 jglgg rimomvdlz, nomn_jm udjgimk")
+        s = s & LD(": {2}.$000A#Cj~ kdjimbm qdipq_ g bo_agomaig a mild ndodc o_pv$0451qmk")
+        s = s & LD(" #f_c_hqd cg_kdqo sodfz = cg_kdqo bo_ado_ gjg $00ABMqpqrn imlu_ j")
+        s = s & LD("#glgg mq io_~$00BB 0$20130,3 kk.")
     Case "prompt_tool"
         s = s & LD("#Cg_kdqo sodfz / o_ppdga_qdj~, kk:$000A(imldu jglgg pq_agqp~ l_ #D")
         s = s & LD("/2 #mq io_~ imlqro_)")
@@ -183,13 +189,6 @@ Private Function LangRu_1(ByVal key As String, s As String) As Boolean
         s = s & LD("#?codp m`lmajdlgh ld l_pqomdl.")
     Case "upd_nogms"
         s = s & LD("#Ld l_hcdl s_hj nj_bgl_ (.#gms) #cj~ f_kdlz.")
-    Case "about"
-        s = s & LD("NeonCenterline {0}$000A$000A#Udlqo_j{l_~ jglg~ nm imlqro_k `ria cj~ s")
-        s = s & LD("#odfdomaig i_l_j_ nmc bg`igh ldml. Ilmnig: $00ABKmlm$00BB $2014 cj~ kmlmw")
-        s = s & LD("#gogllzt (ldmlmazt) wogsqma, $00ABIropga$00BB $2014 cj~ orimngplzt.$000A$000A$00A9 20")
-        s = s & LD("26 SAB:CORE. #@dpnj_qlm cj~ j}`mbm gpnmj{fma_lg~, a qmk vgpjd")
-        s = s & LD(" #imkkdovdpimbm. Nomc_e_ g ndodn_imai_ nj_bgl_ f_nodxdlz (pk.")
-        s = s & LD(" LICENSE).")
     Case Else
         LangRu_1 = False
     End Select
@@ -199,6 +198,13 @@ Private Function LangRu_2(ByVal key As String, s As String) As Boolean
     LangRu_2 = True
     s = ""
     Select Case key
+    Case "about"
+        s = s & LD("NeonCenterline {0}$000A$000A#Udlqo_j{l_~ jglg~ nm imlqro_k `ria cj~ s")
+        s = s & LD("#odfdomaig i_l_j_ nmc bg`igh ldml. Ilmnig: $00ABKmlm$00BB $2014 cj~ kmlmw")
+        s = s & LD("#gogllzt (ldmlmazt) wogsqma, $00ABIropga$00BB $2014 cj~ orimngplzt.$000A$000A$00A9 20")
+        s = s & LD("26 SAB:CORE. #@dpnj_qlm cj~ j}`mbm gpnmj{fma_lg~, a qmk vgpjd")
+        s = s & LD(" #imkkdovdpimbm. Nomc_e_ g ndodn_imai_ nj_bgl_ f_nodxdlz (pk.")
+        s = s & LD(" LICENSE).")
     Case "about_donate"
         s = s & LD("$000A$000A#Nj_bgl `dpnj_qlzh. Dpjg ml a_k nmkmb_dq $2014 kmelm nm`j_bmc_o")
         s = s & LD("#gq{ _aqmo_. Mqiozq{ pqo_lgur#?")
@@ -288,8 +294,6 @@ Private Function LangRu_2(ByVal key As String, s As String) As Boolean
         s = s & LD("#k")
     Case "cut_title"
         s = s & LD("#Io_qlmpq{ odf_")
-    Case "cut_nostep"
-        s = s & LD("#Io_qlmpq{ odf_ ld f_c_l_ (L_pqomhig).")
     Case Else
         LangRu_2 = False
     End Select
@@ -299,6 +303,8 @@ Private Function LangRu_3(ByVal key As String, s As String) As Boolean
     LangRu_3 = True
     s = ""
     Select Case key
+    Case "cut_nostep"
+        s = s & LD("#Io_qlmpq{ odf_ ld f_c_l_ (L_pqomhig).")
     Case "cut_report"
         s = s & LD("#Nmcbmli_ nmc odf #{0} #kk: rimomvdlm irpima #{1} (#podf_lm apdbm")
         s = s & LD(" {2} #kk), red io_qlz #{3}, #ld nmcmbl_lm #{4} (#f_kilrqzd, `df p")
@@ -393,11 +399,6 @@ Private Function LangRu_3(ByVal key As String, s As String) As Boolean
         s = s & LD("#Rnompqgq{")
     Case "chk_simp_ask"
         s = s & LD("#Nmi_fza_q{ milm rnomxdlg~ nog i_ecmk f_nrpid")
-    Case "tb_outdated"
-        s = s & LD("#N_ldj{ $00ABLdml$00BB a #CorelDRAW #rpq_odj_: a |qmh adopgg nj_bgl_ l_")
-        s = s & LD(" #ldh dpq{ lmazd ilmnig. M`lmagq{ n_ldj{ pdhv_p#?$000A$000AWindows #nmn")
-        s = s & LD("#ompgq no_a_ _ckglgpqo_qmo_. F_qdk nmjlmpq{} ndodf_nrpqgqd #Co")
-        s = s & LD("relDRAW $2014 #lmazd ilmnig nm~a~qp~ p_kg.")
     Case Else
         LangRu_3 = False
     End Select
@@ -407,6 +408,11 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
     LangRu_4 = True
     s = ""
     Select Case key
+    Case "tb_outdated"
+        s = s & LD("#N_ldj{ $00ABLdml$00BB a #CorelDRAW #rpq_odj_: a |qmh adopgg nj_bgl_ l_")
+        s = s & LD(" #ldh dpq{ lmazd ilmnig. M`lmagq{ n_ldj{ pdhv_p#?$000A$000AWindows #nmn")
+        s = s & LD("#ompgq no_a_ _ckglgpqo_qmo_. F_qdk nmjlmpq{} ndodf_nrpqgqd #Co")
+        s = s & LD("relDRAW $2014 #lmazd ilmnig nm~a~qp~ p_kg.")
     Case "tb_reset_done"
         s = s & LD("#N_ldj{ $00ABLdml$00BB p`omwdl_ i l_`mor ilmnmi |qmh adopgg nj_bgl_.$000A")
         s = s & LD("$000A{0}")
@@ -500,12 +506,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
     Case "grom_hem_rep"
         s = s & LD("#Imlqro nmc nmcbg`: aznrpi #{0} #kk l_orer mq io_~ (m`ydiqma: #{")
         s = s & LD("1}) $2014 #l_ pjmd `_lldo_.")
-    Case "grom_hint"
-        s = s & LD("#A i_ecmk rbjr $2014 j}adop, l_ pqmoml_t $2014 o_almkdolm, ld oded f_")
-        s = s & LD("#c_llmbm o_ppqm~lg~. Piorbj$0451llzh rbmj $2014 qmed rbmj; r iorb_ g ")
-        s = s & LD("#ma_j_ $2014 o_almkdolm nm imlqror. Imlqro nmc nmcbg` $2014 jglg~ odf")
-        s = s & LD("#_ l_ aznrpi l_orer mq io_~ `_lldo_ (j}adopz $2014 mq io_~, i_i `")
-        s = s & LD("#df nmcbg`_).")
     Case Else
         LangRu_4 = False
     End Select
@@ -515,6 +515,12 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     LangRu_5 = True
     s = ""
     Select Case key
+    Case "grom_hint"
+        s = s & LD("#A i_ecmk rbjr $2014 j}adop, l_ pqmoml_t $2014 o_almkdolm, ld oded f_")
+        s = s & LD("#c_llmbm o_ppqm~lg~. Piorbj$0451llzh rbmj $2014 qmed rbmj; r iorb_ g ")
+        s = s & LD("#ma_j_ $2014 o_almkdolm nm imlqror. Imlqro nmc nmcbg` $2014 jglg~ odf")
+        s = s & LD("#_ l_ aznrpi l_orer mq io_~ `_lldo_ (j}adopz $2014 mq io_~, i_i `")
+        s = s & LD("#df nmcbg`_).")
     Case "btn_grom"
         s = s & LD("#O_ppq_agq{")
     Case "bad_grom"
@@ -629,8 +635,6 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     Case "nest_report"
         s = s & LD("#O_fjmedlm cdq_jdh: #{0}, #jgpqma: #{1}.$000A{2}#Nmjd mq io_~ #{3} #kk,")
         s = s & LD(" #f_fmo kdecr cdq_j~kg #{4} #kk, #{5}.")
-    Case "nest_how_c0"
-        s = s & LD("#nm imlqror, `df nmamomq_")
     Case Else
         LangRu_5 = False
     End Select
@@ -640,6 +644,8 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
     LangRu_6 = True
     s = ""
     Select Case key
+    Case "nest_how_c0"
+        s = s & LD("#nm imlqror, `df nmamomq_")
     Case "nest_how_c1"
         s = s & LD("#nm imlqror, p nmamomqmk l_ 180$00B0")
     Case "nest_how_c2"
@@ -782,6 +788,13 @@ Private Function LangEn_1(ByVal key As String, s As String) As Boolean
     Case "done"
         s = s & LD("Done ({0}, cutter {1} mm): {2} objects, {3} lines created.$000AT")
         s = s & LD("ime {4} s (computing {5} s).")
+    Case "warn_thin"
+        s = s & LD("The cutter is too large for these letters: the stroke is $2248 {")
+        s = s & LD("0} mm, but line ends stay {1} mm from the edge $2014 lines are s")
+        s = s & LD("hortened, dropped entirely: {2}.$000AFor small text and engravin")
+        s = s & LD("g, in the window before the run set the cutter diameter to t")
+        s = s & LD("he engraver diameter, or $0022Line end inset from the edge$0022 to 0")
+        s = s & LD("$20130.3 mm.")
     Case "prompt_tool"
         s = s & LD("Cutter / diffuser diameter, mm:$000A(a free line end is placed D")
         s = s & LD("/2 from the outline edge)")
@@ -848,12 +861,6 @@ Private Function LangEn_1(ByVal key As String, s As String) As Boolean
         s = s & LD("The update address is not configured.")
     Case "upd_nogms"
         s = s & LD("The plugin file (.gms) to replace was not found.")
-    Case "about"
-        s = s & LD("NeonCenterline {0}$000A$000ACenterline from letter outlines for mill")
-        s = s & LD("ing flex-neon channels. Buttons: $0022Mono$0022 for monoline (neon) ")
-        s = s & LD("fonts, $0022Script$0022 for handwritten fonts.$000A$000A$00A9 2026 SAB:CORE. Fre")
-        s = s & LD("e for any use, including commercial. Selling or repackaging ")
-        s = s & LD("the plugin is prohibited (see LICENSE).")
     Case Else
         LangEn_1 = False
     End Select
@@ -863,6 +870,12 @@ Private Function LangEn_2(ByVal key As String, s As String) As Boolean
     LangEn_2 = True
     s = ""
     Select Case key
+    Case "about"
+        s = s & LD("NeonCenterline {0}$000A$000ACenterline from letter outlines for mill")
+        s = s & LD("ing flex-neon channels. Buttons: $0022Mono$0022 for monoline (neon) ")
+        s = s & LD("fonts, $0022Script$0022 for handwritten fonts.$000A$000A$00A9 2026 SAB:CORE. Fre")
+        s = s & LD("e for any use, including commercial. Selling or repackaging ")
+        s = s & LD("the plugin is prohibited (see LICENSE).")
     Case "about_donate"
         s = s & LD("$000A$000AThe plugin is free. If it helps you, you can support the a")
         s = s & LD("uthor. Open the page?")
@@ -951,8 +964,6 @@ Private Function LangEn_2(ByVal key As String, s As String) As Boolean
         s = s & LD("m")
     Case "cut_title"
         s = s & LD("Cut step")
-    Case "cut_nostep"
-        s = s & LD("The cut step is not set (Settings).")
     Case Else
         LangEn_2 = False
     End Select
@@ -962,6 +973,8 @@ Private Function LangEn_3(ByVal key As String, s As String) As Boolean
     LangEn_3 = True
     s = ""
     Select Case key
+    Case "cut_nostep"
+        s = s & LD("The cut step is not set (Settings).")
     Case "cut_report"
         s = s & LD("Fit to cut step {0} mm: {1} pieces shortened ({2} mm removed")
         s = s & LD(" in total), {3} already fit, {4} not fitted (closed, no free")
@@ -1056,11 +1069,6 @@ Private Function LangEn_3(ByVal key As String, s As String) As Boolean
         s = s & LD("Simplify")
     Case "chk_simp_ask"
         s = s & LD("Show the simplify window on every run")
-    Case "tb_outdated"
-        s = s & LD("The $0022Neon$0022 toolbar in CorelDRAW is outdated: this plugin ver")
-        s = s & LD("sion has new buttons on it. Update the toolbar now?$000A$000AWindows")
-        s = s & LD(" will ask for administrator rights. Then fully restart Corel")
-        s = s & LD("DRAW and the new buttons appear by themselves.")
     Case Else
         LangEn_3 = False
     End Select
@@ -1070,6 +1078,11 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
     LangEn_4 = True
     s = ""
     Select Case key
+    Case "tb_outdated"
+        s = s & LD("The $0022Neon$0022 toolbar in CorelDRAW is outdated: this plugin ver")
+        s = s & LD("sion has new buttons on it. Update the toolbar now?$000A$000AWindows")
+        s = s & LD(" will ask for administrator rights. Then fully restart Corel")
+        s = s & LD("DRAW and the new buttons appear by themselves.")
     Case "tb_reset_done"
         s = s & LD("The $0022Neon$0022 toolbar is reset to the button set of this plugin")
         s = s & LD(" version.$000A$000A{0}")
@@ -1165,12 +1178,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
     Case "grom_hem_rep"
         s = s & LD("Hem outline: {0} mm outside the edge ({1} objects) $2014 on the ")
         s = s & LD("banner layer.")
-    Case "grom_hint"
-        s = s & LD("A grommet in every corner, evenly along the sides, never fur")
-        s = s & LD("ther apart than the given distance. A rounded corner counts ")
-        s = s & LD("as a corner; circles and ovals get grommets evenly all round")
-        s = s & LD(". The hem outline is a cut line the allowance outside the ba")
-        s = s & LD("nner edge (grommets are still measured from the edge).")
     Case Else
         LangEn_4 = False
     End Select
@@ -1180,6 +1187,12 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     LangEn_5 = True
     s = ""
     Select Case key
+    Case "grom_hint"
+        s = s & LD("A grommet in every corner, evenly along the sides, never fur")
+        s = s & LD("ther apart than the given distance. A rounded corner counts ")
+        s = s & LD("as a corner; circles and ovals get grommets evenly all round")
+        s = s & LD(". The hem outline is a cut line the allowance outside the ba")
+        s = s & LD("nner edge (grommets are still measured from the edge).")
     Case "btn_grom"
         s = s & LD("Place")
     Case "bad_grom"
@@ -1294,8 +1307,6 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     Case "nest_report"
         s = s & LD("Parts nested: {0}, sheets: {1}.$000A{2}Edge margin {3} mm, gap b")
         s = s & LD("etween parts {4} mm, {5}.")
-    Case "nest_how_c0"
-        s = s & LD("by outline, no rotation")
     Case Else
         LangEn_5 = False
     End Select
@@ -1305,6 +1316,8 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
     LangEn_6 = True
     s = ""
     Select Case key
+    Case "nest_how_c0"
+        s = s & LD("by outline, no rotation")
     Case "nest_how_c1"
         s = s & LD("by outline, rotation by 180$00B0")
     Case "nest_how_c2"
