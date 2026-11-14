@@ -1,6 +1,8 @@
 Option Explicit
 ' Окно перед расчётом (если включено «Спрашивать при каждом запуске»): диаметр фрезы,
 ' тип неона, кратность реза, подгонка. Элементы окна создаёт NeonBuild, код вставляется при сборке.
+' Окно общее для «Моно» и «Курсива»: строка «Курсив — шрифт как образец» есть только у «Курсива»
+' (NeonRunScript), у «Моно» она скрыта, и окно короче.
 ' NeonRunMode = 1 — то же окно перед упрощением контура: допуск и «показывать окно» (лишние
 ' элементы скрываются, окно становится короче — сборщик менять не нужно).
 ' NeonRunMode = 2 — перед расстановкой люверсов: отступ от края, расстояние между люверсами,
@@ -45,7 +47,7 @@ Private Sub UserForm_Initialize()
         InitNoodle
         Exit Sub
     End If
-    Me.Caption = NeonL("center_title")
+    Me.Caption = NeonLF("center_title_mode", NeonL(IIf(NeonRunScript, "mode_script", "mode_mono")))
     lblTool.Caption = NeonL("lbl_tool")
     cboTool.Clear
     cboTool.AddItem "6"
@@ -92,7 +94,26 @@ Private Sub UserForm_Initialize()
     chkAsk.Value = True
     btnOK.Caption = NeonL("btn_run")
     btnCancel.Caption = NeonL("btn_cancel")
+    ' «шрифт как образец» — настройка «Курсива»; у «Моно» строку убрать, всё ниже поднять
+    If Not NeonRunScript Then
+        HideRefRow
+    End If
     NeonRunConfirmed = False
+End Sub
+
+' окно «Моно»: без строки «Курсив — шрифт как образец», окно короче на её высоту
+Private Sub HideRefRow()
+    Dim dy As Single
+    dy = chkAsk.Top - lblRef.Top
+    If dy <= 0 Then
+        Exit Sub
+    End If
+    lblRef.Visible = False
+    cboRef.Visible = False
+    chkAsk.Top = chkAsk.Top - dy
+    btnOK.Top = btnOK.Top - dy
+    btnCancel.Top = btnCancel.Top - dy
+    Me.Height = Me.Height - dy
 End Sub
 
 Private Sub InitSimplify()
@@ -690,7 +711,9 @@ Private Sub btnOK_Click()
     End If
     SaveSetting "NeonCenterline", "Params", "Tool", FmtNum(t)
     SaveSetting "NeonCenterline", "Cut", "Step", FmtNum(c)
-    SaveSetting "NeonCenterline", "Script", "RefEnd", CStr(cboRef.ListIndex)
+    If NeonRunScript Then
+        SaveSetting "NeonCenterline", "Script", "RefEnd", CStr(cboRef.ListIndex)
+    End If
     SaveSetting "NeonCenterline", "Cut", "Type", IIf(cboType.ListIndex = 1, "neon2", "classic")
     SaveSetting "NeonCenterline", "Cut", "Fit", IIf(chkFit.Value, "1", "0")
     SaveSetting "NeonCenterline", "Cut", "Trim", IIf(cboTrim.ListIndex = 1, "end", "both")

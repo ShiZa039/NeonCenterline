@@ -29,6 +29,8 @@ Public NeonRunConfirmed As Boolean
 ' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура, 2 — люверсы, 3 — раскладка, 4 — лапша,
 ' 5 — окно хода работы
 Public NeonRunMode As Long
+' окно центральных линий (режим 0) открыто кнопкой «Курсив»: только тогда в нём строка «шрифт как образец»
+Public NeonRunScript As Boolean
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
 Public Const NEON_TOOLBAR_VER As String = "12"
@@ -94,7 +96,7 @@ Private Sub RunMode(ByVal mode As Long)
     ' сначала окно параметров, потом сам расчёт — при окне хода работы (RunMono / RunScript ещё раз)
     If Not NeonInJob(IIf(mode = 0, "mono", "script")) Then
         If GetSetting(REG_APP, "UI", "AskTool", "1") = "1" Then
-            If Not AskRunParams() Then
+            If Not AskRunParams(mode) Then
                 Exit Sub
             End If
         End If
@@ -184,9 +186,10 @@ Private Sub RunMode(ByVal mode As Long)
 End Sub
 
 ' окно параметров перед расчётом; без собранной формы — прежний вопрос о диаметре
-Private Function AskRunParams() As Boolean
+Private Function AskRunParams(ByVal mode As Long) As Boolean
     Dim f As Object, s As String, tool As Double
     NeonRunMode = 0
+    NeonRunScript = (mode = 1)
     On Error Resume Next
     Set f = VBA.UserForms.Add("frmNeonRun")
     On Error GoTo 0

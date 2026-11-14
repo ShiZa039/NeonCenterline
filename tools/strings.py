@@ -4,6 +4,7 @@
 STRINGS = {
     'app_title':     ('NeonCenterline', 'NeonCenterline'),
     'center_title':  ('Центральная линия', 'Centerline'),
+    'center_title_mode': ('Центральная линия — {0}', 'Centerline — {0}'),
     'mode_mono':     ('Моно', 'Mono'),
     'mode_script':   ('Курсив', 'Script'),
     'script_beta':   ('\n\n⚠ Режим «Курсив» в разработке и работает нестабильно: на стыках букв возможны изломы и лишние куски. Проверьте линии перед резкой.',

@@ -70,7 +70,7 @@
 - **диаметр фрезы** D (по умолчанию 8 мм);
 - **отступ конца линии от края** — свободный конец ставится с отступом от края контура; по умолчанию D/2 (радиус фрезы), можно задать в мм. **Мелкий текст и гравировка по центральной линии:** задайте диаметр гравера (или отступ 0–0,3 мм) — иначе концы уходят внутрь на D/2 = 4 мм, и на буквах 5–6 мм от линий ничего не остаётся (плагин предупредит об этом в отчёте);
 - **тип неона** — светодиодный (лента внутри: кусок неона = длина паза) или **неон 2.0** (силиконовый рассеиватель в пазу, лента отдельно);
-- **«Курсив» — шрифт как образец**: нет (фрезеровать сам контур, с учётом фрезы) / да, линия до кончика штриха (по умолчанию) / да, с отступом на полширины штриха;
+- **«Курсив» — шрифт как образец** (только в окне «Курсива»): нет (фрезеровать сам контур, с учётом фрезы) / да, линия до кончика штриха (по умолчанию) / да, с отступом на полширины штриха;
 - **кратность реза** (10 / 25 / 50 мм или своя) и галочка **«Подгонять линии под кратность реза»**: после расчёта каждый кусок укорачивается до ближайшей меньшей кратной длины — только за счёт **свободных** концов, поровну с обоих или только с конца линии (настройка «Укорачивать»). Удлинять нельзя: конец уже стоит с отступом от края. Замкнутые куски и куски без свободных концов не меняются — остаток виден в отчёте.
 
 ## Контур ▾
@@ -201,7 +201,7 @@ Select outlines (curves, text, groups) and press **Mono** or **Script**.
 - **cutter diameter** D (8 mm by default);
 - **line end inset from the edge** — a free line end is set back from the outline edge; D/2 (the cutter radius) by default, or a value in mm. **Small text and centerline engraving:** set the engraver diameter (or an inset of 0–0.3 mm) — otherwise line ends move 4 mm (D/2) inward and on 5–6 mm letters nothing is left of the lines (the report warns about it);
 - **neon type** — LED neon (strip inside: neon piece = groove length) or **Neon 2.0** (silicone diffuser in a groove, separate strip);
-- **Script — font as a reference**: no (mill the outline itself, with the cutter) / yes, line to the stroke tip (default) / yes, inset by half the stroke width;
+- **Script — font as a reference** (only in the Script window): no (mill the outline itself, with the cutter) / yes, line to the stroke tip (default) / yes, inset by half the stroke width;
 - **cut step** (10 / 25 / 50 mm or custom) and **"Fit lines to the cut step"**: after a run every piece is shortened to the nearest smaller multiple — only at **free** ends, equally at both or only at the line end ("Shorten" setting). Lines are never extended: a free end is already inset from the edge. Closed pieces and pieces without free ends are left as is; the remainder is shown in the report.
 
 ## Outline ▾
