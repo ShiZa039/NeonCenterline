@@ -149,7 +149,7 @@ lines = S.run(code)                         # что напечатал Main
 - `run()` кладёт модуль в библиотеку `Standard` LibreOffice, запускает без экрана с таймаутом; ошибка компиляции — `StandTimeout`;
 - `python tools/lo_stand.py GROMGEO NESTRASTER` — только «компилируется ли раздел».
 
-Образец целиком — `tools/stands/grom_hem.py`; стенд ядра «Моно» по всему тестовому шрифту — `tools/stands/mono_font.py` (см. выше). (контур под подгиб против `proto/grommets.py hem()`): `python tools/stands/grom_hem.py` → `mismatches: 0`. Новый стенд — копия образца: свои входные данные, своя процедура, сравнение с допуском (`1e-4` мм для точек).
+Образец целиком — `tools/stands/grom_hem.py` (контур под подгиб против `proto/grommets.py hem()`): `python tools/stands/grom_hem.py` → `mismatches: 0`. Новый стенд — копия образца: свои входные данные, своя процедура, сравнение с допуском (`1e-4` мм для точек). Стенд ядер «Моно» и «Курсива» по целым шрифтам — `tools/stands/mono_font.py` (см. [выше](#моно-и-курсив)).
 
 ## Сборка `.gms`
 

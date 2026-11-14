@@ -1,4 +1,4 @@
-"""«Моно» на всём тестовом шрифте: снимок до правки и сравнение после — правило «нулевой регрессии».
+"""«Моно» (и «Курсив») на всём шрифте: снимок до правки и сравнение после — правило «нулевой регрессии».
 
 Ядро core/NeonCenterline.bas (раздел '@@CORE_BEGIN … '@@CORE_END и объявления перед ним) исполняется
 в LibreOffice Basic; знаки font/SABNeonTest.ttf подаются ломаными, как их читает CorelDRAW.
@@ -14,6 +14,14 @@ snap: --core <.bas> (по умолчанию core/NeonCenterline.bas — мож�
       --sizes 70:6,100:8 (высота прописных, мм : диаметр фрезы, мм), --text "АБВ" (только эти знаки).
 Два размера по всему шрифту — около 16 минут. Сравнение точное (до последнего знака координат).
 14.11.2026: правки «Моно» для мелкого текста — diff 0 на 70:6, 100:8 и 40:4.
+
+«Курсив»: --script N — ядро core/NeonScript.bas, режим «шрифт как образец» N (0 — нет, с учётом фрезы;
+1 — до кончика штриха, по умолчанию в плагине; 2 — отступ на полширины). Шрифт — --font <ttf/otf/woff/woff2>,
+строки — --texts "Привет тест|Neon sign" (через |). Готовые контуры (например, дамп из CorelDRAW) —
+--polys <файл.pkl>: список объектов, объект — список колец [(x, y), ...] в мм; объекты раскладываются
+в ряд и считаются по 6 за запуск. Пример:
+    python tools/stands/mono_font.py snap s.pkl --script 1 --font marck-script-cyrillic-400-normal.woff2 \
+           --texts "Привет тест" --sizes 80:8
 """
 import argparse, os, pickle, sys, tempfile, time
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +48,7 @@ Sub Main
         Line Input #f, ln
         If Left(ln, 1) = "T" Then
             parts = Split(ln, " ")
-            CoreSetParams CDbl(parts(1)), CDbl(parts(2))
+            CoreSetParams CDbl(parts(1)), CDbl(parts(2)){REF}
         ElseIf ln = "R" Then
             If st >= 0 Then CoreEndRing st
             st = CoreRingStart()
@@ -105,9 +113,10 @@ class Flat(BasePen):
     _endPath = _closePath
 
 
-def text_rings(text, cap_mm):
-    f = TTFont(FONT); gs = f.getGlyphSet(); cmap = f.getBestCmap()
-    sc = cap_mm / f['OS/2'].sCapHeight
+def text_rings(text, cap_mm, font=None):
+    f = TTFont(font or FONT); gs = f.getGlyphSet(); cmap = f.getBestCmap()
+    capu = getattr(f['OS/2'], 'sCapHeight', 0) or 0.7 * f['head'].unitsPerEm
+    sc = cap_mm / capu
     x = 0; rings = []
     for ch in text:
         if ord(ch) not in cmap:
@@ -119,15 +128,17 @@ def text_rings(text, cap_mm):
     return rings
 
 
-def core_module(core):
+def core_module(core, ref=None):
     s = open(core, encoding='utf-8').read().replace('\r\n', '\n')
     head = s[:s.index("'@@CORE_BEGIN")]
     body = s[s.index("'@@CORE_BEGIN"):s.index("'@@CORE_END")]
     head = '\n'.join(l for l in head.splitlines() if not l.startswith('Attribute VB_'))
-    # у ядер до 14.11.2026 нет NeonMonoThinW / NeonMonoDropped — тогда их не печатаем
-    thin = ' & " thinW=" & NeonMonoThinW() & " dropped=" & NeonMonoDropped()' if 'NeonMonoThinW' in s else ''
+    # у ядер до 14.11.2026 нет NeonMonoThinW / NeonMonoDropped (NeonScript…) — тогда их не печатаем
+    pre = 'NeonScript' if ref is not None else 'NeonMono'
+    thin = (f' & " thinW=" & {pre}ThinW() & " dropped=" & {pre}Dropped()' if pre + 'ThinW' in s else '')
+    refc = f'\n            NeonScriptSetRef {int(ref)}' if ref is not None else ''
     return ('Option VBASupport 1\n' + head + '\n' + body +
-            HARNESS.replace('{IN}', IN).replace('{OUT}', S.OUT).replace('{THIN}', thin))
+            HARNESS.replace('{IN}', IN).replace('{OUT}', S.OUT).replace('{THIN}', thin).replace('{REF}', refc))
 
 
 def run_rings(code, rings, tool, tol=0.25):
@@ -155,21 +166,40 @@ def run_rings(code, rings, tool, tol=0.25):
     return paths, L[0]
 
 
+def polys_batches(path):
+    """Объекты из pickle -> партии по 6, разложенные в ряд (чтобы не касались друг друга)."""
+    P = pickle.load(open(path, 'rb'))
+    out = []
+    for k0 in range(0, len(P), 6):
+        rings, x = [], 0.0
+        for obj in P[k0:k0 + 6]:
+            xs = [p[0] for r in obj for p in r]
+            dx = x - min(xs)
+            rings += [[(px + dx, py) for px, py in r] for r in obj]
+            x += max(xs) - min(xs) + 50
+        out.append((f'polys{k0}', rings))
+    return out
+
+
 def snap(a):
-    code = core_module(a.core)
+    code = core_module(a.core, a.script)
     sizes = [tuple(map(float, s.split(':'))) for s in a.sizes.split(',')]
-    texts = [a.text] if a.text else TEXTS
+    texts = a.texts.split('|') if a.texts else ([a.text] if a.text else TEXTS)
     res = {}
-    for cap, tool in sizes:
-        for txt in texts:
-            t0 = time.time()
-            try:
-                res[(cap, tool, txt)], info = run_rings(code, text_rings(txt, cap), tool)
-            except Exception as e:
-                res[(cap, tool, txt)], info = 'ERR ' + str(e), ''
-            pickle.dump(res, open(a.out, 'wb'))
-            n = len(res[(cap, tool, txt)]) if not isinstance(res[(cap, tool, txt)], str) else res[(cap, tool, txt)]
-            print(f'{cap:g}:{tool:g} {txt[:4]}… paths {n} ({time.time() - t0:.0f} s) {info}', flush=True)
+    if a.polys:
+        # готовые контуры — свой размер; из --sizes берётся только фреза
+        jobs = [(0.0, tool, name, rings) for _, tool in sizes[:1] for name, rings in polys_batches(a.polys)]
+    else:
+        jobs = [(cap, tool, txt, None) for cap, tool in sizes for txt in texts]
+    for cap, tool, txt, rings in jobs:
+        t0 = time.time()
+        try:
+            res[(cap, tool, txt)], info = run_rings(code, rings if rings is not None else text_rings(txt, cap, a.font), tool)
+        except Exception as e:
+            res[(cap, tool, txt)], info = 'ERR ' + str(e), ''
+        pickle.dump(res, open(a.out, 'wb'))
+        n = len(res[(cap, tool, txt)]) if not isinstance(res[(cap, tool, txt)], str) else res[(cap, tool, txt)]
+        print(f'{cap:g}:{tool:g} {txt[:4]}… paths {n} ({time.time() - t0:.0f} s) {info}', flush=True)
     print('saved', a.out)
 
 
@@ -189,7 +219,7 @@ def diff(a):
         for i, k in enumerate(bad):
             for j, (lab, R) in enumerate((('before', A[k]), ('after', B[k]))):
                 ax = axs[2 * i + j][0]
-                for r in text_rings(k[2], k[0]):
+                for r in (text_rings(k[2], k[0], a.font) if k[0] > 0 else []):
                     ax.plot([p[0] for p in r + r[:1]], [p[1] for p in r + r[:1]], color='0.6', lw=0.6)
                 for g, cl, segs in (R if not isinstance(R, str) else []):
                     for s in segs:
@@ -212,6 +242,12 @@ if __name__ == '__main__':
     p1 = sp.add_parser('snap'); p1.add_argument('out')
     p1.add_argument('--core', default=os.path.join(ROOT, 'core', 'NeonCenterline.bas'))
     p1.add_argument('--sizes', default='70:6,100:8'); p1.add_argument('--text', default='')
+    p1.add_argument('--script', type=int, default=None, help='ядро «Курсива», режим образца 0/1/2')
+    p1.add_argument('--font', default=None); p1.add_argument('--texts', default='')
+    p1.add_argument('--polys', default='')
     p2 = sp.add_parser('diff'); p2.add_argument('a'); p2.add_argument('b'); p2.add_argument('--png', default='')
+    p2.add_argument('--font', default=None)
     a = ap.parse_args()
+    if a.cmd == 'snap' and a.script is not None and a.core == os.path.join(ROOT, 'core', 'NeonCenterline.bas'):
+        a.core = os.path.join(ROOT, 'core', 'NeonScript.bas')
     snap(a) if a.cmd == 'snap' else diff(a)

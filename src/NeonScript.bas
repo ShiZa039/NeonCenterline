@@ -28,6 +28,7 @@ Private Const P_JMERGE As Double = 0.5     ' развилки ближе JMERGE 
 Private Const P_CORNER As Double = 55#     ' угол (град), с которого ставится острый узел
 Private Const P_MERGEANG As Double = 40#   ' макс. излом для сквозного прохода через развилку
 Private Const P_TOL As Double = 0.25       ' допуск аппроксимации, мм
+Private Const P_TOLW As Double = 16#       ' ...но не грубее W / TOLW: мелкий текст (гравировка); от штриха 4 мм — P_TOL
 Private Const P_FLAT_TOL As Double = 0.02  ' допуск разбиения исходных кривых на отрезки, мм
 Private Const P_DOT As Double = 0.5        ' радиус метки-точки, мм
 Private Const REG_APP As String = "NeonCenterline"
@@ -43,6 +44,9 @@ Private gEndOff As Double, gEndOffSet As Boolean
 ' режим «шрифт — образец»: 0 — фрезеровка самого контура (как раньше), 1 — линия до кончика штриха,
 ' 2 — с отступом на полширины штриха; фреза не учитывается (нет отталкивания от краёв)
 Private gRefEnd As Long, gToolBase As Double
+' допуск, заданный снаружи; самый тонкий штрих, у которого отступ конца больше ширины; линии, целиком
+' съеденные отступом конца (фреза не по размеру букв — мелкий текст, гравировка)
+Private gTolBase As Double, gThinW As Double, gDropped As Long
 
 ' --- все кольца объекта ---
 Private AX() As Double, AY() As Double, NAP As Long
@@ -155,8 +159,21 @@ Private Function EndOff() As Double
 End Function
 
 Private Sub CoreSetParams(ByVal tool As Double, ByVal tol As Double)
-    gTool = tool: gTol = tol: gToolBase = tool
+    gTool = tool: gTol = tol: gToolBase = tool: gTolBase = tol
 End Sub
+
+' после расчёта: самый тонкий штрих, у которого отступ конца (D/2 или заданный) больше его ширины, иначе 0.
+' В режиме «образец» концы задаёт сам режим (доли ширины штриха) — там всегда 0
+Public Function NeonScriptThinW() As Double
+    If gThinW < BIG Then
+        NeonScriptThinW = gThinW
+    End If
+End Function
+
+' сколько линий отступ конца съел целиком
+Public Function NeonScriptDropped() As Long
+    NeonScriptDropped = gDropped
+End Function
 
 ' режим образца для следующего расчёта (см. gRefEnd)
 Public Sub NeonScriptSetRef(ByVal mode As Long)
@@ -201,7 +218,7 @@ Private Sub CoreRun()
     Dim rbx0() As Double, rby0() As Double, rbx1() As Double, rby1() As Double
     Dim lst() As Long, nl As Long, nPolys As Long, outer() As Long
 
-    NOS = 0: NOP = 0: gGroup = 0
+    NOS = 0: NOP = 0: gGroup = 0: gThinW = BIG: gDropped = 0
     ReDim OSeg(0 To 8, 0 To 255)
     ReDim OPathStart(0 To 63): ReDim OPathClosed(0 To 63): ReDim OPathGroup(0 To 63)
     If NAR = 0 Then
@@ -515,6 +532,16 @@ Private Sub RunGroup()
     ElseIf gRefEnd = 2 Then
         gTool = gW
     End If
+    ' допуск аппроксимации — не грубее W/16: на мелком тексте (гравировка) 0.25 мм — треть штриха
+    gTol = gTolBase
+    If gTol > gW / P_TOLW Then
+        gTol = gW / P_TOLW
+    End If
+    If EndOff() > gW Then
+        If gW < gThinW Then
+            gThinW = gW
+        End If
+    End If
     s0 = NOP
     DropTinyHoles
 
@@ -577,7 +604,7 @@ Private Sub RunGroup()
             NOS = OPathStart(s0): NOP = s0
         End If
         If gx1 - gx0 < 4 * gW And gy1 - gy0 < 4 * gW Then
-            EmitDot (gx0 + gx1) / 2, (gy0 + gy1) / 2
+            EmitDot (gx0 + gx1) / 2, (gy0 + gy1) / 2, gx1 - gx0, gy1 - gy0
         End If
     End If
 End Sub
@@ -633,14 +660,22 @@ Private Function RingLen(ByVal r As Long) As Double
     RingLen = s
 End Function
 
-Private Sub EmitDot(ByVal cx As Double, ByVal cy As Double)
-    Dim kk As Double
+Private Sub EmitDot(ByVal cx As Double, ByVal cy As Double, ByVal w As Double, ByVal h As Double)
+    Dim kk As Double, rr As Double
+    ' метка P_DOT, но не больше четверти самой точки (мелкий текст: метка не шире точки)
+    rr = P_DOT
+    If w > h Then
+        w = h
+    End If
+    If 0.25 * w < rr Then
+        rr = 0.25 * w
+    End If
     AddPath True
-    kk = 0.5522847498 * P_DOT
-    EmitSeg 1, cx + P_DOT, cy, cx + P_DOT, cy + kk, cx + kk, cy + P_DOT, cx, cy + P_DOT
-    EmitSeg 1, cx, cy + P_DOT, cx - kk, cy + P_DOT, cx - P_DOT, cy + kk, cx - P_DOT, cy
-    EmitSeg 1, cx - P_DOT, cy, cx - P_DOT, cy - kk, cx - kk, cy - P_DOT, cx, cy - P_DOT
-    EmitSeg 1, cx, cy - P_DOT, cx + kk, cy - P_DOT, cx + P_DOT, cy - kk, cx + P_DOT, cy
+    kk = 0.5522847498 * rr
+    EmitSeg 1, cx + rr, cy, cx + rr, cy + kk, cx + kk, cy + rr, cx, cy + rr
+    EmitSeg 1, cx, cy + rr, cx - kk, cy + rr, cx - rr, cy + kk, cx - rr, cy
+    EmitSeg 1, cx - rr, cy, cx - rr, cy - kk, cx - kk, cy - rr, cx, cy - rr
+    EmitSeg 1, cx, cy - rr, cx + kk, cy - rr, cx + rr, cy - kk, cx + rr, cy
 End Sub
 
 ' ресэмплинг колец с шагом h; точки внутри чужих полигонов выкидываются
@@ -2578,7 +2613,7 @@ Private Sub FindCusps()
                                     End If
                                 Next k
                                 If cv Then
-                                    t = D - gTool / 2
+                                    t = D - EndOff()
                                     If t < 0 Then
                                         t = 0
                                     End If
@@ -3296,7 +3331,7 @@ Private Sub ProcessChains()
                     FreeEnd xs, ys, np_, cref, nm1
                 End If
             End If
-            If free0 Then
+            If free0 And np_ >= 2 Then
                 ReversePts xs, ys, np_
                 If gRefEnd = 1 Then
                     RefEnd xs, ys, np_, cref, nm0
@@ -3304,6 +3339,11 @@ Private Sub ProcessChains()
                     FreeEnd xs, ys, np_, cref, nm0
                 End If
                 ReversePts xs, ys, np_
+            End If
+            If np_ < 2 Then
+                ' отступ конца съел линию целиком
+                gDropped = gDropped + 1
+                GoTo NextChain
             End If
         End If
         cX(ci) = CopyD(xs, np_): cY(ci) = CopyD(ys, np_): dN(ci) = np_: dCl(ci) = closed: dOk(ci) = True: dRef(ci) = cref
@@ -5443,6 +5483,12 @@ Private Sub Retract(xs() As Double, ys() As Double, np_ As Long, ByVal back As D
     Loop
     If back > 0 And np_ >= 2 Then
         s = Dist(xs(np_ - 1), ys(np_ - 1), xs(np_ - 2), ys(np_ - 2))
+        If back >= s Then
+            ' отступ конца длиннее всей линии (фреза шире штриха): от линии ничего не осталось;
+            ' раньше точка уезжала за начало линии — отрезок торчал из буквы
+            np_ = 1
+            Exit Sub
+        End If
         If s > 0.000000001 Then
             t = back / s
             xs(np_ - 1) = xs(np_ - 1) + (xs(np_ - 2) - xs(np_ - 1)) * t

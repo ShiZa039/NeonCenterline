@@ -139,6 +139,17 @@ Private Sub RunMode(ByVal mode As Long)
         mname = NeonL("mode_script")
         NeonScriptSetRef CLng(Val(GetSetting(REG_APP, "Script", "RefEnd", "1")))
         rc = NeonScriptRun(tool, nIn, nOut, tAll, tCore, errText)
+        ' то же предупреждение, что у «Моно»; в режиме «образец» концы от фрезы не зависят — его там нет
+        If rc = 0 Then
+            thinW = NeonScriptThinW()
+            If thinW > 0 Then
+                eoEff = tool / 2
+                If Len(eo) > 0 Then
+                    eoEff = ParseNum(eo)
+                End If
+                thinRep = vbCrLf & vbCrLf & NeonLF("warn_thin", FmtNum(Round(thinW, 2)), FmtNum(Round(eoEff, 2)), NeonScriptDropped())
+            End If
+        End If
     End If
 
     ' подгонка новых линий под кратность реза
@@ -162,7 +173,7 @@ Private Sub RunMode(ByVal mode As Long)
     Select Case rc
     Case 0
         If mode = 1 Then
-            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & cutRep & _
+            MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & thinRep & cutRep & _
                    NeonL("script_beta"), vbExclamation, NeonL("center_title")
         Else
             MsgBox NeonLF("done", mname, FmtNum(tool), nIn, nOut, Format$(tAll, "0.0"), Format$(tCore, "0.0")) & thinRep & cutRep, _
