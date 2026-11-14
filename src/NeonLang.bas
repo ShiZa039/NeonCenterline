@@ -82,6 +82,7 @@ Private Function LangRu(ByVal key As String) As String
     ElseIf LangRu_4(key, s) Then
     ElseIf LangRu_5(key, s) Then
     ElseIf LangRu_6(key, s) Then
+    ElseIf LangRu_7(key, s) Then
     Else
         s = key
     End If
@@ -439,6 +440,10 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
     Case "grom_report"
         s = s & LD("#J}adopma: #{0} (#m`ydiqma: #{1}).$000A#Mq io_~ cm udlqo_ j}adop_ #{2}")
         s = s & LD(" #kk, o_ppqm~lgd kdecr j}adop_kg ld `mj{wd #{3} #kk, qmvi_ $00D8#{4}")
+        s = s & LD(" #kk.$000AQmvig $2014 l_ pjmd `_lldo_, nm bornnd l_ m`ydiq.")
+    Case "grom_report_own"
+        s = s & LD("#J}adopma: #{0} (#m`ydiqma: #{1}).$000A#Mq io_~ cm udlqo_ j}adop_ #{2}")
+        s = s & LD(" #kk, o_ppqm~lgd kdecr j}adop_kg ld `mj{wd #{3} #kk, qmvi_ $00D8#{4}")
         s = s & LD(" #kk.$000AQmvig $2014 l_ pjmd $00ABJ}adopz$00BB, nm bornnd l_ m`ydiq.")
     Case "grom_report_reinf"
         s = s & LD("#Rpgjdlgd rbjma: dx$0451 nm qmvid a #{0} #kk mq i_ecmbm rbj_.")
@@ -503,8 +508,6 @@ Private Function LangRu_4(ByVal key As String, s As String) As Boolean
         s = s & LD("#o_)")
     Case "bad_grom_hem"
         s = s & LD("#Aznrpi nmc nmcbg` $2014 mq 0 cm 1000 kk.")
-    Case "grom_hem_name"
-        s = s & LD("#Nmcbg` #{0} #kk")
     Case Else
         LangRu_4 = False
     End Select
@@ -514,6 +517,8 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     LangRu_5 = True
     s = ""
     Select Case key
+    Case "grom_hem_name"
+        s = s & LD("#Nmcbg` #{0} #kk")
     Case "grom_hem_rep"
         s = s & LD("#Imlqro nmc nmcbg`: aznrpi #{0} #kk l_orer mq io_~ (m`ydiqma: #{")
         s = s & LD("1}) $2014 #l_ pjmd `_lldo_.")
@@ -631,9 +636,6 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
         s = s & LD("#O_pij_ci_: nmcngp{ jgpq_ #{0}")
     Case "nest_group"
         s = s & LD("#O_pij_ci_: jgpq #{0} #gf #{1} $00B7 {2}")
-    Case "nest_label"
-        s = s & LD("#Jgpq #{0} #gf #{1} $00B7 {2} $00D7 {3} #kk $00B7 #{4} $00B7 #cdq_jdh #{5} $00B7 #f_nmjld")
-        s = s & LD("#lgd #{6}%")
     Case Else
         LangRu_5 = False
     End Select
@@ -643,6 +645,9 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
     LangRu_6 = True
     s = ""
     Select Case key
+    Case "nest_label"
+        s = s & LD("#Jgpq #{0} #gf #{1} $00B7 {2} $00D7 {3} #kk $00B7 #{4} $00B7 #cdq_jdh #{5} $00B7 #f_nmjld")
+        s = s & LD("#lgd #{6}%")
     Case "nest_report"
         s = s & LD("#O_fjmedlm cdq_jdh: #{0}, #jgpqma: #{1}.$000A{2}#Nmjd mq io_~ #{3} #kk,")
         s = s & LD(" #f_fmo kdecr cdq_j~kg #{4} #kk, #{5}.")
@@ -737,12 +742,21 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
         s = s & LD("$00BB $2014 #apdbc_ nmwqrvlm.")
     Case "btn_nest"
         s = s & LD("#O_fjmegq{")
+    Case Else
+        LangRu_6 = False
+    End Select
+End Function
+
+Private Function LangRu_7(ByVal key As String, s As String) As Boolean
+    LangRu_7 = True
+    s = ""
+    Select Case key
     Case "bad_nest"
         s = s & LD("#Nomado{qd fl_vdlg~: cjgl_ g wgogl_ jgpq_ 10$2013100000 kk, nmjd ")
         s = s & LD("0$20131000 #kk g kdl{wd nmjmaglz jgpq_, f_fmo 0$20131000 kk, l_gkdl{w")
         s = s & LD("#_~ cjgl_ ld `mj{wd cjglz jgpq_.")
     Case Else
-        LangRu_6 = False
+        LangRu_7 = False
     End Select
 End Function
 
@@ -754,6 +768,7 @@ Private Function LangEn(ByVal key As String) As String
     ElseIf LangEn_4(key, s) Then
     ElseIf LangEn_5(key, s) Then
     ElseIf LangEn_6(key, s) Then
+    ElseIf LangEn_7(key, s) Then
     Else
         s = key
     End If
@@ -1111,6 +1126,10 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
     Case "grom_report"
         s = s & LD("Grommets: {0} (objects: {1}).$000AEdge to grommet centre {2} mm,")
         s = s & LD(" distance between grommets at most {3} mm, point $00D8{4} mm.$000APo")
+        s = s & LD("ints are on the banner layer, one group per object.")
+    Case "grom_report_own"
+        s = s & LD("Grommets: {0} (objects: {1}).$000AEdge to grommet centre {2} mm,")
+        s = s & LD(" distance between grommets at most {3} mm, point $00D8{4} mm.$000APo")
         s = s & LD("ints are on the $0022Grommets$0022 layer, one group per object.")
     Case "grom_report_reinf"
         s = s & LD("Corner reinforcement: one more point {0} mm from each corner")
@@ -1177,8 +1196,6 @@ Private Function LangEn_4(ByVal key As String, s As String) As Boolean
         s = s & LD("nner layer)")
     Case "bad_grom_hem"
         s = s & LD("The hem allowance must be between 0 and 1000 mm.")
-    Case "grom_hem_name"
-        s = s & LD("Hem {0} mm")
     Case Else
         LangEn_4 = False
     End Select
@@ -1188,6 +1205,8 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     LangEn_5 = True
     s = ""
     Select Case key
+    Case "grom_hem_name"
+        s = s & LD("Hem {0} mm")
     Case "grom_hem_rep"
         s = s & LD("Hem outline: {0} mm outside the edge ({1} objects) $2014 on the ")
         s = s & LD("banner layer.")
@@ -1305,9 +1324,6 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
         s = s & LD("Nesting: sheet label {0}")
     Case "nest_group"
         s = s & LD("Nesting: sheet {0} of {1} $00B7 {2}")
-    Case "nest_label"
-        s = s & LD("Sheet {0} of {1} $00B7 {2} $00D7 {3} mm $00B7 {4} $00B7 {5} parts $00B7 {6}% fil")
-        s = s & LD("led")
     Case Else
         LangEn_5 = False
     End Select
@@ -1317,6 +1333,9 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
     LangEn_6 = True
     s = ""
     Select Case key
+    Case "nest_label"
+        s = s & LD("Sheet {0} of {1} $00B7 {2} $00D7 {3} mm $00B7 {4} $00B7 {5} parts $00B7 {6}% fil")
+        s = s & LD("led")
     Case "nest_report"
         s = s & LD("Parts nested: {0}, sheets: {1}.$000A{2}Edge margin {3} mm, gap b")
         s = s & LD("etween parts {4} mm, {5}.")
@@ -1412,11 +1431,20 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
         s = s & LD("ps are always nested one by one.")
     Case "btn_nest"
         s = s & LD("Nest")
+    Case Else
+        LangEn_6 = False
+    End Select
+End Function
+
+Private Function LangEn_7(ByVal key As String, s As String) As Boolean
+    LangEn_7 = True
+    s = ""
+    Select Case key
     Case "bad_nest"
         s = s & LD("Check the values: sheet length and width 10$2013100000 mm, margi")
         s = s & LD("n 0$20131000 mm and under half the sheet, gap 0$20131000 mm, minimum")
         s = s & LD(" length not above the sheet length.")
     Case Else
-        LangEn_6 = False
+        LangEn_7 = False
     End Select
 End Function

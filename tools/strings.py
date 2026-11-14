@@ -187,6 +187,10 @@ STRINGS = {
     'grom_none':     ('В выделении нет замкнутого контура, в который люверсы помещаются с таким отступом от края.',
                       'The selection has no closed outline that fits grommets at this edge distance.'),
     'grom_report':   ('Люверсов: {0} (объектов: {1}).\nОт края до центра люверса {2} мм, расстояние между люверсами не больше {3} мм, точка Ø{4} мм.\n'
+                      'Точки — на слое баннера, по группе на объект.',
+                      'Grommets: {0} (objects: {1}).\nEdge to grommet centre {2} mm, distance between grommets at most {3} mm, point Ø{4} mm.\n'
+                      'Points are on the banner layer, one group per object.'),
+    'grom_report_own': ('Люверсов: {0} (объектов: {1}).\nОт края до центра люверса {2} мм, расстояние между люверсами не больше {3} мм, точка Ø{4} мм.\n'
                       'Точки — на слое «Люверсы», по группе на объект.',
                       'Grommets: {0} (objects: {1}).\nEdge to grommet centre {2} mm, distance between grommets at most {3} mm, point Ø{4} mm.\n'
                       'Points are on the "Grommets" layer, one group per object.'),

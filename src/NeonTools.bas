@@ -1445,7 +1445,8 @@ Fin:
         End If
         Exit Sub
     End If
-    msg = NeonLF("grom_report", nAll, nObj, FmtNum(edge), FmtNum(stp), FmtNum(dia))
+    ' где лежат точки: на слое баннера (по умолчанию) или на своём слое «Люверсы»
+    msg = NeonLF(IIf(ownLay, "grom_report_own", "grom_report"), nAll, nObj, FmtNum(edge), FmtNum(stp), FmtNum(dia))
     If rf > 0 Then
         msg = msg & vbCrLf & NeonLF("grom_report_reinf", FmtNum(rf))
     End If
