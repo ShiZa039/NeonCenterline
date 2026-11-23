@@ -1,8 +1,8 @@
 {
-    "version":  "1.1.3",
-    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.1.3/NeonCenterline.gms",
-    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.1.3/dist/NeonCenterline.gms",
-    "sha256":  "4cfdd14c43b455b5609914449e7ae1071b0944dc5d13dd81889f5cd7aad5be70",
-    "notes_ru":  "Моно на мелком тексте и при гравировке: гладкие дуги, предупреждение «фреза велика»; окно Моно без строки Курсива; отчёт люверсов называет слой.",
-    "notes_en":  "Mono on small text and engraving: smooth arcs, a cutter-too-large warning; the Mono window has no Script row; the grommet report names the layer."
+    "version":  "1.1.4",
+    "gms_url":  "https://github.com/ShiZa039/NeonCenterline/releases/download/1.1.4/NeonCenterline.gms",
+    "gms_url2":  "https://cdn.jsdelivr.net/gh/ShiZa039/NeonCenterline@1.1.4/dist/NeonCenterline.gms",
+    "sha256":  "fef56270f25bb038b15ef3efefff3b6f4921fd4f8c5cb95cb784e57e8468591a",
+    "notes_ru":  "Новая кнопка «Кубик» — развёртка под фрезеровку со ступенькой; «Курсив» на мелком тексте (гравировка). После обновления — «Да» на вопрос про панель.",
+    "notes_en":  "New \"Box\" button — a box layout for a router with a step joint; Script on small text (engraving). After the update answer \"Yes\" to the toolbar question."
 }
