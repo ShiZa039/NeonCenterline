@@ -15,6 +15,8 @@ Option Explicit
 ' закрыть окно, пока она идёт, нельзя.
 ' NeonRunMode = 6 — перед кубиком: длина, ширина, высота (наружные), толщина, высота ступеньки, зазор,
 ' выход линий ступеньки за край.
+' NeonRunMode = 7 — сохранить по правилам: поля частей шаблона из файла правил (списки и текст), номер,
+' папка (выбор деревом), имя файла сразу, «Правила…» — открыть или выбрать файл правил.
 
 ' люверсы: свой цвет ("S:..."), последний выбранный цвет из списка, защита от повторного Change
 Private gCustom As String, gLastIdx As Long, gBusy As Boolean
@@ -29,6 +31,25 @@ Private gHem As Object, gHemV As Object, gGL As Object
 Private gPB As Object, gPF As Object, gPT As Object, gJobStarted As Boolean
 ' кубик: зазор в ступеньке и выход линий за край (поля и подписи создаются при открытии окна)
 Private gBC As Object, gBCL As Object, gBO As Object, gBOL As Object
+' сохранить по правилам: поля частей шаблона — списки (gN0…gN5) и текстовые (gT0…gT5), номер, кнопки
+' папки и правил (события — чтобы имя файла менялось сразу); поле каждой части; подписи папки, имени и
+' файла правил; папка
+Private WithEvents gN0 As MSForms.ComboBox
+Private WithEvents gN1 As MSForms.ComboBox
+Private WithEvents gN2 As MSForms.ComboBox
+Private WithEvents gN3 As MSForms.ComboBox
+Private WithEvents gN4 As MSForms.ComboBox
+Private WithEvents gN5 As MSForms.ComboBox
+Private WithEvents gT0 As MSForms.TextBox
+Private WithEvents gT1 As MSForms.TextBox
+Private WithEvents gT2 As MSForms.TextBox
+Private WithEvents gT3 As MSForms.TextBox
+Private WithEvents gT4 As MSForms.TextBox
+Private WithEvents gT5 As MSForms.TextBox
+Private WithEvents gNmNum As MSForms.TextBox
+Private WithEvents gNmDirB As MSForms.CommandButton
+Private WithEvents gNmRulB As MSForms.CommandButton
+Private gNmCtl(0 To 7) As Object, gNmDirL As Object, gNmNameL As Object, gNmRulL As Object, gNmDir As String
 
 Private Sub UserForm_Initialize()
     If NeonRunMode = 5 Then
@@ -53,6 +74,10 @@ Private Sub UserForm_Initialize()
     End If
     If NeonRunMode = 6 Then
         InitBox
+        Exit Sub
+    End If
+    If NeonRunMode = 7 Then
+        InitName
         Exit Sub
     End If
     Me.Caption = NeonLF("center_title_mode", NeonL(IIf(NeonRunScript, "mode_script", "mode_mono")))
@@ -589,6 +614,277 @@ Private Sub BoxList(cb As Object, ByVal items As Variant, ByVal cur As Double)
     cb.Text = FmtNum(cur)
 End Sub
 
+' сохранить по правилам: по строке на часть шаблона (список — выпадающий, с правом вписать своё; иначе
+' текст; номер — узкое поле), папка, имя файла, файл правил
+Private Sub InitName()
+    Dim c As Object, i As Long, y As Single, k As Long, nC As Long, nT As Long, lb As Object, ctl As Object
+    Dim j As Long, v As String, cap As String
+    For Each c In Me.Controls
+        c.Visible = False
+    Next c
+    Me.Caption = NeonL("nm_title")
+    NeonNmLoad
+    y = 12
+    For i = 0 To NmNT - 1
+        k = NmKind(i)
+        Set lb = Me.Controls.Add("Forms.Label.1", "lblNm" & i, True)
+        lb.Left = 12: lb.Top = y + 4: lb.Width = 112: lb.Height = 18
+        cap = NmTokName(i)
+        lb.Caption = UCase$(Left$(cap, 1)) & Mid$(cap, 2) & ":"
+        If k = 0 Then
+            Set ctl = NmNewCombo(nC)
+            nC = nC + 1
+            For j = 0 To NmLsCnt(NmTokList(i)) - 1
+                ctl.AddItem NmItemShow(NmLsFirst(NmTokList(i)) + j)
+            Next j
+        ElseIf k = 3 Then
+            Set gNmNum = Me.Controls.Add("Forms.TextBox.1", "txtNmNum", True)
+            Set ctl = gNmNum
+        Else
+            Set ctl = NmNewText(nT)
+            nT = nT + 1
+        End If
+        ctl.Left = 128: ctl.Top = y: ctl.Height = 20
+        If k = 3 Then
+            ctl.Width = 60
+        Else
+            ctl.Width = 210
+            v = NeonNmLast(NmTokName(i))
+            If k = 0 Then
+                If Len(v) = 0 Then
+                    If ctl.ListCount > 0 Then
+                        ctl.ListIndex = 0
+                    End If
+                Else
+                    ctl.Text = v
+                End If
+            Else
+                ctl.Text = v
+            End If
+        End If
+        Set gNmCtl(i) = ctl
+        y = y + 26
+    Next i
+    ' папка: подпись и кнопка, ниже — путь во всю ширину
+    Set lb = Me.Controls.Add("Forms.Label.1", "lblNmDir", True)
+    lb.Left = 12: lb.Top = y + 6: lb.Width = 112: lb.Height = 18
+    lb.Caption = NeonL("nm_dir")
+    Set gNmDirB = Me.Controls.Add("Forms.CommandButton.1", "btnNmDir", True)
+    gNmDirB.Left = 238: gNmDirB.Top = y + 2: gNmDirB.Width = 100: gNmDirB.Height = 22
+    gNmDirB.Caption = NeonL("nm_dir_btn")
+    Set gNmDirL = Me.Controls.Add("Forms.Label.1", "lblNmDirV", True)
+    gNmDirL.Left = 12: gNmDirL.Top = y + 28: gNmDirL.Width = 326: gNmDirL.Height = 18
+    y = y + 50
+    ' имя файла — сразу, как получится
+    Set lb = Me.Controls.Add("Forms.Label.1", "lblNmName", True)
+    lb.Left = 12: lb.Top = y: lb.Width = 112: lb.Height = 18
+    lb.Caption = NeonL("nm_name")
+    Set gNmNameL = Me.Controls.Add("Forms.Label.1", "lblNmNameV", True)
+    gNmNameL.Left = 12: gNmNameL.Top = y + 18: gNmNameL.Width = 326: gNmNameL.Height = 30
+    gNmNameL.WordWrap = True
+    gNmNameL.Font.Bold = True
+    y = y + 54
+    ' файл правил и кнопка «Правила…»
+    Set gNmRulL = Me.Controls.Add("Forms.Label.1", "lblNmRules", True)
+    gNmRulL.Left = 12: gNmRulL.Top = y + 2: gNmRulL.Width = 220: gNmRulL.Height = 30
+    gNmRulL.WordWrap = True
+    gNmRulL.ForeColor = &H808080
+    gNmRulL.Caption = NeonLF("nm_rules_lbl", NmShortPath(NeonNmRulesPath(), 70))
+    Set gNmRulB = Me.Controls.Add("Forms.CommandButton.1", "btnNmRules", True)
+    gNmRulB.Left = 238: gNmRulB.Top = y: gNmRulB.Width = 100: gNmRulB.Height = 22
+    gNmRulB.Caption = NeonL("nm_rules_btn")
+    y = y + 36
+    lblHint.Left = 12: lblHint.Top = y: lblHint.Width = 326
+    lblHint.WordWrap = True
+    lblHint.Height = 42
+    lblHint.Caption = NeonL("nm_hint")
+    lblHint.Visible = True
+    btnOK.Top = lblHint.Top + lblHint.Height + 8
+    btnCancel.Top = btnOK.Top
+    btnOK.Caption = NeonL("btn_nm_save")
+    btnCancel.Caption = NeonL("btn_cancel")
+    btnOK.Visible = True
+    btnCancel.Visible = True
+    Me.Height = btnOK.Top + btnOK.Height + 50
+    gNmDir = NeonNmStartDir()
+    gNmDirL.Caption = NmShortPath(gNmDir, 60)
+    NmSuggestNum
+    NmPreview
+    NeonRunConfirmed = False
+End Sub
+
+' новое поле-список части шаблона (первые шесть — с событием изменения)
+Private Function NmNewCombo(ByVal n As Long) As Object
+    Dim c As Object
+    Set c = Me.Controls.Add("Forms.ComboBox.1", "cboNm" & n, True)
+    On Error Resume Next
+    c.Style = 0
+    On Error GoTo 0
+    Select Case n
+    Case 0
+        Set gN0 = c
+    Case 1
+        Set gN1 = c
+    Case 2
+        Set gN2 = c
+    Case 3
+        Set gN3 = c
+    Case 4
+        Set gN4 = c
+    Case 5
+        Set gN5 = c
+    End Select
+    Set NmNewCombo = c
+End Function
+
+' новое текстовое поле части шаблона (первые шесть — с событием изменения)
+Private Function NmNewText(ByVal n As Long) As Object
+    Dim c As Object
+    Set c = Me.Controls.Add("Forms.TextBox.1", "txtNm" & n, True)
+    Select Case n
+    Case 0
+        Set gT0 = c
+    Case 1
+        Set gT1 = c
+    Case 2
+        Set gT2 = c
+    Case 3
+        Set gT3 = c
+    Case 4
+        Set gT4 = c
+    Case 5
+        Set gT5 = c
+    End Select
+    Set NmNewText = c
+End Function
+
+' длинный путь — с многоточием в начале
+Private Function NmShortPath(ByVal s As String, ByVal n As Long) As String
+    If Len(s) > n Then
+        s = ChrW(&H2026) & Right$(s, n - 1)
+    End If
+    NmShortPath = s
+End Function
+
+' имя файла по полям окна (без расширения)
+Private Function NmCurName() As String
+    Dim v() As String, i As Long
+    If NmNT = 0 Then
+        Exit Function
+    End If
+    ReDim v(0 To NmNT - 1)
+    For i = 0 To NmNT - 1
+        If Not gNmCtl(i) Is Nothing Then
+            v(i) = NmValue(i, gNmCtl(i).Text)
+        End If
+    Next i
+    NmCurName = NmBuild(v)
+End Function
+
+Private Sub NmPreview()
+    If gNmNameL Is Nothing Then
+        Exit Sub
+    End If
+    gNmNameL.Caption = NmCurName() & ".cdr"
+End Sub
+
+Private Sub NmSuggestNum()
+    If Not gNmNum Is Nothing Then
+        gNmNum.Text = CStr(NeonNmNextNum(gNmDir))
+    End If
+End Sub
+
+' запомнить тексты полей (кроме номера)
+Private Sub NmRememberNow()
+    Dim toks() As String, vals() As String, i As Long, n As Long
+    If NmNT = 0 Then
+        Exit Sub
+    End If
+    ReDim toks(0 To NmNT - 1): ReDim vals(0 To NmNT - 1)
+    For i = 0 To NmNT - 1
+        If NmKind(i) <> 3 Then
+            If Not gNmCtl(i) Is Nothing Then
+                toks(n) = NmTokName(i)
+                vals(n) = gNmCtl(i).Text
+                n = n + 1
+            End If
+        End If
+    Next i
+    NeonNmRemember toks, vals, n
+End Sub
+
+Private Sub gN0_Change()
+    NmPreview
+End Sub
+
+Private Sub gN1_Change()
+    NmPreview
+End Sub
+
+Private Sub gN2_Change()
+    NmPreview
+End Sub
+
+Private Sub gN3_Change()
+    NmPreview
+End Sub
+
+Private Sub gN4_Change()
+    NmPreview
+End Sub
+
+Private Sub gN5_Change()
+    NmPreview
+End Sub
+
+Private Sub gT0_Change()
+    NmPreview
+End Sub
+
+Private Sub gT1_Change()
+    NmPreview
+End Sub
+
+Private Sub gT2_Change()
+    NmPreview
+End Sub
+
+Private Sub gT3_Change()
+    NmPreview
+End Sub
+
+Private Sub gT4_Change()
+    NmPreview
+End Sub
+
+Private Sub gT5_Change()
+    NmPreview
+End Sub
+
+Private Sub gNmNum_Change()
+    NmPreview
+End Sub
+
+' «Выбрать…» — папка деревом; номер — следующий в новой папке
+Private Sub gNmDirB_Click()
+    Dim d As String
+    d = NeonNmPickFolder(gNmDir)
+    If Len(d) > 0 Then
+        gNmDir = d
+        gNmDirL.Caption = NmShortPath(d, 60)
+        NmSuggestNum
+        NmPreview
+    End If
+End Sub
+
+' «Правила…» — открыть или выбрать файл правил; поменялись — окно открывается заново (поля запомнены)
+Private Sub gNmRulB_Click()
+    NmRememberNow
+    If NeonNmRulesMenu() Then
+        NeonRunReopen = True
+        Me.Hide
+    End If
+End Sub
 ' раскладка: «3050x2050» -> «3050 × 2050» для списка готовых размеров
 Private Function NestShow(ByVal s As String) As String
     NestShow = Replace(s, "x", " " & ChrW(&HD7) & " ")
@@ -665,6 +961,28 @@ End Sub
 
 Private Sub btnOK_Click()
     Dim t As Double, c As Double, st As Double, d As Double, w As Double, h As Double
+    Dim nmS As String, nmP As String
+    If NeonRunMode = 7 Then
+        nmS = NmCurName()
+        If Len(nmS) = 0 Then
+            MsgBox NeonL("nm_empty"), vbExclamation, NeonL("nm_title")
+            Exit Sub
+        End If
+        If Not NeonNmDirOk(gNmDir) Then
+            MsgBox NeonLF("nm_nodir", gNmDir), vbExclamation, NeonL("nm_title")
+            Exit Sub
+        End If
+        nmP = gNmDir & "\" & nmS & ".cdr"
+        If Not NeonNmOverwriteOk(nmP) Then
+            Exit Sub
+        End If
+        NmRememberNow
+        SaveSetting "NeonCenterline", "Naming", "Dir", gNmDir
+        NeonNmPath = nmP
+        NeonRunConfirmed = True
+        Me.Hide
+        Exit Sub
+    End If
     If NeonRunMode = 6 Then
         w = ParseNum(cboTool.Text): h = ParseNum(cboEnd.Text): d = ParseNum(cboCut.Text)
         t = ParseNum(gH.Text): st = ParseNum(gV.Text): c = ParseNum(gBC.Text)

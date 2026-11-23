@@ -49,6 +49,9 @@ for name, path, call in MODS:
     for t in ['ShapeRange', 'Layer', 'Shape', 'Collection', 'Curve', 'SubPath', 'Segment', 'Node', 'Color', 'Document', 'Window']:
         s = re.sub(r'\bAs %s\b' % t, 'As Object', s)
     s = re.sub(r'\bAs cdrUnit\b', 'As Long', s)
+    # поля окна с событиями (WithEvents … As MSForms.ComboBox) — LibreOffice их не знает
+    s = re.sub(r'\bWithEvents\s+', '', s)
+    s = re.sub(r'\bAs MSForms\.\w+', 'As Object', s)
     extra = STUB_COREL
     if name in ('frmCode', 'frmRun'):
         s = s.replace('Unload Me', "Me = Nothing")

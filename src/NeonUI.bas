@@ -27,13 +27,15 @@ Private Const REG_APP As String = "NeonCenterline"
 ' результат окна перед расчётом (frmNeonRun): True — «Построить» / «Упростить»
 Public NeonRunConfirmed As Boolean
 ' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура, 2 — люверсы, 3 — раскладка, 4 — лапша,
-' 5 — окно хода работы, 6 — кубик
+' 5 — окно хода работы, 6 — кубик, 7 — сохранить по правилам
 Public NeonRunMode As Long
+' сохранить по правилам: окно перечитать (поменялись правила); выбранный полный путь файла
+Public NeonRunReopen As Boolean, NeonNmPath As String
 ' окно центральных линий (режим 0) открыто кнопкой «Курсив»: только тогда в нём строка «шрифт как образец»
 Public NeonRunScript As Boolean
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
-Public Const NEON_TOOLBAR_VER As String = "13"
+Public Const NEON_TOOLBAR_VER As String = "14"
 ' файлы панели обновлены в этом сеансе (InstallToolbar): в памяти CorelDRAW ещё старый состав
 ' панели, сбрасывать её можно только после перезапуска
 Public NeonTbInstalled As Boolean
@@ -655,6 +657,46 @@ Public Function NeonBoxOk(ByVal l As Double, ByVal w As Double, ByVal h As Doubl
     NeonBoxOk = True
 End Function
 
+' окно «Сохранить по правилам» (frmNeonRun в режиме 7) -> полный путь файла, "" — отмена. После «Правила…»
+' окно открывается заново с новыми правилами. Без собранной формы — имя стандартным окном, папка — по умолчанию
+Public Function AskNameParams() As String
+    Dim f As Object, s As String, d As String
+    Do
+        NeonRunMode = 7
+        NeonRunReopen = False
+        NeonNmPath = ""
+        Set f = Nothing
+        On Error Resume Next
+        Set f = VBA.UserForms.Add("frmNeonRun")
+        On Error GoTo 0
+        If f Is Nothing Then
+            Exit Do
+        End If
+        NeonRunConfirmed = False
+        f.Show
+        Unload f
+        NeonRunMode = 0
+        If Not NeonRunReopen Then
+            If NeonRunConfirmed Then
+                AskNameParams = NeonNmPath
+            End If
+            Exit Function
+        End If
+    Loop
+    NeonRunMode = 0
+    d = NeonNmStartDir()
+    s = NmClean(InputBox(NeonLF("nm_ask", d), NeonL("nm_title"), ""))
+    If Len(s) = 0 Then
+        Exit Function
+    End If
+    If LCase$(Right$(s, 4)) <> ".cdr" Then
+        s = s & ".cdr"
+    End If
+    s = d & "\" & s
+    If NeonNmOverwriteOk(s) Then
+        AskNameParams = s
+    End If
+End Function
 ' окно перед упрощением контура (то же окно frmNeonRun в режиме 1): допуск, показывать ли окно;
 ' без собранной формы — вопрос о допуске стандартным окном. False — отмена
 Public Function AskSimplifyParams() As Boolean

@@ -11,7 +11,8 @@ Attribute VB_Name = "NeonTools"
 '    NestSheets      — раскладка деталей на листы: по габаритам, без поворота, с полем и зазором;
 '    SplitLetters    — разбить на буквы: по объекту на букву, дырки остаются в своих буквах;
 '    MakeNoodles     — лапша: полосы заданной длины и ширины, резы зигзагом, отрезы в конце списка;
-'    MakeBox         — кубик: развёртка из 6 деталей под фрезеровку, соединение в ступеньку (четверть).
+'    MakeBox         — кубик: развёртка из 6 деталей под фрезеровку, соединение в ступеньку (четверть);
+'    SaveByRules     — сохранить документ под именем по правилам (шаблон и списки — в файле правил).
 ' =====================================================================
 Option Explicit
 
@@ -140,6 +141,21 @@ Private RuJ() As Long, RuI() As Long, RuL() As Long, NRu As Long, RgC() As Byte
 Private RnNx As Long, RnNy As Long, ShR() As Long, ShO() As Long, ShM() As Long, ShNum() As Long, OpenSl() As Long
 Private RnOrd() As Long, RnRot() As Long, NtRot() As Long
 '@@NEST_DECL_END
+
+' ---- сохранить по правилам: шаблон имени и списки из файла правил (см. раздел «Имя файла по правилам») ----
+'@@NAMING_DECL_BEGIN
+' частей шаблона не больше
+Private Const NM_MAXTOK As Long = 8
+' файл правил по умолчанию — %APPDATA%\NeonCenterline\NeonNaming.txt; выбрана папка — этот файл в ней
+Private Const NM_FILE As String = "NeonNaming.txt"
+' шаблон: начало до первой части, хвост после последней; части — имя (в нижнем регистре), разделитель
+' перед ней, номер списка (-1 — списка нет)
+Public NmTpl As String, NmPrefix As String, NmSuffix As String, NmNT As Long
+Public NmTokName() As String, NmTokSep() As String, NmTokList() As Long
+' списки: имя раздела, первый пункт, число пунктов; пункты: код, расшифровка
+Public NmNL As Long, NmLsName() As String, NmLsFirst() As Long, NmLsCnt() As Long
+Public NmNI As Long, NmItCode() As String, NmItDesc() As String
+'@@NAMING_DECL_END
 
 ' длина выделенного: контуры отдельно от центральных линий плагина
 Public Sub MeasureLength()
@@ -3945,6 +3961,300 @@ Public Function NeonBoxNum(ByVal key As String, ByVal def As Double) As Double
         NeonBoxNum = ParseNum(s)
     End If
 End Function
+' ---------------------------------------------------------------------
+'  Кнопка «Сохранить по правилам»: окно (части имени из файла правил, папка, номер) -> сохранить как
+' ---------------------------------------------------------------------
+Public Sub SaveByRules()
+    Dim ttl As String, p As String, errText As String
+    ttl = NeonL("nm_title")
+    If ActiveDocument Is Nothing Then
+        MsgBox NeonL("err_nodoc"), vbExclamation, ttl
+        Exit Sub
+    End If
+    p = AskNameParams()
+    If Len(p) = 0 Then
+        Exit Sub
+    End If
+    On Error Resume Next
+    ActiveDocument.SaveAs p
+    If Err.Number <> 0 Then
+        errText = Err.Description
+    End If
+    On Error GoTo 0
+    If Len(errText) > 0 Then
+        MsgBox NeonLF("nm_err_save", p, errText), vbCritical, ttl
+        Exit Sub
+    End If
+    SaveSetting "NeonCenterline", "Naming", "Dir", NmParentDir(p)
+    NeonToolbarCheck
+End Sub
+
+' файл правил: из настроек или %APPDATA%\NeonCenterline\NeonNaming.txt
+Public Function NeonNmRulesPath() As String
+    Dim p As String
+    p = GetSetting("NeonCenterline", "Naming", "Rules", "")
+    If Len(p) = 0 Then
+        p = Environ$("APPDATA") & "\NeonCenterline\" & NM_FILE
+    End If
+    NeonNmRulesPath = p
+End Function
+
+' прочитать правила (нет файла — создать из образца) и разобрать
+Public Sub NeonNmLoad()
+    Dim p As String, t As String
+    p = NeonNmRulesPath()
+    NeonNmEnsure p
+    t = NmReadText(p)
+    If Len(NmTrim(t)) = 0 Then
+        t = NeonNmSample()
+    End If
+    NmParse t, NeonL("nm_tpl_default")
+End Sub
+
+' образец файла правил на языке интерфейса (строки — CRLF, для Блокнота)
+Public Function NeonNmSample() As String
+    NeonNmSample = Replace(Replace(NeonL("nm_sample"), vbCrLf, vbLf), vbLf, vbCrLf)
+End Function
+
+' нет файла правил — создать его (и папку) из образца
+Public Sub NeonNmEnsure(ByVal p As String)
+    Dim fso As Object, d As String
+    On Error Resume Next
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    If fso.FileExists(p) Then
+        Exit Sub
+    End If
+    d = fso.GetParentFolderName(p)
+    If Len(d) > 0 Then
+        If Not fso.FolderExists(d) Then
+            fso.CreateFolder d
+        End If
+    End If
+    NmWriteText p, NeonNmSample()
+    Err.Clear
+End Sub
+
+' текст файла: UTF-8 (с меткой или без), не похоже на UTF-8 — Windows-1251 (Блокнот «ANSI»)
+Private Function NmReadText(ByVal p As String) As String
+    Dim st As Object, s As String
+    On Error Resume Next
+    Set st = CreateObject("ADODB.Stream")
+    st.Type = 2
+    st.Charset = "utf-8"
+    st.Open
+    st.LoadFromFile p
+    s = st.ReadText
+    st.Close
+    If InStr(s, ChrW(&HFFFD)) > 0 Then
+        st.Charset = "windows-1251"
+        st.Open
+        st.LoadFromFile p
+        s = st.ReadText
+        st.Close
+    End If
+    Err.Clear
+    NmReadText = s
+End Function
+
+Private Sub NmWriteText(ByVal p As String, ByVal s As String)
+    Dim st As Object
+    On Error Resume Next
+    Set st = CreateObject("ADODB.Stream")
+    st.Type = 2
+    st.Charset = "utf-8"
+    st.Open
+    st.WriteText s
+    st.SaveToFile p, 2
+    st.Close
+    Err.Clear
+End Sub
+
+' папка без «\» в конце
+Private Function NmNoSlash(ByVal d As String) As String
+    Do While Len(d) > 0 And Right$(d, 1) = "\"
+        d = Left$(d, Len(d) - 1)
+    Loop
+    NmNoSlash = d
+End Function
+
+Private Function NmParentDir(ByVal p As String) As String
+    Dim k As Long
+    k = InStrRev(p, "\")
+    If k > 0 Then
+        NmParentDir = Left$(p, k - 1)
+    End If
+End Function
+
+' папка по умолчанию: папка документа, иначе последняя, иначе «Документы»
+Public Function NeonNmStartDir() As String
+    Dim d As String, fso As Object
+    On Error Resume Next
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    d = ActiveDocument.FilePath
+    If Len(d) = 0 Then
+        d = GetSetting("NeonCenterline", "Naming", "Dir", "")
+    End If
+    d = NmNoSlash(d)
+    If Len(d) > 0 Then
+        If Not fso.FolderExists(d & "\") Then
+            d = ""
+        End If
+    End If
+    If Len(d) = 0 Then
+        d = NmNoSlash(CreateObject("WScript.Shell").SpecialFolders("MyDocuments"))
+    End If
+    Err.Clear
+    NeonNmStartDir = d
+End Function
+
+Public Function NeonNmDirOk(ByVal d As String) As Boolean
+    On Error Resume Next
+    NeonNmDirOk = CreateObject("Scripting.FileSystemObject").FolderExists(d & "\")
+    Err.Clear
+End Function
+
+' следующий порядковый номер в папке: по всем файлам, названным по шаблону (любое расширение)
+Public Function NeonNmNextNum(ByVal d As String) As Long
+    Dim fso As Object, f As Object, nm() As String, n As Long, s As String, k As Long
+    NeonNmNextNum = 1
+    ReDim nm(0 To 63)
+    On Error Resume Next
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    If Not fso.FolderExists(d & "\") Then
+        Exit Function
+    End If
+    For Each f In fso.GetFolder(d & "\").Files
+        s = f.Name
+        k = InStrRev(s, ".")
+        If k > 1 Then
+            s = Left$(s, k - 1)
+        End If
+        If n > UBound(nm) Then
+            ReDim Preserve nm(0 To 2 * n)
+        End If
+        nm(n) = s
+        n = n + 1
+    Next f
+    Err.Clear
+    On Error GoTo 0
+    NeonNmNextNum = NmNextNum(nm, n)
+End Function
+
+' окно выбора папки деревом (CorelDRAW; нет — окно Windows)
+Public Function NeonNmPickFolder(ByVal start As String) As String
+    Dim app As Object, r As String, sh As Object, f As Object
+    On Error Resume Next
+    Set app = Application
+    r = app.CorelScriptTools.GetFolder(start & "\", NeonL("nm_pick_dir"))
+    If Err.Number <> 0 Then
+        Err.Clear
+        r = ""
+        Set sh = CreateObject("Shell.Application")
+        Set f = sh.BrowseForFolder(0, NeonL("nm_pick_dir"), &H41, 0)
+        If Not f Is Nothing Then
+            r = f.Self.Path
+        End If
+    End If
+    Err.Clear
+    If Left$(r, 2) = "::" Then
+        r = ""
+    End If
+    NeonNmPickFolder = NmNoSlash(r)
+End Function
+
+' «Правила…»: открыть в Блокноте (окно ждёт, пока его закроют) или выбрать другой файл / папку для
+' него (например, общую для отдела). True — правила поменялись, окно перечитать
+Public Function NeonNmRulesMenu() As Boolean
+    Dim p As String, r As Long, sh As Object, f As Object, q As String
+    p = NeonNmRulesPath()
+    r = MsgBox(NeonLF("nm_rules_menu", p), vbYesNoCancel + vbQuestion, NeonL("nm_title"))
+    If r = vbYes Then
+        NeonNmEnsure p
+        On Error Resume Next
+        CreateObject("WScript.Shell").Run "notepad.exe """ & p & """", 1, True
+        Err.Clear
+        On Error GoTo 0
+        NeonNmRulesMenu = True
+    ElseIf r = vbNo Then
+        On Error Resume Next
+        Set sh = CreateObject("Shell.Application")
+        Set f = sh.BrowseForFolder(0, NeonL("nm_pick_rules"), &H4040, 0)
+        If Not f Is Nothing Then
+            q = f.Self.Path
+        End If
+        If Left$(q, 2) = "::" Then
+            q = ""
+        End If
+        If Len(q) > 0 Then
+            If CreateObject("Scripting.FileSystemObject").FolderExists(q) Then
+                q = NmNoSlash(q) & "\" & NM_FILE
+            End If
+        End If
+        Err.Clear
+        On Error GoTo 0
+        If Len(q) > 0 Then
+            SaveSetting "NeonCenterline", "Naming", "Rules", q
+            NeonNmEnsure q
+            NeonNmRulesMenu = True
+        End If
+    End If
+End Function
+
+' файл уже есть — спросить, заменять ли (сам документ — без вопроса)
+Public Function NeonNmOverwriteOk(ByVal p As String) As Boolean
+    Dim ex As Boolean, cur As String
+    On Error Resume Next
+    ex = CreateObject("Scripting.FileSystemObject").FileExists(p)
+    cur = ActiveDocument.FullFileName
+    Err.Clear
+    On Error GoTo 0
+    If Not ex Or LCase$(cur) = LCase$(p) Then
+        NeonNmOverwriteOk = True
+    Else
+        NeonNmOverwriteOk = (MsgBox(NeonLF("nm_exists", p), vbYesNo + vbQuestion, NeonL("nm_title")) = vbYes)
+    End If
+End Function
+
+' последнее значение части шаблона (текст поля)
+Public Function NeonNmLast(ByVal tok As String) As String
+    Dim a As Variant, i As Long, k As Long, s As String
+    a = Split(GetSetting("NeonCenterline", "Naming", "Last", ""), Chr$(30))
+    For i = LBound(a) To UBound(a)
+        s = CStr(a(i))
+        k = InStr(s, Chr$(31))
+        If k > 0 Then
+            If Left$(s, k - 1) = tok Then
+                NeonNmLast = Mid$(s, k + 1)
+                Exit Function
+            End If
+        End If
+    Next i
+End Function
+
+' запомнить значения частей: имена и тексты полей (n штук); остальные запомненные части остаются
+Public Sub NeonNmRemember(toks() As String, vals() As String, ByVal n As Long)
+    Dim a As Variant, i As Long, j As Long, k As Long, s As String, r As String, mine As Boolean
+    For i = 0 To n - 1
+        r = r & Chr$(30) & toks(i) & Chr$(31) & vals(i)
+    Next i
+    a = Split(GetSetting("NeonCenterline", "Naming", "Last", ""), Chr$(30))
+    For i = LBound(a) To UBound(a)
+        s = CStr(a(i))
+        k = InStr(s, Chr$(31))
+        If k > 0 Then
+            mine = False
+            For j = 0 To n - 1
+                If Left$(s, k - 1) = toks(j) Then
+                    mine = True
+                End If
+            Next j
+            If Not mine Then
+                r = r & Chr$(30) & s
+            End If
+        End If
+    Next i
+    SaveSetting "NeonCenterline", "Naming", "Last", Mid$(r, 2)
+End Sub
 
 ' ---------------------------------------------------------------------
 '  Кнопка «Раскладка на листы»
@@ -5180,6 +5490,300 @@ Private Sub BoxRed(ByVal p As Long, ByVal tp As Long, ByVal x1 As Double, ByVal 
     NBr = NBr + 1
 End Sub
 '@@BOXGEO_END
+
+'@@NAMING_BEGIN
+' ---------------------------------------------------------------------
+'  Имя файла по правилам (без объектов CorelDRAW — проверяется стендом tools/stands/naming.py).
+'  Файл правил — текст: строки с # или ; — комментарии; [раздел] — начало раздела. Раздел «шаблон»
+'  (template) — первая непустая строка, например {печать}_{материал}_{размеры}_{клиент}_{номер}:
+'  части в фигурных скобках, между ними — разделители. Любой другой раздел — список «код = расшифровка»
+'  (или просто «код»). Часть шаблона: {номер} / {number} — порядковый номер файла в папке; есть раздел
+'  с её именем — список; {размеры} / {size} — поле размеров (х, Х, ×, *, пробелы -> x); иначе — простое
+'  текстовое поле. Пустая часть выпадает вместе с разделителем перед ней (у первой — после неё).
+' ---------------------------------------------------------------------
+Public Sub NmParse(ByVal txt As String, ByVal defTpl As String)
+    Dim lines As Variant, i As Long, s As String, sec As String, p As Long, code As String, desc As String
+    NmTpl = "": NmNL = 0: NmNI = 0
+    ReDim NmLsName(0 To 31): ReDim NmLsFirst(0 To 31): ReDim NmLsCnt(0 To 31)
+    ReDim NmItCode(0 To 511): ReDim NmItDesc(0 To 511)
+    txt = Replace(txt, vbCr, vbLf)
+    lines = Split(txt, vbLf)
+    For i = LBound(lines) To UBound(lines)
+        s = NmTrim(CStr(lines(i)))
+        If Len(s) = 0 Then
+            ' пустая строка
+        ElseIf Left$(s, 1) = "#" Or Left$(s, 1) = ";" Then
+            ' комментарий
+        ElseIf Left$(s, 1) = "[" And Right$(s, 1) = "]" Then
+            sec = LCase$(NmTrim(Mid$(s, 2, Len(s) - 2)))
+            If Not NmTplSec(sec) And Len(sec) > 0 And NmNL <= UBound(NmLsName) Then
+                NmLsName(NmNL) = sec: NmLsFirst(NmNL) = NmNI: NmLsCnt(NmNL) = 0
+                NmNL = NmNL + 1
+            End If
+        ElseIf NmTplSec(sec) Then
+            If Len(NmTpl) = 0 Then
+                NmTpl = s
+            End If
+        ElseIf Len(sec) > 0 And NmNL > 0 And NmNI <= UBound(NmItCode) Then
+            p = InStr(s, "=")
+            If p > 0 Then
+                code = NmTrim(Left$(s, p - 1)): desc = NmTrim(Mid$(s, p + 1))
+            Else
+                code = s: desc = ""
+            End If
+            If Len(code) > 0 Then
+                NmItCode(NmNI) = code: NmItDesc(NmNI) = desc
+                NmNI = NmNI + 1
+                NmLsCnt(NmNL - 1) = NmLsCnt(NmNL - 1) + 1
+            End If
+        End If
+    Next i
+    If Len(NmTpl) = 0 Then
+        NmTpl = defTpl
+    End If
+    NmTplParse
+    If NmNT = 0 Then
+        NmTpl = defTpl
+        NmTplParse
+    End If
+End Sub
+
+' раздел шаблона
+Private Function NmTplSec(ByVal sec As String) As Boolean
+    NmTplSec = (sec = "шаблон" Or sec = "template")
+End Function
+
+' шаблон -> начало, части (имя, разделитель перед ней, список), хвост
+Private Sub NmTplParse()
+    Dim p As Long, q As Long, k As Long, lit As String, nm As String, j As Long
+    NmNT = 0: NmPrefix = "": NmSuffix = ""
+    ReDim NmTokName(0 To NM_MAXTOK - 1): ReDim NmTokSep(0 To NM_MAXTOK - 1): ReDim NmTokList(0 To NM_MAXTOK - 1)
+    p = 1
+    Do
+        q = InStr(p, NmTpl, "{")
+        If q = 0 Then
+            Exit Do
+        End If
+        k = InStr(q + 1, NmTpl, "}")
+        If k = 0 Then
+            Exit Do
+        End If
+        lit = Mid$(NmTpl, p, q - p)
+        nm = LCase$(NmTrim(Mid$(NmTpl, q + 1, k - q - 1)))
+        If Len(nm) > 0 And NmNT < NM_MAXTOK Then
+            If NmNT = 0 Then
+                NmPrefix = NmPrefix & lit
+            Else
+                NmTokSep(NmNT) = lit
+            End If
+            NmTokName(NmNT) = nm
+            NmTokList(NmNT) = -1
+            For j = 0 To NmNL - 1
+                If NmLsName(j) = nm Then
+                    NmTokList(NmNT) = j
+                    Exit For
+                End If
+            Next j
+            NmNT = NmNT + 1
+        ElseIf NmNT = 0 Then
+            NmPrefix = NmPrefix & lit
+        End If
+        p = k + 1
+    Loop
+    NmSuffix = Mid$(NmTpl, p)
+End Sub
+
+' вид части: 0 — список, 1 — текст, 2 — размеры, 3 — номер
+Public Function NmKind(ByVal i As Long) As Long
+    Dim nm As String
+    nm = NmTokName(i)
+    If nm = "номер" Or nm = "number" Or nm = "№" Then
+        NmKind = 3
+    ElseIf NmTokList(i) >= 0 Then
+        NmKind = 0
+    ElseIf NmIsSize(i) Then
+        NmKind = 2
+    Else
+        NmKind = 1
+    End If
+End Function
+
+' часть — размеры (и у списка размеров значение тоже приводится)
+Public Function NmIsSize(ByVal i As Long) As Boolean
+    Dim nm As String
+    nm = NmTokName(i)
+    NmIsSize = (nm = "размеры" Or nm = "размер" Or nm = "size" Or nm = "sizes")
+End Function
+
+' пункт списка для окна: «код — расшифровка»
+Public Function NmItemShow(ByVal k As Long) As String
+    If Len(NmItDesc(k)) > 0 Then
+        NmItemShow = NmItCode(k) & " " & ChrW(&H2014) & " " & NmItDesc(k)
+    Else
+        NmItemShow = NmItCode(k)
+    End If
+End Function
+
+' код из строки окна («код — расшифровка» -> код)
+Public Function NmCodeOf(ByVal s As String) As String
+    Dim p As Long
+    p = InStr(s, " " & ChrW(&H2014) & " ")
+    If p > 0 Then
+        s = Left$(s, p - 1)
+    End If
+    NmCodeOf = NmTrim(s)
+End Function
+
+' значение части для имени из текста поля
+Public Function NmValue(ByVal i As Long, ByVal s As String) As String
+    Dim k As Long, d As String, c As Long
+    k = NmKind(i)
+    If k = 0 Then
+        s = NmCodeOf(s)
+    End If
+    If k = 3 Then
+        For c = 1 To Len(s)
+            If Mid$(s, c, 1) Like "#" Then
+                d = d & Mid$(s, c, 1)
+            End If
+        Next c
+        s = d
+    ElseIf NmIsSize(i) Then
+        s = NmSizes(s)
+    End If
+    NmValue = NmClean(s)
+End Function
+
+' размеры: «3000 х 2500 * 500» -> 3000x2500x500
+Public Function NmSizes(ByVal s As String) As String
+    Dim v As Variant
+    For Each v In Array(ChrW(&H445), ChrW(&H425), ChrW(&HD7), "*", "X")
+        s = Replace(s, CStr(v), "x")
+    Next v
+    s = Replace(s, " ", "")
+    Do While InStr(s, "xx") > 0
+        s = Replace(s, "xx", "x")
+    Loop
+    Do While Left$(s, 1) = "x"
+        s = Mid$(s, 2)
+    Loop
+    Do While Right$(s, 1) = "x"
+        s = Left$(s, Len(s) - 1)
+    Loop
+    NmSizes = s
+End Function
+
+' без символов, запрещённых в имени файла Windows; без пробелов по краям
+Public Function NmClean(ByVal s As String) As String
+    Dim v As Variant, c As Long
+    For Each v In Array("\", "/", ":", "*", "?", """", "<", ">", "|")
+        s = Replace(s, CStr(v), "-")
+    Next v
+    For c = 1 To 31
+        s = Replace(s, Chr$(c), "")
+    Next c
+    NmClean = NmTrim(s)
+End Function
+
+' имя по значениям частей (без расширения): пустая часть выпадает с разделителем
+Public Function NmBuild(vals() As String) As String
+    Dim i As Long, r As String, first As Boolean
+    r = NmPrefix: first = True
+    For i = 0 To NmNT - 1
+        If Len(vals(i)) > 0 Then
+            If Not first Then
+                r = r & NmTokSep(i)
+            End If
+            r = r & vals(i)
+            first = False
+        End If
+    Next i
+    NmBuild = NmClean(r & NmSuffix)
+End Function
+
+' следующий номер: имена файлов папки без расширения (n штук) -> наибольший номер у имён по шаблону + 1.
+' Номер считается, если {номер} — последняя часть шаблона: цифры в конце имени перед хвостом
+Public Function NmNextNum(names() As String, ByVal n As Long) As Long
+    Dim i As Long, k As Long, pat As String, s As String, d As String, best As Long, c As Long
+    NmNextNum = 1
+    k = -1
+    For i = 0 To NmNT - 1
+        If NmKind(i) = 3 Then
+            k = i
+        End If
+    Next i
+    If k < 0 Or k <> NmNT - 1 Then
+        Exit Function
+    End If
+    pat = NmLike(NmPrefix)
+    For i = 0 To NmNT - 1
+        If i > 0 Then
+            pat = pat & NmLike(NmTokSep(i))
+        End If
+        pat = pat & "*"
+    Next i
+    pat = LCase$(pat & NmLike(NmSuffix))
+    For i = 0 To n - 1
+        s = LCase$(names(i))
+        If s Like pat Then
+            If Len(NmSuffix) > 0 And Len(s) >= Len(NmSuffix) Then
+                s = Left$(s, Len(s) - Len(NmSuffix))
+            End If
+            d = ""
+            c = Len(s)
+            Do While c > 0
+                If Not (Mid$(s, c, 1) Like "#") Then
+                    Exit Do
+                End If
+                d = Mid$(s, c, 1) & d
+                c = c - 1
+            Loop
+            If Len(d) > 0 And Len(d) < 9 Then
+                If CLng(d) > best Then
+                    best = CLng(d)
+                End If
+            End If
+        End If
+    Next i
+    NmNextNum = best + 1
+End Function
+
+' текст -> образец для Like (спецсимволы в скобках)
+Private Function NmLike(ByVal s As String) As String
+    Dim c As Long, ch As String, r As String
+    For c = 1 To Len(s)
+        ch = Mid$(s, c, 1)
+        If ch = "[" Or ch = "?" Or ch = "*" Or ch = "#" Then
+            r = r & "[" & ch & "]"
+        Else
+            r = r & ch
+        End If
+    Next c
+    NmLike = r
+End Function
+
+' обрезать пробелы, табуляции, неразрывный пробел и метку UTF-8 по краям
+Public Function NmTrim(ByVal s As String) As String
+    Dim ch As String
+    Do While Len(s) > 0
+        ch = Left$(s, 1)
+        If ch = " " Or ch = vbTab Or ch = ChrW(&HA0) Or ch = ChrW(&HFEFF) Then
+            s = Mid$(s, 2)
+        Else
+            Exit Do
+        End If
+    Loop
+    Do While Len(s) > 0
+        ch = Right$(s, 1)
+        If ch = " " Or ch = vbTab Or ch = ChrW(&HA0) Or ch = ChrW(&HFEFF) Then
+            s = Left$(s, Len(s) - 1)
+        Else
+            Exit Do
+        End If
+    Loop
+    NmTrim = s
+End Function
+'@@NAMING_END
 
 '@@NESTGEO_BEGIN
 ' ---------------------------------------------------------------------

@@ -2,11 +2,11 @@
 <!--
   NeonCenterline — команды и панель инструментов (CorelDRAW Addons).
   Команды вызывают макросы проекта NeonCenterline.gms (пользовательская папка GMS).
-  Панель: Моно, Курсив | Контур ▾, Линии ▾, Раскладка ▾ | Настройки ▾. «▾» — кнопка-группа:
+  Панель: Моно, Курсив | Контур ▾, Линии ▾, Раскладка ▾ | Сохранить по правилам | Настройки ▾. «▾» — кнопка-группа:
   itemData type="flyout" с flyoutBarRef на commandBarData type="menu" flyout="true" (как кнопки
   со списком в самом CorelDRAW, DrawUI.items.xml; без type="flyout" CorelDRAW 2026 кнопку не рисует).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 13]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 14]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
@@ -131,6 +131,13 @@
                 userCaption="Одинаковые — в группы"
                 userToolTip="Собрать одинаковые объекты (одна форма с точностью 0,1 мм и один цвет) в группы «N шт» и показать ведомость форм. Отмена — Ctrl+Z"
                 enable="true"/>
+      <itemData guid="6a6c75ad-8004-51a5-a752-6973e2312e26"
+                icon="guid://6a6c75ad-8004-51a5-a752-6973e2312e26"
+                dynamicCommand="NeonCenterline.NeonTools.SaveByRules"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Сохранить по правилам"
+                userToolTip="Сохранить документ под именем по правилам отдела: части имени (печать, материал, размеры, клиент, номер) — из файла правил, папка — деревом, номер — следующий по порядку в папке"
+                enable="true"/>
       <!-- кнопки-группы: открывают выпадающий список команд -->
       <itemData guid="58b78302-39ef-5436-8097-5392406fe15a"
                 type="flyout"
@@ -181,6 +188,8 @@
           <item guidRef="58b78302-39ef-5436-8097-5392406fe15a"/>
           <item guidRef="305a1621-a721-5784-9de2-b2338e83336c"/>
           <item guidRef="d32b7178-2e37-5391-aca2-12628ac3838b"/>
+          <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
+          <item guidRef="6a6c75ad-8004-51a5-a752-6973e2312e26"/>
           <item guidRef="266435b4-6e53-460f-9fa7-f45be187d400"/>
           <item guidRef="0392cc33-564d-537f-b0df-9d90ebfd4177"/>
         </toolbar>

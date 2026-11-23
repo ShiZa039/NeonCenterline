@@ -41,7 +41,9 @@ ITEMS = [('mono', 'neon_mono', 101, 'Моно'),
          # с [NeonToolbar 11]: лапша (группа «Раскладка»); с [NeonToolbar 12] подписи без «Неон: »
          ('noodle', 'neon_noodle', 116, 'Лапша (полосы)'),
          # с [NeonToolbar 13]: кубик под фрезеровку (группа «Раскладка»)
-         ('box', 'neon_box', 117, 'Кубик')]
+         ('box', 'neon_box', 117, 'Кубик'),
+         # с [NeonToolbar 14]: сохранить по правилам (отдельная кнопка перед «Настройками и помощью»)
+         ('save', 'neon_save', 118, 'Сохранить по правилам')]
 
 def bmp_entry(im):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()

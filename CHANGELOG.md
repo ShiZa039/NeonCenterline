@@ -1,5 +1,13 @@
 # Changelog
 
+## Не выпущено · Unreleased
+
+RU
+- **Новая кнопка «Сохранить по правилам»** (на панели перед «Настройками и помощью») — имя файла по правилам отдела, например `720_block_3000x2500x500_Voksis_1.cdr`. Шаблон имени и списки (печать, материал…) — в текстовом файле правил: его можно положить в общую папку, чтобы правила были одни для дизайнеров и менеджеров; кнопка «Правила…» открывает его в Блокноте или выбирает другой. В окне: списки — по разделам файла (код = расшифровка), размеры и клиент — поля (размеры приводятся к виду 3000x2500x500), номер — следующий по порядку в папке; папка — деревом; имя видно сразу. Свою часть имени можно добавить правкой файла правил, без обновления плагина. Набор кнопок панели — 14.
+
+EN
+- **New button "Save by rules"** (on the toolbar before Settings and help) — the file name follows your team's rules, e.g. `720_block_3000x2500x500_Voksis_1.cdr`. The name template and the lists (print, material…) live in a text rules file that can sit in a shared folder so designers and managers share the same rules; the "Rules…" button opens it in Notepad or picks another one. In the window: lists from the file sections (code = description), size and client are fields (size becomes 3000x2500x500), the number is the next one in the folder; the folder is picked from a tree; the name is shown as you type. Add your own name part by editing the rules file — no plugin update needed. Toolbar set 14.
+
 ## 1.1.4 — 2026-11-23
 
 RU

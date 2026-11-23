@@ -83,6 +83,7 @@ Private Function LangRu(ByVal key As String) As String
     ElseIf LangRu_5(key, s) Then
     ElseIf LangRu_6(key, s) Then
     ElseIf LangRu_7(key, s) Then
+    ElseIf LangRu_8(key, s) Then
     Else
         s = key
     End If
@@ -663,6 +664,63 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
         s = s & LD("#V$0451olmd $2014 odf nm imlqror. I_ec_~ cdq_j{ $2014 pam~ bornn_, apd cd")
         s = s & LD("#q_jg azcdjdlz: o_fjmegq{ l_ jgpq $2014 $00ABO_pij_ci_ $25BE$00BB $2192 $00ABO_pij_ci")
         s = s & LD("#_ l_ jgpqz$00BB.")
+    Case "nm_title"
+        s = s & LD("#Pmto_lgq{ nm no_agj_k")
+    Case "nm_dir"
+        s = s & LD("#N_ni_:")
+    Case "nm_dir_btn"
+        s = s & LD("#Az`o_q{ n_nir$2026")
+    Case "nm_name"
+        s = s & LD("#Gk~ s_hj_:")
+    Case "nm_rules_btn"
+        s = s & LD("#No_agj_$2026")
+    Case "nm_rules_lbl"
+        s = s & LD("#No_agj_ gkdlg: #{0}")
+    Case "nm_hint"
+        s = s & LD("#O_fkdoz $2014 i_i a gkdlg: $00AB3000 t 2500 t 500$00BB pq_ldq 3000#x2500x")
+        s = s & LD("500. #Lmkdo $2014 pjdcr}xgh nm nmo~cir a n_nid, kmelm nmno_agq{. ")
+        s = s & LD("#W_`jml gkdlg g pngpig $2014 a s_hjd no_agj (ilmni_ $00ABNo_agj_$2026$00BB).")
+    Case "btn_nm_save"
+        s = s & LD("#Pmto_lgq{")
+    Case "nm_pick_dir"
+        s = s & LD("#N_ni_ cj~ pmto_ldlg~")
+    Case "nm_pick_rules"
+        s = s & LD("#S_hj no_agj gjg n_ni_ cj~ ldbm (l_nogkdo, m`x_~ cj~ mqcdj_)")
+    Case "nm_rules_menu"
+        s = s & LD("#S_hj no_agj gkdlg:$000A#{0}$000A$000A#C_ $2014 mqiozq{ a @jmilmqd. Nmno_a{qd, ")
+        s = s & LD("#pmto_lgqd g f_iomhqd @jmilmq $2014 milm ndodvgq_dq no_agj_.$000ALdq ")
+        s = s & LD("$2014 #az`o_q{ corbmh s_hj no_agj gjg n_nir (l_nogkdo, m`xr} cj~ ")
+        s = s & LD("#apdbm mqcdj_: dpjg s_hj_ q_k ldq, ml pmfc_pqp~ gf m`o_fu_).$000A")
+        s = s & LD("#Mqkdl_ $2014 lgvdbm ld kdl~q{.")
+    Case "nm_exists"
+        s = s & LD("#S_hj red dpq{:$000A#{0}$000A$000A#F_kdlgq{#?")
+    Case "nm_empty"
+        s = s & LD("#Gk~ s_hj_ nrpqmd $2014 f_nmjlgqd nmj~.")
+    Case "nm_nodir"
+        s = s & LD("#N_ni_ ld l_hcdl_:$000A#{0}$000A$000A#Az`dogqd n_nir ilmnimh $00ABAz`o_q{ n_nir")
+        s = s & LD("$2026$00BB.")
+    Case "nm_err_save"
+        s = s & LD("#Ld rc_jmp{ pmto_lgq{ s_hj:$000A#{0}$000A$000A{1}")
+    Case "nm_ask"
+        s = s & LD("#Gk~ s_hj_ (`df .#cdr). #N_ni_:$000A#{0}")
+    Case "nm_tpl_default"
+        s = s & LD("{#ndv_q{#}_{#k_qdog_j#}_{#o_fkdoz#}_{#ijgdlq#}_{#lmkdo#}")
+    Case "nm_sample"
+        s = s & LD("$0023 #No_agj_ gkdlg s_hj_ cj~ ilmnig $00ABPmto_lgq{ nm no_agj_k$00BB (nj")
+        s = s & LD("#_bgl #NeonCenterline).$000A$0023 #Pqomig p $0023 $2014 imkkdlq_ogg. S_hj kmelm")
+        s = s & LD(" #nmjmegq{ a m`xr} n_nir $2014 qmbc_ no_agj_ mclg l_ adp{ mqcdj$000A$0023")
+        s = s & LD(" (#a mild pmto_ldlg~: $00ABNo_agj_$2026$00BB -> $00ABLdq$00BB -> az`o_q{ |qmq s_h")
+        s = s & LD("#j gjg n_nir).$000A$0023$000A$0023 #[#w_`jml#] $2014 #i_i pm`go_dqp~ gk~: v_pqg a sgb")
+        s = s & LD("#rolzt pim`i_t, kdecr lgkg $2014 o_fcdjgqdjg.$000A$0023   #{#lmkdo#} $2014 #nmo~c")
+        s = s & LD("#imazh lmkdo s_hj_ a n_nid (nj_bgl nmcpq_aj~dq pjdcr}xgh);$000A$0023 ")
+        s = s & LD("  {#o_fkdoz#} $2014 #nmjd o_fkdoma: $00AB3000 t 2500 t 500$00BB pq_ldq 3000")
+        s = s & LD("x2500x500;$000A$0023   #v_pq{, cj~ imqmomh lged dpq{ o_fcdj-pngpmi, $2014")
+        s = s & LD(" #azn_c_}xgh pngpmi; `df pngpi_ $2014 nompqmd nmjd, i_i #{#ijgdlq#}.")
+        s = s & LD("$000A$0023 #Pngpig: $00ABimc = o_pwgsomai_$00BB. A gk~ s_hj_ gc$0451q imc, a mild")
+        s = s & LD(" #agcl_ o_pwgsomai_.$000A$0023 Pam~ v_pq{: cmngwgqd, l_nogkdo, #{#j_kgl")
+        s = s & LD("#_ug~#} #a w_`jml g o_fcdj #[#j_kgl_ug~#] #pm pngpimk.$000A$000A#[#w_`jml#]$000A{#n")
+        s = s & LD("#dv_q{#}_{#k_qdog_j#}_{#o_fkdoz#}_{#ijgdlq#}_{#lmkdo#}$000A$000A[#ndv_q{#]$000A720 =")
+        s = s & LD(" #Glqdo{dol_~ ndv_q{$000A$000A#[#k_qdog_j#]$000Ablock = #@_lldo `j|i_rq$000A")
     Case "same_title"
         s = s & LD("#Mcgl_imazd $2014 a bornnz")
     Case "same_nosel"
@@ -706,6 +764,15 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
         s = s & LD("#O_pij_ci_: o_ki_ jgpq_ #{0}")
     Case "nest_labname"
         s = s & LD("#O_pij_ci_: nmcngp{ jgpq_ #{0}")
+    Case Else
+        LangRu_6 = False
+    End Select
+End Function
+
+Private Function LangRu_7(ByVal key As String, s As String) As Boolean
+    LangRu_7 = True
+    s = ""
+    Select Case key
     Case "nest_group"
         s = s & LD("#O_pij_ci_: jgpq #{0} #gf #{1} $00B7 {2}")
     Case "nest_label"
@@ -749,15 +816,6 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
         s = s & LD("#apd uadq_")
     Case "lbl_nest_size"
         s = s & LD("#Bmqmazh o_fkdo:")
-    Case Else
-        LangRu_6 = False
-    End Select
-End Function
-
-Private Function LangRu_7(ByVal key As String, s As String) As Boolean
-    LangRu_7 = True
-    s = ""
-    Select Case key
     Case "lbl_nest_len"
         s = s & LD("#Cjgl_ jgpq_, kk:")
     Case "lbl_nest_wid"
@@ -812,6 +870,15 @@ Private Function LangRu_7(ByVal key As String, s As String) As Boolean
         s = s & LD("#gimk (q_`jgvig, p`moig); `df b_jmvig o_f`go_}qp~ l_ |jdkdlqz")
         s = s & LD(" $2014 #q_i rcm`lm cj~ gknmoq_ #SVG/DXF #mclmh bornnmh. $00ABMcgl_imazd")
         s = s & LD("$00BB $2014 #apdbc_ nmwqrvlm.")
+    Case Else
+        LangRu_7 = False
+    End Select
+End Function
+
+Private Function LangRu_8(ByVal key As String, s As String) As Boolean
+    LangRu_8 = True
+    s = ""
+    Select Case key
     Case "btn_nest"
         s = s & LD("#O_fjmegq{")
     Case "bad_nest"
@@ -819,7 +886,7 @@ Private Function LangRu_7(ByVal key As String, s As String) As Boolean
         s = s & LD("0$20131000 #kk g kdl{wd nmjmaglz jgpq_, f_fmo 0$20131000 kk, l_gkdl{w")
         s = s & LD("#_~ cjgl_ ld `mj{wd cjglz jgpq_.")
     Case Else
-        LangRu_7 = False
+        LangRu_8 = False
     End Select
 End Function
 
@@ -832,6 +899,7 @@ Private Function LangEn(ByVal key As String) As String
     ElseIf LangEn_5(key, s) Then
     ElseIf LangEn_6(key, s) Then
     ElseIf LangEn_7(key, s) Then
+    ElseIf LangEn_8(key, s) Then
     Else
         s = key
     End If
@@ -1416,6 +1484,65 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
         s = s & LD("Black is the cut outline. Each part is its own group and all")
         s = s & LD(" parts are selected: to lay them out on a sheet $2014 Layout $25BE $2192")
         s = s & LD(" $0022Nest on sheets$0022.")
+    Case "nm_title"
+        s = s & LD("Save by rules")
+    Case "nm_dir"
+        s = s & LD("Folder:")
+    Case "nm_dir_btn"
+        s = s & LD("Choose folder$2026")
+    Case "nm_name"
+        s = s & LD("File name:")
+    Case "nm_rules_btn"
+        s = s & LD("Rules$2026")
+    Case "nm_rules_lbl"
+        s = s & LD("Naming rules: {0}")
+    Case "nm_hint"
+        s = s & LD("Sizes as in the name: $00223000 x 2500 x 500$0022 becomes 3000x2500x")
+        s = s & LD("500. The number is the next one in the folder; you can chang")
+        s = s & LD("e it. The name template and the lists are in the rules file ")
+        s = s & LD("(the $0022Rules$2026$0022 button).")
+    Case "btn_nm_save"
+        s = s & LD("Save")
+    Case "nm_pick_dir"
+        s = s & LD("Folder to save to")
+    Case "nm_pick_rules"
+        s = s & LD("Rules file or a folder for it (for example, a shared one)")
+    Case "nm_rules_menu"
+        s = s & LD("Naming rules file:$000A{0}$000A$000AYes $2014 open it in Notepad. Edit, save")
+        s = s & LD(" and close Notepad $2014 the window re-reads the rules.$000ANo $2014 cho")
+        s = s & LD("ose another rules file or a folder (for example, one shared ")
+        s = s & LD("by the whole team: if there is no file, one is created from ")
+        s = s & LD("the sample).$000ACancel $2014 change nothing.")
+    Case "nm_exists"
+        s = s & LD("The file already exists:$000A{0}$000A$000AReplace it?")
+    Case "nm_empty"
+        s = s & LD("The file name is empty $2014 fill in the fields.")
+    Case "nm_nodir"
+        s = s & LD("Folder not found:$000A{0}$000A$000AChoose a folder with $0022Choose folder$2026$0022")
+        s = s & LD(".")
+    Case "nm_err_save"
+        s = s & LD("Could not save the file:$000A{0}$000A$000A{1}")
+    Case "nm_ask"
+        s = s & LD("File name (without .cdr). Folder:$000A{0}")
+    Case "nm_tpl_default"
+        s = s & LD("{print}_{material}_{size}_{client}_{number}")
+    Case "nm_sample"
+        s = s & LD("$0023 File naming rules for the $0022Save by rules$0022 button (NeonCent")
+        s = s & LD("erline plugin).$000A$0023 Lines starting with $0023 are comments. Put th")
+        s = s & LD("is file in a shared folder to give the whole team the same r")
+        s = s & LD("ules$000A$0023 (in the save window: $0022Rules$2026$0022 -> $0022No$0022 -> choose this ")
+        s = s & LD("file or its folder).$000A$0023$000A$0023 [template] $2014 how the name is built:")
+        s = s & LD(" parts in curly braces, separators between them.$000A$0023   {number")
+        s = s & LD("} $2014 the file's sequence number in the folder (the plugin fil")
+        s = s & LD("ls in the next one);$000A$0023   {size} $2014 the size field: $00223000 x 25")
+        s = s & LD("00 x 500$0022 becomes 3000x2500x500;$000A$0023   a part with a list sect")
+        s = s & LD("ion below is a drop-down list; without a list it is a plain ")
+        s = s & LD("field, like {client}.$000A$0023 Lists: $0022code = description$0022. The cod")
+        s = s & LD("e goes into the file name, the window shows the description.")
+        s = s & LD("$000A$0023 Your own part: add, for example, {lamination} to the temp")
+        s = s & LD("late and a [lamination] section with a list.$000A$000A[template]$000A{pr")
+        s = s & LD("int}_{material}_{size}_{client}_{number}$000A$000A[print]$000A720 = Indo")
+        s = s & LD("or print$000A$000A[material]$000Ablock = Blackout banner$000A")
     Case "same_title"
         s = s & LD("Group identical")
     Case "same_nosel"
@@ -1458,6 +1585,15 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
         s = s & LD("Nesting: sheet frame {0}")
     Case "nest_labname"
         s = s & LD("Nesting: sheet label {0}")
+    Case Else
+        LangEn_6 = False
+    End Select
+End Function
+
+Private Function LangEn_7(ByVal key As String, s As String) As Boolean
+    LangEn_7 = True
+    s = ""
+    Select Case key
     Case "nest_group"
         s = s & LD("Nesting: sheet {0} of {1} $00B7 {2}")
     Case "nest_label"
@@ -1501,15 +1637,6 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
         s = s & LD("all colours")
     Case "lbl_nest_size"
         s = s & LD("Preset size:")
-    Case Else
-        LangEn_6 = False
-    End Select
-End Function
-
-Private Function LangEn_7(ByVal key As String, s As String) As Boolean
-    LangEn_7 = True
-    s = ""
-    Select Case key
     Case "lbl_nest_len"
         s = s & LD("Sheet length, mm:")
     Case "lbl_nest_wid"
@@ -1565,6 +1692,15 @@ Private Function LangEn_7(ByVal key As String, s As String) As Boolean
         s = s & LD("); untick it to split groups into their elements $2014 handy for")
         s = s & LD(" an SVG/DXF import that comes as one group. $0022Identical$0022 grou")
         s = s & LD("ps are always nested one by one.")
+    Case Else
+        LangEn_7 = False
+    End Select
+End Function
+
+Private Function LangEn_8(ByVal key As String, s As String) As Boolean
+    LangEn_8 = True
+    s = ""
+    Select Case key
     Case "btn_nest"
         s = s & LD("Nest")
     Case "bad_nest"
@@ -1572,6 +1708,6 @@ Private Function LangEn_7(ByVal key As String, s As String) As Boolean
         s = s & LD("n 0$20131000 mm and under half the sheet, gap 0$20131000 mm, minimum")
         s = s & LD(" length not above the sheet length.")
     Case Else
-        LangEn_7 = False
+        LangEn_8 = False
     End Select
 End Function

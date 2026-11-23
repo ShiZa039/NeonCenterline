@@ -321,6 +321,69 @@ STRINGS = {
                       'The step lines of the front and the back run {4} mm past the edge.'),
     'box_rep_tail':  ('Чёрное — рез по контуру. Каждая деталь — своя группа, все детали выделены: разложить на лист — «Раскладка ▾» → «Раскладка на листы».',
                       'Black is the cut outline. Each part is its own group and all parts are selected: to lay them out on a sheet — Layout ▾ → "Nest on sheets".'),
+    'nm_title':      ('Сохранить по правилам', 'Save by rules'),
+    'nm_dir':        ('Папка:', 'Folder:'),
+    'nm_dir_btn':    ('Выбрать папку…', 'Choose folder…'),
+    'nm_name':       ('Имя файла:', 'File name:'),
+    'nm_rules_btn':  ('Правила…', 'Rules…'),
+    'nm_rules_lbl':  ('Правила имени: {0}', 'Naming rules: {0}'),
+    'nm_hint':       ('Размеры — как в имени: «3000 х 2500 х 500» станет 3000x2500x500. Номер — следующий по порядку в папке, можно поправить. '
+                      'Шаблон имени и списки — в файле правил (кнопка «Правила…»).',
+                      'Sizes as in the name: "3000 x 2500 x 500" becomes 3000x2500x500. The number is the next one in the folder; you can change it. '
+                      'The name template and the lists are in the rules file (the "Rules…" button).'),
+    'btn_nm_save':   ('Сохранить', 'Save'),
+    'nm_pick_dir':   ('Папка для сохранения', 'Folder to save to'),
+    'nm_pick_rules': ('Файл правил или папка для него (например, общая для отдела)', 'Rules file or a folder for it (for example, a shared one)'),
+    'nm_rules_menu': ('Файл правил имени:\n{0}\n\nДа — открыть в Блокноте. Поправьте, сохраните и закройте Блокнот — окно перечитает правила.\n'
+                      'Нет — выбрать другой файл правил или папку (например, общую для всего отдела: если файла там нет, он создастся из образца).\n'
+                      'Отмена — ничего не менять.',
+                      'Naming rules file:\n{0}\n\nYes — open it in Notepad. Edit, save and close Notepad — the window re-reads the rules.\n'
+                      'No — choose another rules file or a folder (for example, one shared by the whole team: if there is no file, one is created from the sample).\n'
+                      'Cancel — change nothing.'),
+    'nm_exists':     ('Файл уже есть:\n{0}\n\nЗаменить?', 'The file already exists:\n{0}\n\nReplace it?'),
+    'nm_empty':      ('Имя файла пустое — заполните поля.', 'The file name is empty — fill in the fields.'),
+    'nm_nodir':      ('Папка не найдена:\n{0}\n\nВыберите папку кнопкой «Выбрать папку…».', 'Folder not found:\n{0}\n\nChoose a folder with "Choose folder…".'),
+    'nm_err_save':   ('Не удалось сохранить файл:\n{0}\n\n{1}', 'Could not save the file:\n{0}\n\n{1}'),
+    'nm_ask':        ('Имя файла (без .cdr). Папка:\n{0}', 'File name (without .cdr). Folder:\n{0}'),
+    'nm_tpl_default':('{печать}_{материал}_{размеры}_{клиент}_{номер}', '{print}_{material}_{size}_{client}_{number}'),
+    'nm_sample':     ('# Правила имени файла для кнопки «Сохранить по правилам» (плагин NeonCenterline).\n'
+                      '# Строки с # — комментарии. Файл можно положить в общую папку — тогда правила одни на весь отдел\n'
+                      '# (в окне сохранения: «Правила…» -> «Нет» -> выбрать этот файл или папку).\n'
+                      '#\n'
+                      '# [шаблон] — как собирается имя: части в фигурных скобках, между ними — разделители.\n'
+                      '#   {номер} — порядковый номер файла в папке (плагин подставляет следующий);\n'
+                      '#   {размеры} — поле размеров: «3000 х 2500 х 500» станет 3000x2500x500;\n'
+                      '#   часть, для которой ниже есть раздел-список, — выпадающий список; без списка — простое поле, как {клиент}.\n'
+                      '# Списки: «код = расшифровка». В имя файла идёт код, в окне видна расшифровка.\n'
+                      '# Своя часть: допишите, например, {ламинация} в шаблон и раздел [ламинация] со списком.\n'
+                      '\n'
+                      '[шаблон]\n'
+                      '{печать}_{материал}_{размеры}_{клиент}_{номер}\n'
+                      '\n'
+                      '[печать]\n'
+                      '720 = Интерьерная печать\n'
+                      '\n'
+                      '[материал]\n'
+                      'block = Баннер блэкаут\n',
+                      '# File naming rules for the "Save by rules" button (NeonCenterline plugin).\n'
+                      '# Lines starting with # are comments. Put this file in a shared folder to give the whole team the same rules\n'
+                      '# (in the save window: "Rules…" -> "No" -> choose this file or its folder).\n'
+                      '#\n'
+                      '# [template] — how the name is built: parts in curly braces, separators between them.\n'
+                      '#   {number} — the file\'s sequence number in the folder (the plugin fills in the next one);\n'
+                      '#   {size} — the size field: "3000 x 2500 x 500" becomes 3000x2500x500;\n'
+                      '#   a part with a list section below is a drop-down list; without a list it is a plain field, like {client}.\n'
+                      '# Lists: "code = description". The code goes into the file name, the window shows the description.\n'
+                      '# Your own part: add, for example, {lamination} to the template and a [lamination] section with a list.\n'
+                      '\n'
+                      '[template]\n'
+                      '{print}_{material}_{size}_{client}_{number}\n'
+                      '\n'
+                      '[print]\n'
+                      '720 = Indoor print\n'
+                      '\n'
+                      '[material]\n'
+                      'block = Blackout banner\n'),
     'same_title':    ('Одинаковые — в группы', 'Group identical'),
     'same_nosel':    ('Выделите объекты: кривые, текст, фигуры.', 'Select the objects: curves, text, shapes.'),
     'same_none':     ('Одинаковых объектов не найдено: все {0} разные.\n\nОдинаковые — одна форма с точностью до 0,1 мм (без поворота и зеркала) и один цвет.',

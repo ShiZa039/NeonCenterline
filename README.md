@@ -12,6 +12,7 @@
 - **Контур** — очистить (убрать наложения и петли), упростить (меньше узлов), разбить на буквы (дырки остаются в своих буквах).
 - **Раскладка** — детали на листы по контуру или по габаритам (бета), одинаковые — в группы, лапша (полосы), кубик (развёртка под фрезеровку), люверсы по краю баннера.
 - **Линии** — длина контуров и линий, выделить центральные линии, подогнать линии под кратность реза.
+- **Сохранить по правилам** — имя файла по правилам отдела (печать, материал, размеры, клиент, номер), правила — в общем файле.
 - У всех инструментов — **окно хода работы** (видно, что плагин работает, а не CorelDRAW завис) и **отчёт с кнопками «ОК» / «Отмена»** (отменить всё сделанное одним шагом). У очистки, упрощения, разбивки и раскладки можно **оставить оригинал**.
 - Интерфейс на русском и английском, автообновление с GitHub.
 
@@ -40,7 +41,7 @@
 
 ## Панель «Неон»
 
-**Моно**, **Курсив** | **Контур ▾**, **Раскладка ▾**, **Линии ▾** | **Настройки и помощь ▾**. Кнопки со стрелкой открывают список:
+**Моно**, **Курсив** | **Контур ▾**, **Линии ▾**, **Раскладка ▾** | **Сохранить по правилам** | **Настройки и помощь ▾**. Кнопки со стрелкой открывают список:
 
 | Группа | Кнопки |
 |---|---|
@@ -114,6 +115,28 @@
 
 **Подогнать под кратность реза** (`NeonCenterline.NeonCut.FitToCut`) — подгоняет под кратность уже готовые выделенные линии (как галочка «Подгонять линии под кратность реза» после расчёта).
 
+## Сохранить по правилам
+
+**Сохранить по правилам** (`NeonCenterline.NeonTools.SaveByRules`) — сохраняет документ под именем, собранным по правилам отдела, например `720_block_3000x2500x500_Voksis_1.cdr`: 720 — интерьерная печать, block — баннер блэкаут, размеры, клиент, порядковый номер.
+
+- **Окно** — по строке на каждую часть имени. Часть со списком в файле правил — выпадающий список (в окне видна расшифровка, в имя идёт код; можно вписать и своё), без списка — простое поле (клиент). **Размеры** вписывает дизайнер: «3000 х 2500 * 500» станет `3000x2500x500`. **Номер** — следующий по порядку среди файлов папки, названных по правилам (можно поправить). Имя файла видно сразу, как получится.
+- **Папка** — кнопка «Выбрать папку…», выбор деревом. По умолчанию — папка документа, у нового — последняя.
+- Файл с таким именем уже есть — плагин спросит, заменять ли. Значения полей (кроме номера) запоминаются до следующего раза.
+- **Правила** — текстовый файл: шаблон имени и списки. Кнопка «Правила…»: «Да» — открыть в Блокноте (после правки закрыть Блокнот — окно перечитает правила), «Нет» — выбрать другой файл или папку. Положите файл в **общую папку** (сетевой диск, облако) и выберите его на каждом компьютере — правила будут одни для дизайнеров и менеджеров. По умолчанию — `%APPDATA%\NeonCenterline\NeonNaming.txt`, при первом запуске создаётся из образца:
+
+```
+[шаблон]
+{печать}_{материал}_{размеры}_{клиент}_{номер}
+
+[печать]
+720 = Интерьерная печать
+
+[материал]
+block = Баннер блэкаут
+```
+
+Части шаблона — в фигурных скобках, между ними — разделители. `{номер}` — порядковый номер, `{размеры}` — поле размеров, часть с разделом-списком — список, остальные — простые поля. Своя часть — дописать `{ламинация}` в шаблон и раздел `[ламинация]` со списком. Пустая часть выпадает из имени вместе с разделителем. Строки с `#` — комментарии. Удобно повесить кнопку на сочетание клавиш: Инструменты → Настройка → Команды → «Макросы» → `NeonCenterline.NeonTools.SaveByRules` → Сочетания клавиш.
+
 ## Настройки
 
 В окне **Настройки** (группа «Настройки и помощь ▾»): диаметр фрезы, отступ конца линии от края, тип неона, «Курсив — шрифт как образец», кратность реза, подгонка линий под кратность и с какого конца укорачивать, «Спрашивать параметры при каждом запуске», допуск упрощения контура и показывать ли окно упрощения, «Оставлять оригинал: очистка, разбивка, упрощение», язык интерфейса (русский / English / как в Windows), ежедневная проверка обновлений. Параметры раскладки, лапши и люверсов запоминаются в их собственных окнах.
@@ -145,6 +168,7 @@ A CorelDRAW plugin for sign making. Its core is a centerline built from letter o
 - **Outline** — clean (remove overlaps and loops), simplify (fewer nodes), split into letters (holes stay in their letters).
 - **Layout** — nest parts on sheets by outline or by bounding boxes (beta), group identical, strips, box (a layout for a router), grommets along a banner edge.
 - **Lines** — length of outlines and lines, select centerlines, fit lines to the cut step.
+- **Save by rules** — the file name follows your team's rules (print, material, size, client, number); the rules live in a shared file.
 - Every tool has a **progress window** (you can see the plugin is working and CorelDRAW has not hung) and a **report with OK / Cancel** (undo all of it in one step). Clean, simplify, split and nesting can **keep the original**.
 - Russian and English interface, automatic updates from GitHub.
 
@@ -173,7 +197,7 @@ A CorelDRAW plugin for sign making. Its core is a centerline built from letter o
 
 ## The "Неон" toolbar
 
-**Mono**, **Script** | **Outline ▾**, **Layout ▾**, **Lines ▾** | **Settings and help ▾**. Buttons with an arrow open a list:
+**Mono**, **Script** | **Outline ▾**, **Lines ▾**, **Layout ▾** | **Save by rules** | **Settings and help ▾**. Buttons with an arrow open a list:
 
 | Group | Buttons |
 |---|---|
@@ -246,6 +270,17 @@ By outline, a part becomes a grid of cells (about 0.7 mm on a 900×600 sheet, ab
 **Select centerlines** (`NeonCenterline.NeonTools.SelectNeonLines`) — selects all plugin centerlines on the page (e.g. to measure the neon or remove them).
 
 **Fit to the cut step** (`NeonCenterline.NeonCut.FitToCut`) — fits already selected lines to the cut step (like "Fit lines to the cut step" after a run).
+
+## Save by rules
+
+**Save by rules** (`NeonCenterline.NeonTools.SaveByRules`) — saves the document under a name built by your team's rules, for example `720_block_3000x2500x500_Voksis_1.cdr`: 720 — indoor print, block — blackout banner, size, client, sequence number.
+
+- **The window** has a row per name part. A part with a list in the rules file is a drop-down (the window shows the description, the name gets the code; you can also type your own), a part without a list is a plain field (client). **Size** is typed by the designer: "3000 x 2500 * 500" becomes `3000x2500x500`. **Number** — the next one among the files in the folder named by the rules (you can change it). The file name is shown as you type.
+- **Folder** — the "Choose folder…" button, a folder tree. By default — the document's folder, for a new document the last one used.
+- If a file with that name already exists, the plugin asks whether to replace it. Field values (except the number) are remembered for next time.
+- **Rules** — a text file: the name template and the lists. The "Rules…" button: "Yes" opens it in Notepad (after editing close Notepad — the window re-reads the rules), "No" chooses another file or folder. Put the file in a **shared folder** (network drive, cloud) and choose it on every computer — designers and managers get the same rules. By default it is `%APPDATA%\NeonCenterline\NeonNaming.txt`, created from a sample on first use (`[template]`, `{print}_{material}_{size}_{client}_{number}`, `[print]`, `[material]`).
+
+Template parts are in curly braces with separators between them. `{number}` is the sequence number, `{size}` the size field, a part with a list section is a list, the rest are plain fields. Your own part: add `{lamination}` to the template and a `[lamination]` section with a list. An empty part drops out of the name with its separator. Lines starting with `#` are comments. Handy: assign a shortcut — Tools → Customization → Commands → Macros → `NeonCenterline.NeonTools.SaveByRules` → Shortcut keys.
 
 ## Settings
 
