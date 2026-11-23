@@ -10,7 +10,8 @@ Attribute VB_Name = "NeonTools"
 '    GroupSame       — одинаковые объекты (форма и цвет) — в группы;
 '    NestSheets      — раскладка деталей на листы: по габаритам, без поворота, с полем и зазором;
 '    SplitLetters    — разбить на буквы: по объекту на букву, дырки остаются в своих буквах;
-'    MakeNoodles     — лапша: полосы заданной длины и ширины, резы зигзагом, отрезы в конце списка.
+'    MakeNoodles     — лапша: полосы заданной длины и ширины, резы зигзагом, отрезы в конце списка;
+'    MakeBox         — кубик: развёртка из 6 деталей под фрезеровку, соединение в ступеньку (четверть).
 ' =====================================================================
 Option Explicit
 
@@ -109,6 +110,10 @@ Private Const MARK_GAP As Double = 0.35
 Private LtNG As Long, LtG0() As Long, LtGn() As Long, LtIdx() As Long
 ' лапша: отрезки (начало, конец) в порядке создания
 Private NdX1() As Double, NdY1() As Double, NdX2() As Double, NdY2() As Double, NNd As Long
+' кубик: детали (левый нижний угол, размер, вид: 0 — крышка и дно, 1 — стенка со ступенькой по боковым краям,
+' 2 — гладкая стенка); фрезеровка ступеньки (деталь, вид: 0 — прямоугольник по углам, 1 — отрезок)
+Private BxX() As Double, BxY() As Double, BxW() As Double, BxH() As Double, BxK() As Long, NBx As Long
+Private BrP() As Long, BrT() As Long, BrX1() As Double, BrY1() As Double, BrX2() As Double, BrY2() As Double, NBr As Long
 ' раскладка: детали (габарит без зазора), порядок, результат (лист, x, y от левого верхнего угла листа)
 Private NtW() As Double, NtH() As Double, NNt As Long, NtOrd() As Long
 Private NtS() As Long, NtX() As Double, NtY() As Double, NtSheets As Long, NtMode As Long, NtHeur As Long
@@ -3820,6 +3825,128 @@ Public Function NeonNoodleNum(ByVal key As String, ByVal def As Double) As Doubl
 End Function
 
 ' ---------------------------------------------------------------------
+'  Кнопка «Кубик» (группа «Раскладка ▾»): развёртка кубика под фрезеровку — 6 деталей, соединение в
+'  ступеньку; каждая деталь — группа (рез по контуру чёрным + фрезеровка ступеньки красным), в центре
+'  страницы, все выделены
+' ---------------------------------------------------------------------
+Public Sub MakeBox()
+    Dim oldUnit As cdrUnit, grp As Boolean, errText As String, ttl As String, msg As String
+    Dim l As Double, w As Double, h As Double, t As Double, e As Double, c As Double, o As Double
+    Dim cx As Double, cy As Double, i As Long, j As Long, stepName As String
+    Dim lay As Layer, sr As ShapeRange, parts As ShapeRange, g As Shape, sh As Shape, pg As Object
+    Dim clrCut As Color, clrStep As Color
+    ttl = NeonL("box_title")
+    If ActiveDocument Is Nothing Then
+        MsgBox NeonL("err_nodoc"), vbExclamation, ttl
+        Exit Sub
+    End If
+    If Not NeonInJob("box") Then
+        If Not AskBoxParams() Then
+            Exit Sub
+        End If
+        NeonJobRun "box", ttl
+        Exit Sub
+    End If
+    l = NeonBoxNum("L", 500): w = NeonBoxNum("W", 500): h = NeonBoxNum("H", 500)
+    t = NeonBoxNum("T", 5): e = NeonBoxNum("Step", 2): c = NeonBoxNum("Clear", 0.2): o = NeonBoxNum("Over", 2)
+    oldUnit = ActiveDocument.Unit
+    ActiveDocument.Unit = cdrMillimeter
+    ActiveDocument.BeginCommandGroup ttl
+    grp = True
+    On Error GoTo Fail
+    Set lay = ActiveDocument.ActiveLayer
+    ' центр страницы (у старых CorelDRAW без LeftX/TopY — от размера страницы)
+    Set pg = ActivePage
+    On Error Resume Next
+    cx = (pg.LeftX + pg.RightX) / 2
+    cy = (pg.TopY + pg.BottomY) / 2
+    If Err.Number <> 0 Then
+        Err.Clear
+        cx = pg.SizeWidth / 2
+        cy = pg.SizeHeight / 2
+    End If
+    On Error GoTo Fail
+    BoxGeo cx, cy, l, w, h, t, e, c, o
+    Set clrCut = CreateCMYKColor(0, 0, 0, 100)
+    Set clrStep = CreateCMYKColor(0, 100, 100, 0)
+    stepName = NeonLF("box_step_name", FmtNum(Round(t + c, 3)), FmtNum(Round(t - e, 3)))
+    Set parts = CreateShapeRange
+    NeonProgPhase NeonL("prog_objects"), NBx
+    For i = 0 To NBx - 1
+        NeonProgStep i
+        Set sr = CreateShapeRange
+        Set sh = lay.CreateRectangle2(BxX(i), BxY(i), BxW(i), BxH(i))
+        BoxStyle sh, clrCut
+        sh.Name = NeonL("box_cut")
+        sr.Add sh
+        For j = 0 To NBr - 1
+            If BrP(j) = i Then
+                If BrT(j) = 0 Then
+                    Set sh = lay.CreateRectangle2(BrX1(j), BrY1(j), BrX2(j) - BrX1(j), BrY2(j) - BrY1(j))
+                Else
+                    Set sh = lay.CreateLineSegment(BrX1(j), BrY1(j), BrX2(j), BrY2(j))
+                End If
+                BoxStyle sh, clrStep
+                sh.Name = stepName
+                sr.Add sh
+            End If
+        Next j
+        Set g = NtGroup(sr)
+        If g Is Nothing Then
+            parts.AddRange sr
+        Else
+            g.Name = NeonLF("box_part", NeonL("box_p" & i), FmtNum(Round(BxW(i), 3)), FmtNum(Round(BxH(i), 3)))
+            NtTag g, "box"
+            parts.Add g
+        End If
+    Next i
+    parts.CreateSelection
+Fin:
+    On Error Resume Next
+    If grp Then
+        ActiveDocument.EndCommandGroup
+    End If
+    ActiveDocument.Unit = oldUnit
+    ActiveWindow.Refresh
+    On Error GoTo 0
+    NeonProgEnd
+    If Len(errText) > 0 Then
+        MsgBox NeonLF("err_fail", errText), vbCritical, ttl
+        Exit Sub
+    End If
+    msg = NeonLF("box_report", FmtNum(l), FmtNum(w), FmtNum(h), FmtNum(t), FmtNum(Round(h - 2 * e, 3)), _
+                 FmtNum(Round(w - 2 * e, 3)))
+    msg = msg & vbCrLf & vbCrLf & NeonLF("box_rep_step", FmtNum(Round(t + c, 3)), FmtNum(c), FmtNum(Round(t - e, 3)), _
+                                         FmtNum(e), FmtNum(o))
+    msg = msg & vbCrLf & vbCrLf & NeonL("box_rep_tail")
+    NeonReport msg, ttl, True
+    NeonToolbarCheck
+    Exit Sub
+Fail:
+    errText = Err.Description
+    Resume Fin
+End Sub
+
+' кубик: без заливки, контур 0.2 мм заданного цвета (у отрезка заливки нет — ошибку пропустить)
+Private Sub BoxStyle(sh As Shape, clr As Color)
+    On Error Resume Next
+    sh.Fill.ApplyNoFill
+    Err.Clear
+    On Error GoTo 0
+    sh.Outline.SetProperties 0.2, Color:=clr
+End Sub
+
+Public Function NeonBoxNum(ByVal key As String, ByVal def As Double) As Double
+    Dim s As String
+    s = GetSetting("NeonCenterline", "Box", key, "")
+    If Len(Trim$(s)) = 0 Then
+        NeonBoxNum = def
+    Else
+        NeonBoxNum = ParseNum(s)
+    End If
+End Function
+
+' ---------------------------------------------------------------------
 '  Кнопка «Раскладка на листы»
 ' ---------------------------------------------------------------------
 Public Sub NestSheets()
@@ -4993,6 +5120,66 @@ Public Sub NoodleGeo(ByVal cx As Double, ByVal cy As Double, ByVal l As Double, 
     NdX1(0) = a2: NdY1(0) = yt + overV: NdX2(0) = a2: NdY2(0) = yb - overV
 End Sub
 '@@NOODLEGEO_END
+
+'@@BOXGEO_BEGIN
+' ---------------------------------------------------------------------
+'  Кубик под фрезеровку — развёртка из 6 деталей (повторяет proto/box.py один в один).
+'  Наружные размеры l × w × h, материал t. Соединение в ступеньку (четверть): на внутренней стороне у края
+'  выбирается полоса шириной s = t + c (толщина + зазор) и глубиной t − e, у края остаётся e. Крышка и
+'  дно — l × w, ступенька по всему краю (прямоугольник с отступом s); перед и зад — l × (h − 2e),
+'  ступенька по боковым краям (отрезки на s от края, с выходом o за край); бока — (h − 2e) × (w − 2e),
+'  гладкие. Развёртка крестом, центр блока — (cx, cy), y вверх: по центру сверху вниз крышка, перед,
+'  дно, зад; бока — слева и справа от дна. Зазор между деталями 20 + o.
+' ---------------------------------------------------------------------
+Public Sub BoxGeo(ByVal cx As Double, ByVal cy As Double, ByVal l As Double, ByVal w As Double, ByVal h As Double, _
+                  ByVal t As Double, ByVal e As Double, ByVal c As Double, ByVal o As Double)
+    Dim s As Double, hw As Double, ws As Double, g As Double, tot As Double, yt As Double, x0 As Double
+    Dim y As Double, yb As Double, ys As Double, i As Long
+    s = t + c
+    hw = h - 2 * e
+    ws = w - 2 * e
+    g = 20 + o
+    tot = w + g + hw + g + w + g + hw
+    yt = cy + tot / 2
+    x0 = cx - l / 2
+    NBx = 0
+    ReDim BxX(0 To 5): ReDim BxY(0 To 5): ReDim BxW(0 To 5): ReDim BxH(0 To 5): ReDim BxK(0 To 5)
+    y = yt - w
+    BoxPut x0, y, l, w, 0
+    y = y - g - hw
+    BoxPut x0, y, l, hw, 1
+    y = y - g - w
+    BoxPut x0, y, l, w, 0
+    yb = y
+    y = y - g - hw
+    BoxPut x0, y, l, hw, 1
+    ys = yb + w / 2 - ws / 2
+    BoxPut x0 - g - hw, ys, hw, ws, 2
+    BoxPut x0 + l + g, ys, hw, ws, 2
+    NBr = 0
+    ReDim BrP(0 To 11): ReDim BrT(0 To 11)
+    ReDim BrX1(0 To 11): ReDim BrY1(0 To 11): ReDim BrX2(0 To 11): ReDim BrY2(0 To 11)
+    For i = 0 To NBx - 1
+        If BxK(i) = 0 Then
+            BoxRed i, 0, BxX(i) + s, BxY(i) + s, BxX(i) + BxW(i) - s, BxY(i) + BxH(i) - s
+        ElseIf BxK(i) = 1 Then
+            BoxRed i, 1, BxX(i) + s, BxY(i) - o, BxX(i) + s, BxY(i) + BxH(i) + o
+            BoxRed i, 1, BxX(i) + BxW(i) - s, BxY(i) - o, BxX(i) + BxW(i) - s, BxY(i) + BxH(i) + o
+        End If
+    Next i
+End Sub
+
+Private Sub BoxPut(ByVal x As Double, ByVal y As Double, ByVal w As Double, ByVal h As Double, ByVal k As Long)
+    BxX(NBx) = x: BxY(NBx) = y: BxW(NBx) = w: BxH(NBx) = h: BxK(NBx) = k
+    NBx = NBx + 1
+End Sub
+
+Private Sub BoxRed(ByVal p As Long, ByVal tp As Long, ByVal x1 As Double, ByVal y1 As Double, _
+                   ByVal x2 As Double, ByVal y2 As Double)
+    BrP(NBr) = p: BrT(NBr) = tp: BrX1(NBr) = x1: BrY1(NBr) = y1: BrX2(NBr) = x2: BrY2(NBr) = y2
+    NBr = NBr + 1
+End Sub
+'@@BOXGEO_END
 
 '@@NESTGEO_BEGIN
 ' ---------------------------------------------------------------------

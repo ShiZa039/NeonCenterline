@@ -17,7 +17,7 @@
 | Путь | Что это | Править? |
 |---|---|---|
 | `src/NeonUI.bas` | Кнопки «Моно» / «Курсив», окна параметров, настройки, «О программе», проверка панели, окно хода работы (`NeonJobRun`, `NeonProg*`), отчёт (`NeonReport`). Версия `NEON_VERSION`, набор кнопок `NEON_TOOLBAR_VER`, адреса `NEON_UPDATE_URL*`, `NEON_DONATE_URL` | да |
-| `src/NeonTools.bas` | Инструменты: длина, выделить линии, упростить, очистить, люверсы, разбить на буквы, одинаковые, лапша, раскладка. Геометрия — в разделах `'@@…_BEGIN` / `'@@…_END` | да |
+| `src/NeonTools.bas` | Инструменты: длина, выделить линии, упростить, очистить, люверсы, разбить на буквы, одинаковые, лапша, кубик, раскладка. Геометрия — в разделах `'@@…_BEGIN` / `'@@…_END` | да |
 | `src/NeonCut.bas` | Тип неона, кратность реза, подгонка линий | да |
 | `src/NeonUpdate.bas` | Проверка и установка обновлений | да |
 | `src/frmNeonRun.code.txt` | Код окна параметров и окна хода работы (режимы 0–5, см. architecture.md). Недостающие поля окно создаёт само | да |
@@ -31,7 +31,7 @@
 | `src/NeonAddon.bas` | Файлы панели внутри плагина + `InstallToolbar` | **нет** — `tools/gen_addon.py` |
 | `icons/` | Значки кнопок (.ico и PNG 16/32) | да |
 | `build/NeonBuild.bas` | Сборщик `.gms` из `src` (только ASCII — его импортируют вручную) | да |
-| `proto/*.py` | Прототипы на Python — эталон для VBA: `centerline*.py`, `simplify.py`, `cleanup.py`, `grommets.py`, `letters.py`, `nesting.py`, `rasternest.py`, `noodles.py` | да |
+| `proto/*.py` | Прототипы на Python — эталон для VBA: `centerline*.py`, `simplify.py`, `cleanup.py`, `grommets.py`, `letters.py`, `nesting.py`, `rasternest.py`, `noodles.py`, `box.py` | да |
 | `tools/lo_stand.py`, `tools/stands/` | Стенд LibreOffice: раздел VBA против прототипа | да |
 | `samples/` | Эталонные SVG для «Курсива» | да |
 | `font/SABNeonTest.ttf` | Тестовый шрифт для «Моно» | — |
@@ -157,7 +157,7 @@ lines = S.run(code)                         # что напечатал Main
 - `run()` кладёт модуль в библиотеку `Standard` LibreOffice, запускает без экрана с таймаутом; ошибка компиляции — `StandTimeout`;
 - `python tools/lo_stand.py GROMGEO NESTRASTER` — только «компилируется ли раздел».
 
-Образец целиком — `tools/stands/grom_hem.py` (контур под подгиб против `proto/grommets.py hem()`): `python tools/stands/grom_hem.py` → `mismatches: 0`. Новый стенд — копия образца: свои входные данные, своя процедура, сравнение с допуском (`1e-4` мм для точек). Стенд ядер «Моно» и «Курсива» по целым шрифтам — `tools/stands/mono_font.py` (см. [выше](#моно-и-курсив)).
+Образец целиком — `tools/stands/grom_hem.py` (контур под подгиб против `proto/grommets.py hem()`): `python tools/stands/grom_hem.py` → `mismatches: 0`. Новый стенд — копия образца: свои входные данные, своя процедура, сравнение с допуском (`1e-4` мм для точек). Ещё стенд — `tools/stands/box.py` (кубик: `BoxGeo` против `proto/box.py` на 5 наборах). Стенд ядер «Моно» и «Курсива» по целым шрифтам — `tools/stands/mono_font.py` (см. [выше](#моно-и-курсив)).
 
 ## Сборка `.gms`
 

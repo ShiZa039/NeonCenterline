@@ -9,7 +9,7 @@ RU · EN
 
 - Центральные линии — «Моно» для моноширинных (неоновых) шрифтов и «Курсив» (бета) для рукописных. Результат — кривые на слое «Неон - центр».
 - Контур — очистить (убрать наложения и петли), упростить (меньше узлов), разбить на буквы (дырки остаются в своих буквах).
-- Раскладка — детали на листы по контуру или по габаритам (бета), одинаковые — в группы, лапша (полосы), люверсы по краю баннера.
+- Раскладка — детали на листы по контуру или по габаритам (бета), одинаковые — в группы, лапша (полосы), кубик (развёртка под фрезеровку), люверсы по краю баннера.
 - Линии — длина контуров и линий, выделить центральные линии, подогнать линии под кратность реза.
 - У всех инструментов — окно хода работы (видно, что плагин работает, а не CorelDRAW завис) и отчёт с кнопками «ОК» / «Отмена» (отменить всё сделанное одним шагом). У очистки, упрощения, разбивки и раскладки можно оставить оригинал.
 - Интерфейс на русском и английском, автообновление с GitHub.
@@ -47,7 +47,7 @@ RU · EN
 | Группа | Кнопки |
 |---|---|
 | Контур ▾ | Упростить контур, Очистить контур, Разбить на буквы |
-| Раскладка ▾ | Раскладка на листы (бета), Одинаковые — в группы, Лапша (полосы), Люверсы |
+| Раскладка ▾ | Раскладка на листы (бета), Одинаковые — в группы, Лапша (полосы), Кубик, Люверсы |
 | Линии ▾ | Длина контуров и линий, Выделить центральные линии, Подогнать под кратность реза |
 | Настройки и помощь ▾ | Настройки, Проверить обновления, О программе |
 
@@ -108,6 +108,8 @@ RU · EN
 
 Лапша (NeonCenterline.NeonTools.MakeNoodles) — резы для полос на плоттере, лазере, фрезере: длина и ширина лапши, количество полос и хвосты — выход реза за линию другого реза, отдельно у горизонтальных резов (за отрезы) и у вертикальных отрезов (за крайние горизонтальные): лазеру и плоттеру хватает 1–2 мм, фрезе — 2–5 мм запаса. Получается N + 1 горизонтальных резов и два вертикальных отреза на концах. Для фрезы — галочка «Фреза» и её диаметр: фреза режет по центральной линии и съедает по радиусу с каждой стороны, поэтому горизонтальные резы идут через ширину + диаметр, а отрезы стоят на радиус за концами полос — после фрезы полосы выходят ровно заданного размера. Порядок объектов — порядок резки: горизонтальные сверху вниз зигзагом (первый — слева направо, дальше направления чередуются — станок не ходит вхолостую), вертикальные отрезы — в самом конце списка, тоже по ходу. Всё — одной группой в центре страницы.
 
+Кубик (NeonCenterline.NeonTools.MakeBox) — развёртка кубика (короба) под фрезеровку из 6 деталей, соединение в ступеньку (четверть). В окне: длина, ширина, высота — наружные, толщина материала, высота ступеньки — сколько материала остаётся у края, зазор в ступеньке (по умолчанию 0,2 мм) и выход линий ступеньки за край (по умолчанию 2 мм). Получается: крышка и дно — Д × Ш, ступенька по всему краю (красный прямоугольник); перед и зад — Д × (В − 2·ступенька), ступенька вдоль боковых краёв (красные линии с выходом за край, чтобы фреза прошла насквозь); бока — (В − 2·ступенька) × (Ш − 2·ступенька), гладкие. Ступенька фрезеруется с внутренней стороны: ширина — толщина + зазор, глубина — толщина − высота ступеньки. Например, кубик 500 мм из материала 5 мм со ступенькой 2: крышка и дно 500 × 500 со ступенькой 5,2 мм, перед и зад 500 × 496, бока 496 × 496, глубина фрезеровки 3 мм. Чёрное — рез по контуру, контур 0,2 мм. Детали — развёрткой крестом в центре страницы, каждая своей группой, все выделены: дальше — «Раскладка на листы». В отчёте — размеры деталей, ширина и глубина ступеньки.
+
 Люверсы (NeonCenterline.NeonTools.PlaceGrommets) — точки под люверсы по краю выделенного баннера или подложки (прямоугольник, скруглённый прямоугольник, любой замкнутый контур): в каждом углу и равномерно по сторонам, не реже заданного расстояния; у круга и овала — равномерно по контуру. В окне: расстояние от края до центра люверса (по умолчанию 20 мм), расстояние между люверсами — не больше (300 мм), диаметр (5 мм) и цвет точки (из списка или любой через окно выбора цвета CorelDRAW), усиление углов — ещё по точке на обе стороны каждого угла на заданном расстоянии (50 мм), контур под подгиб — линия реза, смещённая наружу от края баннера на выпуск (по умолчанию 50 мм; у прямоугольника — прямоугольник с острыми углами, у кривых — ломаная с шагом 2 мм); люверсы по-прежнему отсчитываются от края баннера. Контур подгиба — на слое баннера, кривой «Подгиб N мм». Люверсы получают только внешние объекты: то, что лежит внутри другого выделенного объекта (рисунок, текст, рамки внутри баннера — в том числе в одной группе с ним), пропускается. Контур, нарисованный линиями без замыкания или собранный из отрезков, считается замкнутым, если концы сходятся. Точки — на слое баннера (галочкой «Люверсы — на отдельный слой» — на слое «Люверсы»), по группе на объект; количество — в отчёте.
 
 Линии ▾
@@ -152,7 +154,7 @@ Features
 
 - Centerlines — Mono for monoline (neon) fonts and Script (beta) for handwritten ones. Output: curves on the layer "Неон - центр".
 - Outline — clean (remove overlaps and loops), simplify (fewer nodes), split into letters (holes stay in their letters).
-- Layout — nest parts on sheets by outline or by bounding boxes (beta), group identical, strips, grommets along a banner edge.
+- Layout — nest parts on sheets by outline or by bounding boxes (beta), group identical, strips, box (a layout for a router), grommets along a banner edge.
 - Lines — length of outlines and lines, select centerlines, fit lines to the cut step.
 - Every tool has a progress window (you can see the plugin is working and CorelDRAW has not hung) and a report with OK / Cancel (undo all of it in one step). Clean, simplify, split and nesting can keep the original.
 - Russian and English interface, automatic updates from GitHub.
@@ -190,7 +192,7 @@ Mono, Script | Outline ▾, Layout ▾, Lines ▾ | Settings and help ▾. Butto
 | Group | Buttons |
 |---|---|
 | Outline ▾ | Simplify outline, Clean outline, Split into letters |
-| Layout ▾ | Nest on sheets (beta), Group identical, Strips, Grommets |
+| Layout ▾ | Nest on sheets (beta), Group identical, Strips, Box, Grommets |
 | Lines ▾ | Length of outlines and lines, Select centerlines, Fit to the cut step |
 | Settings and help ▾ | Settings, Check for updates, About |
 
@@ -250,6 +252,8 @@ By outline, a part becomes a grid of cells (about 0.7 mm on a 900×600 sheet, ab
 Group identical (NeonCenterline.NeonTools.GroupSame) — finds selected objects of the same shape and colour and groups them as "Identical: N pcs · W × H mm". Outlines are compared within 0.1 mm, no rotation or mirroring; the outline itself is compared, so the number and placement of nodes, the start point and direction do not matter — the same digit from different text-to-curves conversions is grouped together. The report lists the shapes by count.
 
 Strips (NeonCenterline.NeonTools.MakeNoodles) — cut lines for strips on a plotter, laser or router: strip length and width, the number of strips and the tails — how far a cut runs past the other cut's line, separately for horizontal cuts (past the end cuts) and vertical end cuts (past the outer horizontal ones): a laser or plotter needs 1–2 mm, a router 2–5 mm of margin. You get N + 1 horizontal cuts and two vertical end cuts. For a router tick "Router" and set the cutter diameter: the router cuts along the centre line and eats a radius on each side, so horizontal cuts are spaced by width + diameter and the end cuts sit a radius past the strip ends — after the router the strips come out exactly the size you set. The object order is the cutting order: horizontal cuts top to bottom in a zigzag (the first left to right, then alternating — no idle runs), the vertical end cuts at the very end of the list, also along the way. One group in the middle of the page.
+
+Box (NeonCenterline.NeonTools.MakeBox) — a 6-part box layout for a router, joined with a step (rabbet). In the window: length, width, height — outside sizes, material thickness, step height — how much material is left at the edge, clearance in the step (0.2 mm by default) and how far the step lines run past the edge (2 mm by default). You get: lid and bottom — L × W, a step all round (a red rectangle); front and back — L × (H − 2·step), a step along the side edges (red lines running past the edge so the cutter goes all the way through); sides — (H − 2·step) × (W − 2·step), plain. The step is milled on the inner face: width = thickness + clearance, depth = thickness − step height. For example, a 500 mm box from 5 mm material with a 2 mm step: lid and bottom 500 × 500 with a 5.2 mm step, front and back 500 × 496, sides 496 × 496, milling depth 3 mm. Black is the cut outline, 0.2 mm outlines. The parts are laid out as a cross in the middle of the page, each as its own group, all selected: next — "Nest on sheets". The report lists the part sizes and the step width and depth.
 
 Grommets (NeonCenterline.NeonTools.PlaceGrommets) — points for grommets along the edge of the selected banner or backing (rectangle, rounded rectangle, any closed outline): one in every corner and evenly along the sides, never further apart than the given distance; circles and ovals get them evenly all round. The window: edge to grommet centre (20 mm by default), distance between grommets — maximum (300 mm), point diameter (5 mm) and colour (from the list or any via the CorelDRAW colour dialog), corner reinforcement — one more point on both sides of every corner at the given distance (50 mm), hem outline — a cut line offset outward from the banner edge by the allowance (50 mm by default; a rectangle gets a sharp-cornered rectangle, curves a polyline with a 2 mm step); grommets are still measured from the banner edge. The hem outline goes to the banner layer as a curve "Hem N mm". Only outer objects get grommets: anything lying inside another selected object (artwork, text, frames inside the banner — also in the same group with it) is skipped. An outline drawn with lines and not closed, or assembled from segments, counts as closed if its ends meet. Points go to the banner layer (with "Grommets on a separate layer" — to the "Grommets" layer), one group per object; the count is in the report.
 

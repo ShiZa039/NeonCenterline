@@ -13,6 +13,8 @@ Option Explicit
 ' NeonRunMode = 4 — перед лапшой: длина, ширина, количество полос, хвосты горизонтальных и вертикальных резов.
 ' NeonRunMode = 5 — окно хода работы: этап, полоса, время; сама работа запускается из Activate (NeonJobGo),
 ' закрыть окно, пока она идёт, нельзя.
+' NeonRunMode = 6 — перед кубиком: длина, ширина, высота (наружные), толщина, высота ступеньки, зазор,
+' выход линий ступеньки за край.
 
 ' люверсы: свой цвет ("S:..."), последний выбранный цвет из списка, защита от повторного Change
 Private gCustom As String, gLastIdx As Long, gBusy As Boolean
@@ -25,6 +27,8 @@ Private gIn As Object, gKeep As Object, gGrp As Object
 Private gHem As Object, gHemV As Object, gGL As Object
 ' окно хода работы: рамка и заливка полосы, строка времени; работа уже запущена
 Private gPB As Object, gPF As Object, gPT As Object, gJobStarted As Boolean
+' кубик: зазор в ступеньке и выход линий за край (поля и подписи создаются при открытии окна)
+Private gBC As Object, gBCL As Object, gBO As Object, gBOL As Object
 
 Private Sub UserForm_Initialize()
     If NeonRunMode = 5 Then
@@ -45,6 +49,10 @@ Private Sub UserForm_Initialize()
     End If
     If NeonRunMode = 4 Then
         InitNoodle
+        Exit Sub
+    End If
+    If NeonRunMode = 6 Then
+        InitBox
         Exit Sub
     End If
     Me.Caption = NeonLF("center_title_mode", NeonL(IIf(NeonRunScript, "mode_script", "mode_mono")))
@@ -511,6 +519,76 @@ Private Sub InitNoodle()
     NeonRunConfirmed = False
 End Sub
 
+' кубик: длина, ширина, высота, толщина, высота ступеньки (поля переиспользуются), зазор и выход линий
+' (поля окно создаёт само)
+Private Sub InitBox()
+    Dim c As Object
+    For Each c In Me.Controls
+        c.Visible = False
+    Next c
+    Me.Caption = NeonL("box_title")
+    GromRow lblTool, cboTool, 14, NeonL("lbl_box_l")
+    BoxList cboTool, Array("100", "200", "300", "400", "500", "600", "800", "1000"), NeonBoxNum("L", 500)
+    GromRow lblEnd, cboEnd, 40, NeonL("lbl_box_w")
+    BoxList cboEnd, Array("100", "200", "300", "400", "500", "600", "800", "1000"), NeonBoxNum("W", 500)
+    GromRow lblCut, cboCut, 66, NeonL("lbl_box_h")
+    BoxList cboCut, Array("100", "200", "300", "400", "500", "600", "800", "1000"), NeonBoxNum("H", 500)
+    If gH Is Nothing Then
+        Set gHL = Me.Controls.Add("Forms.Label.1", "lblNestH", True)
+        Set gH = Me.Controls.Add("Forms.ComboBox.1", "cboNestH", True)
+        gH.Height = cboTool.Height
+    End If
+    GromRow gHL, gH, 92, NeonL("lbl_box_t")
+    BoxList gH, Array("3", "4", "5", "6", "8", "10"), NeonBoxNum("T", 5)
+    If gV Is Nothing Then
+        Set gVL = Me.Controls.Add("Forms.Label.1", "lblNoodleV", True)
+        Set gV = Me.Controls.Add("Forms.ComboBox.1", "cboNoodleV", True)
+        gV.Height = cboTool.Height
+    End If
+    GromRow gVL, gV, 118, NeonL("lbl_box_e")
+    BoxList gV, Array("1", "1.5", "2", "2.5", "3"), NeonBoxNum("Step", 2)
+    If gBC Is Nothing Then
+        Set gBCL = Me.Controls.Add("Forms.Label.1", "lblBoxC", True)
+        Set gBC = Me.Controls.Add("Forms.ComboBox.1", "cboBoxC", True)
+        gBC.Height = cboTool.Height
+    End If
+    GromRow gBCL, gBC, 144, NeonL("lbl_box_c")
+    BoxList gBC, Array("0", "0.1", "0.2", "0.3", "0.5"), NeonBoxNum("Clear", 0.2)
+    If gBO Is Nothing Then
+        Set gBOL = Me.Controls.Add("Forms.Label.1", "lblBoxO", True)
+        Set gBO = Me.Controls.Add("Forms.ComboBox.1", "cboBoxO", True)
+        gBO.Height = cboTool.Height
+    End If
+    GromRow gBOL, gBO, 170, NeonL("lbl_box_o")
+    BoxList gBO, Array("0", "1", "2", "3", "5", "10"), NeonBoxNum("Over", 2)
+    lblHint.Left = 12: lblHint.Top = 200: lblHint.Width = 326
+    lblHint.WordWrap = True
+    lblHint.Height = 96
+    lblHint.Caption = NeonL("box_hint")
+    lblHint.Visible = True
+    btnOK.Top = lblHint.Top + lblHint.Height + 10
+    btnCancel.Top = btnOK.Top
+    btnOK.Caption = NeonL("btn_box")
+    btnCancel.Caption = NeonL("btn_cancel")
+    btnOK.Visible = True
+    btnCancel.Visible = True
+    Me.Height = btnOK.Top + btnOK.Height + 50
+    NeonRunConfirmed = False
+End Sub
+
+' кубик: список готовых значений и текущее значение (поле — с правом ввести своё)
+Private Sub BoxList(cb As Object, ByVal items As Variant, ByVal cur As Double)
+    Dim v As Variant
+    On Error Resume Next
+    cb.Style = 0
+    On Error GoTo 0
+    cb.Clear
+    For Each v In items
+        cb.AddItem v
+    Next v
+    cb.Text = FmtNum(cur)
+End Sub
+
 ' раскладка: «3050x2050» -> «3050 × 2050» для списка готовых размеров
 Private Function NestShow(ByVal s As String) As String
     NestShow = Replace(s, "x", " " & ChrW(&HD7) & " ")
@@ -587,6 +665,24 @@ End Sub
 
 Private Sub btnOK_Click()
     Dim t As Double, c As Double, st As Double, d As Double, w As Double, h As Double
+    If NeonRunMode = 6 Then
+        w = ParseNum(cboTool.Text): h = ParseNum(cboEnd.Text): d = ParseNum(cboCut.Text)
+        t = ParseNum(gH.Text): st = ParseNum(gV.Text): c = ParseNum(gBC.Text)
+        If Not NeonBoxOk(w, h, d, t, st, c, ParseNum(gBO.Text)) Then
+            MsgBox NeonL("bad_box"), vbExclamation, NeonL("box_title")
+            Exit Sub
+        End If
+        SaveSetting "NeonCenterline", "Box", "L", FmtNum(w)
+        SaveSetting "NeonCenterline", "Box", "W", FmtNum(h)
+        SaveSetting "NeonCenterline", "Box", "H", FmtNum(d)
+        SaveSetting "NeonCenterline", "Box", "T", FmtNum(t)
+        SaveSetting "NeonCenterline", "Box", "Step", FmtNum(st)
+        SaveSetting "NeonCenterline", "Box", "Clear", FmtNum(c)
+        SaveSetting "NeonCenterline", "Box", "Over", FmtNum(ParseNum(gBO.Text))
+        NeonRunConfirmed = True
+        Me.Hide
+        Exit Sub
+    End If
     If NeonRunMode = 4 Then
         w = ParseNum(cboTool.Text): h = ParseNum(cboEnd.Text): c = ParseNum(cboCut.Text): d = ParseNum(gH.Text)
         st = ParseNum(gV.Text): t = ParseNum(cboTrim.Text)

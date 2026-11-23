@@ -6,7 +6,7 @@
   itemData type="flyout" с flyoutBarRef на commandBarData type="menu" flyout="true" (как кнопки
   со списком в самом CorelDRAW, DrawUI.items.xml; без type="flyout" CorelDRAW 2026 кнопку не рисует).
   GUID не менять: по ним CorelDRAW узнаёт кнопки в настроенных рабочих пространствах.
-  Набор кнопок панели: [NeonToolbar 12]. При изменении состава панели поднять номер здесь и
+  Набор кнопок панели: [NeonToolbar 13]. При изменении состава панели поднять номер здесь и
   NEON_TOOLBAR_VER в src/NeonUI.bas — после обновления плагин сам сбросит панель к этому составу.
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:frmwrk="Corel Framework Data">
@@ -103,6 +103,13 @@
                 userCaption="Лапша (полосы)"
                 userToolTip="Нарезка полос заданной длины и ширины для плоттера, лазера, фрезера: горизонтальные резы зигзагом сверху вниз, вертикальные отрезы — в конце списка, резы с выходом за край. Отмена — Ctrl+Z"
                 enable="true"/>
+      <itemData guid="f74184b9-4df6-5819-b99f-29e7643457ec"
+                icon="guid://f74184b9-4df6-5819-b99f-29e7643457ec"
+                dynamicCommand="NeonCenterline.NeonTools.MakeBox"
+                dynamicCategory="2cc24a3e-fe24-4708-9a74-9c75406eebcd"
+                userCaption="Кубик"
+                userToolTip="Развёртка кубика под фрезеровку по наружным размерам: крышка и дно со ступенькой по всему краю, перед и зад — со ступенькой по боковым краям, бока гладкие; ширина ступеньки — толщина + зазор. Отмена — Ctrl+Z"
+                enable="true"/>
       <itemData guid="67333f2d-18b9-5925-b8bc-24d97a6dff93"
                 icon="guid://67333f2d-18b9-5925-b8bc-24d97a6dff93"
                 dynamicCommand="NeonCenterline.NeonTools.PlaceGrommets"
@@ -139,7 +146,7 @@
                 flyoutBarRef="5731901c-4115-58a7-9466-9da0ca279658"
                 icon="guid://d32b7178-2e37-5391-aca2-12628ac3838b"
                 userCaption="Раскладка"
-                userToolTip="Раскладка на листы (бета), одинаковые — в группы, лапша, люверсы"
+                userToolTip="Раскладка на листы (бета), одинаковые — в группы, лапша, кубик, люверсы"
                 enable="true"/>
       <itemData guid="305a1621-a721-5784-9de2-b2338e83336c"
                 type="flyout"
@@ -197,6 +204,7 @@
           <item guidRef="b4b6f389-35cc-5b46-b3db-ffb4e200250f"/>
           <item guidRef="3ef0efdf-6719-53ff-a444-924cb4d86b5e"/>
           <item guidRef="da18bf83-4d0f-5e8b-8834-e23137080009"/>
+          <item guidRef="f74184b9-4df6-5819-b99f-29e7643457ec"/>
           <item guidRef="67333f2d-18b9-5925-b8bc-24d97a6dff93"/>
         </menu>
       </commandBarData>

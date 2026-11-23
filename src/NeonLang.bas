@@ -591,6 +591,78 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
     Case "noodle_rep_tail"
         s = s & LD("#Mclmh bornnmh a udlqod pqo_lguz; nmo~cmi m`ydiqma $2014 nmo~cmi ")
         s = s & LD("#odfig.")
+    Case "box_title"
+        s = s & LD("#Ir`gi")
+    Case "lbl_box_l"
+        s = s & LD("#Cjgl_ (C), l_orel_~, kk:")
+    Case "lbl_box_w"
+        s = s & LD("#Wgogl_ (W), l_orel_~, kk:")
+    Case "lbl_box_h"
+        s = s & LD("#Azpmq_ (A), l_orel_~, kk:")
+    Case "lbl_box_t"
+        s = s & LD("#Qmjxgl_ k_qdog_j_, kk:")
+    Case "lbl_box_e"
+        s = s & LD("#Azpmq_ pqrndl{ig (mpq_$0451qp~ r io_~), kk:")
+    Case "lbl_box_c"
+        s = s & LD("#F_fmo a pqrndl{id, kk:")
+    Case "lbl_box_o"
+        s = s & LD("#Aztmc jglgh pqrndl{ig f_ io_h, kk:")
+    Case "box_hint"
+        s = s & LD("#O_fa$0451oqi_ ir`gi_ nmc sodfdomair: iozwi_ g clm $2014 pm pqrndl{im")
+        s = s & LD("#h nm apdkr io_}, ndodc g f_c $2014 pm pqrndl{imh nm `mimazk io_~")
+        s = s & LD("#k, `mi_ $2014 bj_cigd. O_fkdoz $2014 l_orelzd. Pqrndl{i_ (io_plmd) s")
+        s = s & LD("#odfdordqp~ p alrqodlldh pqmomlz: wgogl_ $2014 qmjxgl_ + f_fmo, b")
+        s = s & LD("#jr`gl_ $2014 qmjxgl_ $2212 azpmq_ pqrndl{ig; azpmq_ pqrndl{ig $2014 pimj")
+        s = s & LD("#{im k_qdog_j_ mpq_$0451qp~ r io_~. Pqdlig imomvd l_ cad azpmqz p")
+        s = s & LD("#qrndl{ig. Cdq_jg $2014 a udlqod pqo_lguz, i_ec_~ pamdh bornnmh.")
+    Case "btn_box"
+        s = s & LD("#Nmpqomgq{")
+    Case "bad_box"
+        s = s & LD("#Nomado{qd fl_vdlg~: o_fkdoz 10$201310000 kk, qmjxgl_ 0$2013100 kk, a")
+        s = s & LD("#zpmq_ pqrndl{ig $2014 `mj{wd 0 g kdl{wd qmjxglz, f_fmo 0$201310 kk, ")
+        s = s & LD("#aztmc jglgh 0$2013100 kk; i_eczh o_fkdo ir`gi_ $2014 `mj{wd cart wgo")
+        s = s & LD("#gl pqrndl{ig (qmjxgl_ + f_fmo).")
+    Case "box_p0"
+        s = s & LD("#iozwi_")
+    Case "box_p1"
+        s = s & LD("#ndodc")
+    Case "box_p2"
+        s = s & LD("#clm")
+    Case "box_p3"
+        s = s & LD("#f_c")
+    Case "box_p4"
+        s = s & LD("#jdazh `mi")
+    Case "box_p5"
+        s = s & LD("#no_azh `mi")
+    Case Else
+        LangRu_5 = False
+    End Select
+End Function
+
+Private Function LangRu_6(ByVal key As String, s As String) As Boolean
+    LangRu_6 = True
+    s = ""
+    Select Case key
+    Case "box_part"
+        s = s & LD("#Ir`gi: #{0} $00B7 {1} $00D7 {2} #kk")
+    Case "box_cut"
+        s = s & LD("#Odf nm imlqror")
+    Case "box_step_name"
+        s = s & LD("#Pqrndl{i_: wgogl_ #{0} #kk, bjr`gl_ #{1} #kk")
+    Case "box_report"
+        s = s & LD("#Ir`gi #{0} $00D7 {1} $00D7 {2} #kk (l_orelzd o_fkdoz), k_qdog_j #{3} #kk")
+        s = s & LD(" $2014 6 #cdq_jdh:$000A$2022 iozwi_ g clm $2014 2 wq #{0} $00D7 {1}, #pqrndl{i_ nm ")
+        s = s & LD("#apdkr io_};$000A$2022 ndodc g f_c $2014 2 wq #{0} $00D7 {4}, #pqrndl{i_ nm `mi")
+        s = s & LD("#mazk io_~k;$000A$2022 `mi_ $2014 2 wq #{4} $00D7 {5}, #bj_cigd.")
+    Case "box_rep_step"
+        s = s & LD("#Pqrndl{i_ (io_plmd, sodfdoma_q{ p alrqodlldh pqmomlz): wgogl")
+        s = s & LD("#_ #{0} #kk (qmjxgl_ + f_fmo #{1}), #bjr`gl_ #{2} #kk $2014 r io_~ mpq_")
+        s = s & LD("$0451#qp~ #{3} #kk. Jglgg pqrndl{ig r ndodc_ g f_c_ aztmc~q f_ io_h")
+        s = s & LD(" #l_ #{4} #kk.")
+    Case "box_rep_tail"
+        s = s & LD("#V$0451olmd $2014 odf nm imlqror. I_ec_~ cdq_j{ $2014 pam~ bornn_, apd cd")
+        s = s & LD("#q_jg azcdjdlz: o_fjmegq{ l_ jgpq $2014 $00ABO_pij_ci_ $25BE$00BB $2192 $00ABO_pij_ci")
+        s = s & LD("#_ l_ jgpqz$00BB.")
     Case "same_title"
         s = s & LD("#Mcgl_imazd $2014 a bornnz")
     Case "same_nosel"
@@ -636,15 +708,6 @@ Private Function LangRu_5(ByVal key As String, s As String) As Boolean
         s = s & LD("#O_pij_ci_: nmcngp{ jgpq_ #{0}")
     Case "nest_group"
         s = s & LD("#O_pij_ci_: jgpq #{0} #gf #{1} $00B7 {2}")
-    Case Else
-        LangRu_5 = False
-    End Select
-End Function
-
-Private Function LangRu_6(ByVal key As String, s As String) As Boolean
-    LangRu_6 = True
-    s = ""
-    Select Case key
     Case "nest_label"
         s = s & LD("#Jgpq #{0} #gf #{1} $00B7 {2} $00D7 {3} #kk $00B7 #{4} $00B7 #cdq_jdh #{5} $00B7 #f_nmjld")
         s = s & LD("#lgd #{6}%")
@@ -686,6 +749,15 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
         s = s & LD("#apd uadq_")
     Case "lbl_nest_size"
         s = s & LD("#Bmqmazh o_fkdo:")
+    Case Else
+        LangRu_6 = False
+    End Select
+End Function
+
+Private Function LangRu_7(ByVal key As String, s As String) As Boolean
+    LangRu_7 = True
+    s = ""
+    Select Case key
     Case "lbl_nest_len"
         s = s & LD("#Cjgl_ jgpq_, kk:")
     Case "lbl_nest_wid"
@@ -742,15 +814,6 @@ Private Function LangRu_6(ByVal key As String, s As String) As Boolean
         s = s & LD("$00BB $2014 #apdbc_ nmwqrvlm.")
     Case "btn_nest"
         s = s & LD("#O_fjmegq{")
-    Case Else
-        LangRu_6 = False
-    End Select
-End Function
-
-Private Function LangRu_7(ByVal key As String, s As String) As Boolean
-    LangRu_7 = True
-    s = ""
-    Select Case key
     Case "bad_nest"
         s = s & LD("#Nomado{qd fl_vdlg~: cjgl_ g wgogl_ jgpq_ 10$2013100000 kk, nmjd ")
         s = s & LD("0$20131000 #kk g kdl{wd nmjmaglz jgpq_, f_fmo 0$20131000 kk, l_gkdl{w")
@@ -1280,6 +1343,79 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
     Case "noodle_rep_tail"
         s = s & LD("One group in the middle of the page; the object order is the")
         s = s & LD(" cutting order.")
+    Case "box_title"
+        s = s & LD("Box")
+    Case "lbl_box_l"
+        s = s & LD("Length, outside, mm:")
+    Case "lbl_box_w"
+        s = s & LD("Width, outside, mm:")
+    Case "lbl_box_h"
+        s = s & LD("Height, outside, mm:")
+    Case "lbl_box_t"
+        s = s & LD("Material thickness, mm:")
+    Case "lbl_box_e"
+        s = s & LD("Step height (left at the edge), mm:")
+    Case "lbl_box_c"
+        s = s & LD("Clearance in the step, mm:")
+    Case "lbl_box_o"
+        s = s & LD("Step lines run past the edge, mm:")
+    Case "box_hint"
+        s = s & LD("Box layout for a router: the lid and the bottom have a step ")
+        s = s & LD("all round, the front and the back along the side edges, the ")
+        s = s & LD("sides are plain. Sizes are outside sizes. The step (red) is ")
+        s = s & LD("milled on the inner face: width = thickness + clearance, dep")
+        s = s & LD("th = thickness $2212 step height; the step height is how much ma")
+        s = s & LD("terial is left at the edge. The walls are shorter by two ste")
+        s = s & LD("p heights. The parts go to the middle of the page, each as i")
+        s = s & LD("ts own group.")
+    Case "btn_box"
+        s = s & LD("Build")
+    Case "bad_box"
+        s = s & LD("Check the values: sizes 10$201310000 mm, thickness 0$2013100 mm, ste")
+        s = s & LD("p height above 0 and below the thickness, clearance 0$201310 mm,")
+        s = s & LD(" lines past the edge 0$2013100 mm; every box size must exceed tw")
+        s = s & LD("o step widths (thickness + clearance).")
+    Case "box_p0"
+        s = s & LD("lid")
+    Case "box_p1"
+        s = s & LD("front")
+    Case "box_p2"
+        s = s & LD("bottom")
+    Case "box_p3"
+        s = s & LD("back")
+    Case "box_p4"
+        s = s & LD("left side")
+    Case "box_p5"
+        s = s & LD("right side")
+    Case Else
+        LangEn_5 = False
+    End Select
+End Function
+
+Private Function LangEn_6(ByVal key As String, s As String) As Boolean
+    LangEn_6 = True
+    s = ""
+    Select Case key
+    Case "box_part"
+        s = s & LD("Box: {0} $00B7 {1} $00D7 {2} mm")
+    Case "box_cut"
+        s = s & LD("Cut outline")
+    Case "box_step_name"
+        s = s & LD("Step: width {0} mm, depth {1} mm")
+    Case "box_report"
+        s = s & LD("Box {0} $00D7 {1} $00D7 {2} mm (outside sizes), material {3} mm $2014 6 ")
+        s = s & LD("parts:$000A$2022 lid and bottom $2014 2 pcs {0} $00D7 {1}, step all round;$000A$2022")
+        s = s & LD(" front and back $2014 2 pcs {0} $00D7 {4}, step along the side edges")
+        s = s & LD(";$000A$2022 sides $2014 2 pcs {4} $00D7 {5}, plain.")
+    Case "box_rep_step"
+        s = s & LD("Step (red, milled on the inner face): width {0} mm (thicknes")
+        s = s & LD("s + clearance {1}), depth {2} mm $2014 {3} mm is left at the edg")
+        s = s & LD("e. The step lines of the front and the back run {4} mm past ")
+        s = s & LD("the edge.")
+    Case "box_rep_tail"
+        s = s & LD("Black is the cut outline. Each part is its own group and all")
+        s = s & LD(" parts are selected: to lay them out on a sheet $2014 Layout $25BE $2192")
+        s = s & LD(" $0022Nest on sheets$0022.")
     Case "same_title"
         s = s & LD("Group identical")
     Case "same_nosel"
@@ -1324,15 +1460,6 @@ Private Function LangEn_5(ByVal key As String, s As String) As Boolean
         s = s & LD("Nesting: sheet label {0}")
     Case "nest_group"
         s = s & LD("Nesting: sheet {0} of {1} $00B7 {2}")
-    Case Else
-        LangEn_5 = False
-    End Select
-End Function
-
-Private Function LangEn_6(ByVal key As String, s As String) As Boolean
-    LangEn_6 = True
-    s = ""
-    Select Case key
     Case "nest_label"
         s = s & LD("Sheet {0} of {1} $00B7 {2} $00D7 {3} mm $00B7 {4} $00B7 {5} parts $00B7 {6}% fil")
         s = s & LD("led")
@@ -1374,6 +1501,15 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
         s = s & LD("all colours")
     Case "lbl_nest_size"
         s = s & LD("Preset size:")
+    Case Else
+        LangEn_6 = False
+    End Select
+End Function
+
+Private Function LangEn_7(ByVal key As String, s As String) As Boolean
+    LangEn_7 = True
+    s = ""
+    Select Case key
     Case "lbl_nest_len"
         s = s & LD("Sheet length, mm:")
     Case "lbl_nest_wid"
@@ -1431,15 +1567,6 @@ Private Function LangEn_6(ByVal key As String, s As String) As Boolean
         s = s & LD("ps are always nested one by one.")
     Case "btn_nest"
         s = s & LD("Nest")
-    Case Else
-        LangEn_6 = False
-    End Select
-End Function
-
-Private Function LangEn_7(ByVal key As String, s As String) As Boolean
-    LangEn_7 = True
-    s = ""
-    Select Case key
     Case "bad_nest"
         s = s & LD("Check the values: sheet length and width 10$2013100000 mm, margi")
         s = s & LD("n 0$20131000 mm and under half the sheet, gap 0$20131000 mm, minimum")

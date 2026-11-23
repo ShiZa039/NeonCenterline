@@ -275,6 +275,52 @@ STRINGS = {
                       'Router ⌀{0} mm: the cuts are cutter centre lines, horizontal ones {1} mm apart, end cuts {2} mm apart — strips after the router are {3} × {4} mm.'),
     'noodle_rep_tail':('Одной группой в центре страницы; порядок объектов — порядок резки.',
                       'One group in the middle of the page; the object order is the cutting order.'),
+    'box_title':     ('Кубик', 'Box'),
+    'lbl_box_l':     ('Длина (Д), наружная, мм:', 'Length, outside, mm:'),
+    'lbl_box_w':     ('Ширина (Ш), наружная, мм:', 'Width, outside, mm:'),
+    'lbl_box_h':     ('Высота (В), наружная, мм:', 'Height, outside, mm:'),
+    'lbl_box_t':     ('Толщина материала, мм:', 'Material thickness, mm:'),
+    'lbl_box_e':     ('Высота ступеньки (остаётся у края), мм:', 'Step height (left at the edge), mm:'),
+    'lbl_box_c':     ('Зазор в ступеньке, мм:', 'Clearance in the step, mm:'),
+    'lbl_box_o':     ('Выход линий ступеньки за край, мм:', 'Step lines run past the edge, mm:'),
+    'box_hint':      ('Развёртка кубика под фрезеровку: крышка и дно — со ступенькой по всему краю, перед и зад — со ступенькой '
+                      'по боковым краям, бока — гладкие. Размеры — наружные. '
+                      'Ступенька (красное) фрезеруется с внутренней стороны: ширина — толщина + зазор, глубина — толщина − высота ступеньки; '
+                      'высота ступеньки — сколько материала остаётся у края. Стенки короче на две высоты ступеньки. '
+                      'Детали — в центре страницы, каждая своей группой.',
+                      'Box layout for a router: the lid and the bottom have a step all round, the front and the back along the side edges, '
+                      'the sides are plain. Sizes are outside sizes. '
+                      'The step (red) is milled on the inner face: width = thickness + clearance, depth = thickness − step height; '
+                      'the step height is how much material is left at the edge. The walls are shorter by two step heights. '
+                      'The parts go to the middle of the page, each as its own group.'),
+    'btn_box':       ('Построить', 'Build'),
+    'bad_box':       ('Проверьте значения: размеры 10–10000 мм, толщина 0–100 мм, высота ступеньки — больше 0 и меньше толщины, '
+                      'зазор 0–10 мм, выход линий 0–100 мм; каждый размер кубика — больше двух ширин ступеньки (толщина + зазор).',
+                      'Check the values: sizes 10–10000 mm, thickness 0–100 mm, step height above 0 and below the thickness, '
+                      'clearance 0–10 mm, lines past the edge 0–100 mm; every box size must exceed two step widths (thickness + clearance).'),
+    'box_p0':        ('крышка', 'lid'),
+    'box_p1':        ('перед', 'front'),
+    'box_p2':        ('дно', 'bottom'),
+    'box_p3':        ('зад', 'back'),
+    'box_p4':        ('левый бок', 'left side'),
+    'box_p5':        ('правый бок', 'right side'),
+    'box_part':      ('Кубик: {0} · {1} × {2} мм', 'Box: {0} · {1} × {2} mm'),
+    'box_cut':       ('Рез по контуру', 'Cut outline'),
+    'box_step_name': ('Ступенька: ширина {0} мм, глубина {1} мм', 'Step: width {0} mm, depth {1} mm'),
+    'box_report':    ('Кубик {0} × {1} × {2} мм (наружные размеры), материал {3} мм — 6 деталей:\n'
+                      '• крышка и дно — 2 шт {0} × {1}, ступенька по всему краю;\n'
+                      '• перед и зад — 2 шт {0} × {4}, ступенька по боковым краям;\n'
+                      '• бока — 2 шт {4} × {5}, гладкие.',
+                      'Box {0} × {1} × {2} mm (outside sizes), material {3} mm — 6 parts:\n'
+                      '• lid and bottom — 2 pcs {0} × {1}, step all round;\n'
+                      '• front and back — 2 pcs {0} × {4}, step along the side edges;\n'
+                      '• sides — 2 pcs {4} × {5}, plain.'),
+    'box_rep_step':  ('Ступенька (красное, фрезеровать с внутренней стороны): ширина {0} мм (толщина + зазор {1}), глубина {2} мм — у края остаётся {3} мм. '
+                      'Линии ступеньки у переда и зада выходят за край на {4} мм.',
+                      'Step (red, milled on the inner face): width {0} mm (thickness + clearance {1}), depth {2} mm — {3} mm is left at the edge. '
+                      'The step lines of the front and the back run {4} mm past the edge.'),
+    'box_rep_tail':  ('Чёрное — рез по контуру. Каждая деталь — своя группа, все детали выделены: разложить на лист — «Раскладка ▾» → «Раскладка на листы».',
+                      'Black is the cut outline. Each part is its own group and all parts are selected: to lay them out on a sheet — Layout ▾ → "Nest on sheets".'),
     'same_title':    ('Одинаковые — в группы', 'Group identical'),
     'same_nosel':    ('Выделите объекты: кривые, текст, фигуры.', 'Select the objects: curves, text, shapes.'),
     'same_none':     ('Одинаковых объектов не найдено: все {0} разные.\n\nОдинаковые — одна форма с точностью до 0,1 мм (без поворота и зеркала) и один цвет.',

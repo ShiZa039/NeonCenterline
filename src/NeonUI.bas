@@ -27,13 +27,13 @@ Private Const REG_APP As String = "NeonCenterline"
 ' результат окна перед расчётом (frmNeonRun): True — «Построить» / «Упростить»
 Public NeonRunConfirmed As Boolean
 ' режим окна frmNeonRun: 0 — центральные линии, 1 — упрощение контура, 2 — люверсы, 3 — раскладка, 4 — лапша,
-' 5 — окно хода работы
+' 5 — окно хода работы, 6 — кубик
 Public NeonRunMode As Long
 ' окно центральных линий (режим 0) открыто кнопкой «Курсив»: только тогда в нём строка «шрифт как образец»
 Public NeonRunScript As Boolean
 ' версия набора кнопок панели «Неон». Поднимать вместе с меткой [NeonToolbar N] в
 ' addon/NeonCenterline/AppUI.xslt, когда меняется состав панели (tools/gen_addon.py сверяет)
-Public Const NEON_TOOLBAR_VER As String = "12"
+Public Const NEON_TOOLBAR_VER As String = "13"
 ' файлы панели обновлены в этом сеансе (InstallToolbar): в памяти CorelDRAW ещё старый состав
 ' панели, сбрасывать её можно только после перезапуска
 Public NeonTbInstalled As Boolean
@@ -602,6 +602,59 @@ Public Function AskNoodleParams() As Boolean
     AskNoodleParams = True
 End Function
 
+' окно перед кубиком (frmNeonRun в режиме 6): размеры, толщина, ступенька, зазор, выход линий. Без собранной
+' формы — стандартными окнами размеры, толщина и ступенька, зазор и выход — как были. False — отмена
+Public Function AskBoxParams() As Boolean
+    Dim f As Object, s As String, v(0 To 4) As Double, i As Long, keys As Variant, lbl As Variant, c As Double
+    NeonRunMode = 6
+    On Error Resume Next
+    Set f = VBA.UserForms.Add("frmNeonRun")
+    On Error GoTo 0
+    If Not f Is Nothing Then
+        NeonRunConfirmed = False
+        f.Show
+        AskBoxParams = NeonRunConfirmed
+        Unload f
+        NeonRunMode = 0
+        Exit Function
+    End If
+    NeonRunMode = 0
+    keys = Array("L", "W", "H", "T", "Step")
+    lbl = Array("lbl_box_l", "lbl_box_w", "lbl_box_h", "lbl_box_t", "lbl_box_e")
+    For i = 0 To 4
+        s = InputBox(NeonL(lbl(i)), NeonL("box_title"), FmtNum(NeonBoxNum(keys(i), Choose(i + 1, 500, 500, 500, 5, 2))))
+        If Len(Trim$(s)) = 0 Then
+            Exit Function
+        End If
+        v(i) = ParseNum(s)
+    Next i
+    c = NeonBoxNum("Clear", 0.2)
+    If Not NeonBoxOk(v(0), v(1), v(2), v(3), v(4), c, NeonBoxNum("Over", 2)) Then
+        MsgBox NeonL("bad_box"), vbExclamation, NeonL("box_title")
+        Exit Function
+    End If
+    For i = 0 To 4
+        SaveSetting REG_APP, "Box", keys(i), FmtNum(v(i))
+    Next i
+    AskBoxParams = True
+End Function
+
+' кубик: можно ли строить (размеры 10–10000, толщина до 100, ступенька больше 0 и меньше толщины,
+' зазор 0–10, выход 0–100, каждый размер больше двух ширин ступеньки t + c)
+Public Function NeonBoxOk(ByVal l As Double, ByVal w As Double, ByVal h As Double, ByVal t As Double, _
+                          ByVal e As Double, ByVal c As Double, ByVal o As Double) As Boolean
+    If l < 10 Or l > 10000 Or w < 10 Or w > 10000 Or h < 10 Or h > 10000 Then
+        Exit Function
+    End If
+    If t <= 0 Or t > 100 Or e <= 0 Or e >= t Or c < 0 Or c > 10 Or o < 0 Or o > 100 Then
+        Exit Function
+    End If
+    If 2 * (t + c) >= l Or 2 * (t + c) >= w Or 2 * (t + c) >= h Then
+        Exit Function
+    End If
+    NeonBoxOk = True
+End Function
+
 ' окно перед упрощением контура (то же окно frmNeonRun в режиме 1): допуск, показывать ли окно;
 ' без собранной формы — вопрос о допуске стандартным окном. False — отмена
 Public Function AskSimplifyParams() As Boolean
@@ -752,6 +805,8 @@ Public Sub NeonJobGo()
         PlaceGrommets
     Case "noodle"
         MakeNoodles
+    Case "box"
+        MakeBox
     Case "cut"
         FitToCut
     End Select
